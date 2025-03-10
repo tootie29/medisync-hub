@@ -18,7 +18,8 @@ import {
   Settings, 
   Calendar, 
   Menu, 
-  PulseIcon 
+  ActivitySquare, 
+  Heart 
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -53,7 +54,7 @@ const Navbar: React.FC = () => {
                 to="/dashboard" 
                 className="flex items-center font-bold text-xl text-medical-primary"
               >
-                <PulseIcon className="h-6 w-6 mr-2" />
+                <Heart className="h-6 w-6 mr-2" />
                 MediSync Hub
               </Link>
             </div>
