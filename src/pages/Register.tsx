@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -33,7 +32,7 @@ const Register: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'student' as const,
+    role: 'student' as 'student' | 'staff',
     phone: '',
     dateOfBirth: '',
     gender: '' as 'male' | 'female' | 'other' | '',
@@ -58,9 +57,9 @@ const Register: React.FC = () => {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    setFormData((prev) => ({ 
+    setFormData(prev => ({ 
       ...prev, 
-      role: value === 'student' ? 'student' : 'staff'
+      role: value === 'student' ? 'student' : 'staff' as const
     }));
   };
 
