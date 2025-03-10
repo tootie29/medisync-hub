@@ -79,9 +79,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: userData.email!,
         name: userData.name!,
         role: userData.role || 'student',
+        phone: userData.phone || '',
+        dateOfBirth: userData.dateOfBirth || '',
+        gender: userData.gender || undefined,
+        address: userData.address || '',
+        emergencyContact: userData.emergencyContact || '',
+        // Include any additional fields from userData
+        ...userData,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        ...userData
       };
 
       // In a real app, you would save the user to the database and hash the password

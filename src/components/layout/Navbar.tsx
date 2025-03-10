@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,19 +10,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  User, 
-  LogOut, 
-  Settings, 
-  Calendar, 
-  Menu, 
-  PulseIcon 
+import { useMediaQuery } from '@/hooks/use-mobile';
+import {
+  Menu,
+  X,
+  User,
+  Heart,
+  LogOut,
+  Settings,
+  HeartPulse
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const handleLogout = () => {
     logout();
@@ -53,7 +54,7 @@ const Navbar: React.FC = () => {
                 to="/dashboard" 
                 className="flex items-center font-bold text-xl text-medical-primary"
               >
-                <PulseIcon className="h-6 w-6 mr-2" />
+                <HeartPulse className="h-6 w-6 mr-2" />
                 MediSync Hub
               </Link>
             </div>
@@ -64,7 +65,7 @@ const Navbar: React.FC = () => {
               to="/appointments" 
               className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-medical-primary hover:bg-gray-50"
             >
-              <Calendar className="h-5 w-5 inline mr-1" />
+              <Heart className="h-5 w-5 inline mr-1" />
               Appointments
             </Link>
           </div>
@@ -93,7 +94,7 @@ const Navbar: React.FC = () => {
                   Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/appointments')}>
-                  <Calendar className="h-4 w-4 mr-2" />
+                  <Heart className="h-4 w-4 mr-2" />
                   Appointments
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/settings')}>
