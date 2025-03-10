@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -11,7 +10,7 @@ import {
   Package2, 
   Settings,
   Calculator,
-  PulseIcon,
+  HeartPulse,
   Stethoscope
 } from 'lucide-react';
 
@@ -120,7 +119,7 @@ const Sidebar: React.FC = () => {
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center">
             <div className="h-8 w-8 rounded-full bg-medical-primary flex items-center justify-center">
-              <PulseIcon className="h-4 w-4 text-white" />
+              <HeartPulse className="h-4 w-4 text-white" />
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-medical-primary">MediSync Hub</p>

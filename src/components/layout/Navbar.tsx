@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -17,8 +16,8 @@ import {
   LogOut, 
   Settings, 
   Calendar, 
-  Menu, 
-  PulseIcon 
+  Menu,
+  HeartPulse 
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -53,7 +52,7 @@ const Navbar: React.FC = () => {
                 to="/dashboard" 
                 className="flex items-center font-bold text-xl text-medical-primary"
               >
-                <PulseIcon className="h-6 w-6 mr-2" />
+                <HeartPulse className="h-6 w-6 mr-2" />
                 MediSync Hub
               </Link>
             </div>
