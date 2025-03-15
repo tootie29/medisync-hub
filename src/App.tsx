@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,10 +23,10 @@ import Inventory from "./pages/Inventory";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import HealthMonitoring from "./pages/HealthMonitoring";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
-// Check if backend server is running
 const ServerChecker = () => {
   const [isChecking, setIsChecking] = useState(true);
   const [isServerRunning, setIsServerRunning] = useState(false);
@@ -126,6 +125,7 @@ const App = () => (
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/health-monitoring" element={<HealthMonitoring />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
