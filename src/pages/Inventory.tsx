@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,18 @@ const Inventory = () => {
   });
   const [updateQuantity, setUpdateQuantity] = useState<{ [key: string]: number }>({});
   const [openAddDialog, setOpenAddDialog] = useState(false);
+
+  // Check user role - only admin and doctor can access this page
+  const hasAccess = user && (user.role === "admin" || user.role === "doctor");
+  
+  // If user doesn't have access, redirect to home page
+  if (!hasAccess) {
+    toast.error("Access Denied", { 
+      description: "You don't have permission to access the inventory",
+      duration: 5000
+    });
+    return <Navigate to="/" replace />;
+  }
 
   useEffect(() => {
     const lowStockItems = medicines.filter(med => med.quantity <= med.threshold);

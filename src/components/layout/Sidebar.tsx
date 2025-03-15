@@ -2,6 +2,7 @@
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 import {
   Calendar,
   ChevronLeft,
@@ -15,6 +16,11 @@ import {
 } from "lucide-react";
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
+  const { user } = useAuth();
+  
+  // Determine if user can access inventory (admin or doctor only)
+  const canAccessInventory = user && (user.role === "admin" || user.role === "doctor");
+  
   const routes = [
     {
       path: "/",
@@ -36,11 +42,12 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       name: "Medical Records",
       icon: ClipboardCheck,
     },
-    {
+    // Only show inventory to admin and doctor roles
+    ...(canAccessInventory ? [{
       path: "/inventory",
       name: "Inventory",
       icon: Package,
-    },
+    }] : []),
   ];
 
   return (
