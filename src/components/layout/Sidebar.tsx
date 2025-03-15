@@ -51,14 +51,14 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       )}
     >
       <div className="flex items-center justify-between px-4">
-        <div className={cn("font-bold text-white text-lg", !isSidebarOpen && "hidden")}>
+        <div className={cn("font-bold text-white text-xl", !isSidebarOpen && "hidden")}>
           MedCenter
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="rounded-full p-1.5 text-white hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="rounded-full p-1.5 text-white hover:bg-white/20"
         >
           {isSidebarOpen ? (
             <ChevronLeft className="h-6 w-6" />
@@ -69,18 +69,18 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-2 py-4 px-2">
+      <div className="flex flex-col gap-2 py-6 px-3">
         {routes.map((route) => (
           <NavLink
             key={route.path}
             to={route.path}
             className={({ isActive }) =>
               cn(
-                "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all",
-                "text-white hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                "group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all",
+                "hover:bg-white/20",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground",
+                  ? "bg-white/20 text-white"
+                  : "text-white/90",
                 !isSidebarOpen && "justify-center px-2"
               )
             }
@@ -88,7 +88,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
             <route.icon className="h-5 w-5" />
             {isSidebarOpen && <span className="whitespace-nowrap">{route.name}</span>}
             {!isSidebarOpen && (
-              <span className="absolute left-full top-1/2 ml-2 -translate-y-1/2 rounded-md bg-sidebar-background px-2 py-1 text-xs font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <span className="absolute left-full top-1/2 ml-2 -translate-y-1/2 rounded-md bg-sidebar-background px-2 py-1 text-xs font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg border border-white/10 z-50">
                 {route.name}
               </span>
             )}
