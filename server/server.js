@@ -11,9 +11,9 @@ const medicineRoutes = require('./routes/medicineRoutes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Enhanced CORS configuration
+// Enhanced CORS configuration with your domain
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://medisync.entrsolutions.com'],
+  origin: ['http://localhost:5173', 'http://localhost:8080', 'https://medisync.entrsolutions.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true

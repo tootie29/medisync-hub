@@ -28,7 +28,7 @@ import HealthMonitoring from "./pages/HealthMonitoring";
 import Settings from "./pages/Settings";
 
 // Define API_URL based on environment or domain
-const API_BASE_URL = import.meta.env.PROD 
+const API_BASE_URL = window.location.hostname === "medisync.entrsolutions.com" 
   ? 'https://medisync.entrsolutions.com'
   : 'http://localhost:3001';
 

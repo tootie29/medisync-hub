@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import axios from 'axios';
 
 // Define API_URL based on environment or domain
-const API_URL = import.meta.env.PROD 
+const API_URL = window.location.hostname === "medisync.entrsolutions.com" 
   ? 'https://medisync.entrsolutions.com/api'
   : 'http://localhost:3001/api';
 
