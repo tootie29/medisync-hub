@@ -1,10 +1,462 @@
 
-const MedicalRecords = () => {
+import React, { useState, useEffect } from 'react';
+import MainLayout from '@/components/layout/MainLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/context/AuthContext';
+import { useData } from '@/context/DataContext';
+import { MedicalRecord, SAMPLE_USERS } from '@/types';
+import { format } from 'date-fns';
+import { Activity, Calendar, User } from 'lucide-react';
+import { toast } from 'sonner';
+
+const MedicalRecords: React.FC = () => {
+  const { user } = useAuth();
+  const { 
+    getMedicalRecordsByPatientId, 
+    addMedicalRecord, 
+    updateMedicalRecord,
+    deleteMedicalRecord
+  } = useData();
+  
+  const [isAddingRecord, setIsAddingRecord] = useState(false);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Partial<MedicalRecord>>({
+    height: 0,
+    weight: 0,
+    bloodPressure: '',
+    temperature: 36.6,
+    diagnosis: '',
+    notes: '',
+    medications: [],
+    followUpDate: '',
+  });
+
+  const isDoctor = user?.role === 'doctor' || user?.role === 'admin';
+  const isPatient = user?.role === 'student' || user?.role === 'staff';
+  
+  // For doctors, we'll display a list of patients
+  const patients = SAMPLE_USERS.filter(
+    u => u.role === 'student' || u.role === 'staff'
+  );
+  
+  // Get medical records based on user role
+  const medicalRecords = isPatient 
+    ? getMedicalRecordsByPatientId(user?.id || '')
+    : selectedPatientId 
+      ? getMedicalRecordsByPatientId(selectedPatientId)
+      : [];
+
+  // Handle form input changes
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    let parsedValue: any = value;
+    
+    // Parse numeric values
+    if (name === 'height' || name === 'weight' || name === 'temperature') {
+      parsedValue = parseFloat(value) || 0;
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: parsedValue }));
+  };
+  
+  // Handle medication input (comma separated)
+  const handleMedicationsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const medicationsList = e.target.value.split(',').map(med => med.trim()).filter(Boolean);
+    setFormData(prev => ({ ...prev, medications: medicationsList }));
+  };
+
+  // Reset form to default values or to edit a specific record
+  const resetForm = (record?: MedicalRecord) => {
+    if (record) {
+      setFormData({
+        height: record.height,
+        weight: record.weight,
+        bloodPressure: record.bloodPressure || '',
+        temperature: record.temperature || 36.6,
+        diagnosis: record.diagnosis || '',
+        notes: record.notes || '',
+        medications: record.medications || [],
+        followUpDate: record.followUpDate || '',
+      });
+      setEditingRecordId(record.id);
+    } else {
+      setFormData({
+        height: 0,
+        weight: 0,
+        bloodPressure: '',
+        temperature: 36.6,
+        diagnosis: '',
+        notes: '',
+        medications: [],
+        followUpDate: '',
+      });
+      setEditingRecordId(null);
+    }
+  };
+
+  // Submit form to add/update record
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.height || !formData.weight) {
+      toast.error('Height and weight are required');
+      return;
+    }
+    
+    try {
+      if (editingRecordId) {
+        // Update existing record
+        updateMedicalRecord(editingRecordId, formData);
+        setEditingRecordId(null);
+      } else {
+        // Add new record
+        const patientId = isPatient ? user?.id as string : selectedPatientId as string;
+        addMedicalRecord({
+          patientId,
+          doctorId: user?.id as string,
+          date: new Date().toISOString().split('T')[0],
+          height: formData.height as number,
+          weight: formData.weight as number,
+          bloodPressure: formData.bloodPressure,
+          temperature: formData.temperature,
+          diagnosis: formData.diagnosis,
+          notes: formData.notes,
+          medications: formData.medications,
+          followUpDate: formData.followUpDate,
+        });
+      }
+      
+      setIsAddingRecord(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving medical record:', error);
+      toast.error('An error occurred while saving the medical record');
+    }
+  };
+
+  // Handle patient selection (for doctors)
+  const handlePatientSelect = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    setIsAddingRecord(false);
+    setEditingRecordId(null);
+  };
+
+  // Format medications list for display
+  const formatMedications = (medications?: string[]) => {
+    if (!medications || medications.length === 0) return 'None';
+    return medications.join(', ');
+  };
+
+  // Handle record deletion
+  const handleDeleteRecord = (recordId: string) => {
+    if (window.confirm('Are you sure you want to delete this medical record?')) {
+      deleteMedicalRecord(recordId);
+    }
+  };
+
   return (
-    <div className="medical-container py-12">
-      <h1 className="page-title">Medical Records</h1>
-      <p>Medical records system coming soon...</p>
-    </div>
+    <MainLayout>
+      <div className="medical-container">
+        <h1 className="page-title">Medical Records</h1>
+
+        {isDoctor && (
+          <div className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Patients</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {patients.map(patient => (
+                    <Button
+                      key={patient.id}
+                      variant={selectedPatientId === patient.id ? "default" : "outline"}
+                      className="justify-start"
+                      onClick={() => handlePatientSelect(patient.id)}
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      {patient.name}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <div className="mt-6">
+          {(isPatient || selectedPatientId) && (
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                {isPatient ? 'Your Medical Records' : 'Patient Medical Records'}
+              </h2>
+              
+              {isDoctor && selectedPatientId && (
+                <Button 
+                  onClick={() => {
+                    setIsAddingRecord(true);
+                    resetForm();
+                  }}
+                  className="bg-medical-primary hover:bg-medical-secondary"
+                >
+                  Add New Record
+                </Button>
+              )}
+            </div>
+          )}
+
+          {(isAddingRecord || editingRecordId) && selectedPatientId && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>
+                  {editingRecordId ? 'Edit Medical Record' : 'Add New Medical Record'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="height">Height (cm)</Label>
+                      <Input
+                        id="height"
+                        name="height"
+                        type="number"
+                        value={formData.height}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="weight">Weight (kg)</Label>
+                      <Input
+                        id="weight"
+                        name="weight"
+                        type="number"
+                        value={formData.weight}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bloodPressure">Blood Pressure</Label>
+                      <Input
+                        id="bloodPressure"
+                        name="bloodPressure"
+                        placeholder="e.g., 120/80"
+                        value={formData.bloodPressure}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="temperature">Temperature (°C)</Label>
+                      <Input
+                        id="temperature"
+                        name="temperature"
+                        type="number"
+                        step="0.1"
+                        value={formData.temperature}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="diagnosis">Diagnosis</Label>
+                      <Input
+                        id="diagnosis"
+                        name="diagnosis"
+                        value={formData.diagnosis}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="medications">Medications (comma separated)</Label>
+                      <Textarea
+                        id="medications"
+                        name="medications"
+                        value={formData.medications?.join(', ')}
+                        onChange={handleMedicationsChange}
+                        rows={2}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="notes">Notes</Label>
+                      <Textarea
+                        id="notes"
+                        name="notes"
+                        value={formData.notes}
+                        onChange={handleChange}
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="followUpDate">Follow-up Date</Label>
+                      <Input
+                        id="followUpDate"
+                        name="followUpDate"
+                        type="date"
+                        value={formData.followUpDate}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 mt-6">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsAddingRecord(false);
+                        setEditingRecordId(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="bg-medical-primary hover:bg-medical-secondary">
+                      {editingRecordId ? 'Update Record' : 'Add Record'}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {medicalRecords.length > 0 ? (
+            <div className="space-y-4">
+              {medicalRecords
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .map(record => {
+                  const doctor = SAMPLE_USERS.find(u => u.id === record.doctorId);
+                  
+                  return (
+                    <Card key={record.id} className="overflow-hidden">
+                      <CardHeader className="bg-gray-50">
+                        <div className="flex justify-between">
+                          <CardTitle className="text-lg">
+                            Medical Record - {format(new Date(record.date), 'PPP')}
+                          </CardTitle>
+                          {isDoctor && (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  resetForm(record);
+                                  setIsAddingRecord(true);
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => handleDeleteRecord(record.id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4">
+                          <div>
+                            <p className="text-sm text-gray-500">Height</p>
+                            <p className="font-medium">{record.height} cm</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Weight</p>
+                            <p className="font-medium">{record.weight} kg</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">BMI</p>
+                            <p className="font-medium">{record.bmi.toFixed(1)}</p>
+                          </div>
+                          {record.bloodPressure && (
+                            <div>
+                              <p className="text-sm text-gray-500">Blood Pressure</p>
+                              <p className="font-medium">{record.bloodPressure}</p>
+                            </div>
+                          )}
+                          {record.temperature && (
+                            <div>
+                              <p className="text-sm text-gray-500">Temperature</p>
+                              <p className="font-medium">{record.temperature} °C</p>
+                            </div>
+                          )}
+                          {doctor && (
+                            <div>
+                              <p className="text-sm text-gray-500">Attending Doctor</p>
+                              <p className="font-medium">Dr. {doctor.name}</p>
+                            </div>
+                          )}
+                          {record.diagnosis && (
+                            <div className="md:col-span-2">
+                              <p className="text-sm text-gray-500">Diagnosis</p>
+                              <p className="font-medium">{record.diagnosis}</p>
+                            </div>
+                          )}
+                          <div className="md:col-span-2">
+                            <p className="text-sm text-gray-500">Medications</p>
+                            <p className="font-medium">{formatMedications(record.medications)}</p>
+                          </div>
+                          {record.notes && (
+                            <div className="md:col-span-2">
+                              <p className="text-sm text-gray-500">Notes</p>
+                              <p className="font-medium whitespace-pre-wrap">{record.notes}</p>
+                            </div>
+                          )}
+                          {record.followUpDate && (
+                            <div>
+                              <p className="text-sm text-gray-500">Follow-up Date</p>
+                              <p className="font-medium">{format(new Date(record.followUpDate), 'PPP')}</p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
+          ) : (
+            <Card className="text-center p-6">
+              <div className="py-8">
+                <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                  <Activity className="h-6 w-6 text-gray-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">No Medical Records Found</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {selectedPatientId 
+                    ? "This patient doesn't have any medical records yet." 
+                    : isPatient 
+                      ? "You don't have any medical records yet." 
+                      : "Select a patient to view or add medical records."}
+                </p>
+                {isDoctor && selectedPatientId && (
+                  <div className="mt-6">
+                    <Button
+                      onClick={() => {
+                        setIsAddingRecord(true);
+                        resetForm();
+                      }}
+                      className="bg-medical-primary hover:bg-medical-secondary"
+                    >
+                      Add First Record
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
+    </MainLayout>
   );
 };
 

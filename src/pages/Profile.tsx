@@ -15,15 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from "sonner";
 import { User } from '@/types';
-import { CalendarIcon, Clock, User as UserIcon } from 'lucide-react';
+import { CalendarIcon, Clock, User as UserIcon, Activity, ArrowUpRight } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
-  const { getAppointmentsByPatientId } = useData();
+  const { getAppointmentsByPatientId, getMedicalRecordsByPatientId } = useData();
   const [isEditing, setIsEditing] = React.useState(false);
   const [formData, setFormData] = React.useState<Partial<User>>({
     name: user?.name || '',
@@ -38,6 +38,16 @@ const Profile: React.FC = () => {
 
   // Get user appointments
   const userAppointments = user ? getAppointmentsByPatientId(user.id) : [];
+  
+  // Get user medical records
+  const userMedicalRecords = user ? getMedicalRecordsByPatientId(user.id) : [];
+  
+  // Get the latest medical record (for BMI and health data)
+  const latestMedicalRecord = userMedicalRecords.length > 0
+    ? userMedicalRecords.sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      )[0]
+    : null;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -69,6 +79,21 @@ const Profile: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Get BMI category and color
+  const getBMICategory = (bmi: number): string => {
+    if (bmi < 18.5) return 'Underweight';
+    if (bmi < 25) return 'Healthy Weight';
+    if (bmi < 30) return 'Overweight';
+    return 'Obese';
+  };
+
+  const getBMICategoryColor = (bmi: number): string => {
+    if (bmi < 18.5) return 'text-blue-500';
+    if (bmi < 25) return 'text-green-500';
+    if (bmi < 30) return 'text-yellow-500';
+    return 'text-red-500';
   };
 
   return (
@@ -222,8 +247,74 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-          {/* New appointments section */}
-          <div className="md:col-span-1">
+          <div className="md:col-span-1 space-y-6">
+            {/* Health Status Card */}
+            {latestMedicalRecord && (
+              <Card className="shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Health Status</CardTitle>
+                  <CardDescription>
+                    Last updated: {format(new Date(latestMedicalRecord.date), 'PPP')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">BMI</span>
+                        <span className={`font-medium ${getBMICategoryColor(latestMedicalRecord.bmi)}`}>
+                          {latestMedicalRecord.bmi.toFixed(1)} - {getBMICategory(latestMedicalRecord.bmi)}
+                        </span>
+                      </div>
+                      <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ 
+                            width: `${Math.min(latestMedicalRecord.bmi * 2, 100)}%`,
+                            background: `linear-gradient(to right, 
+                              #3b82f6 0%, #3b82f6 18.5%, 
+                              #22c55e 18.5%, #22c55e 25%, 
+                              #eab308 25%, #eab308 30%, 
+                              #ef4444 30%, #ef4444 100%)`
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">Height</span>
+                        <span className="font-medium">{latestMedicalRecord.height} cm</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">Weight</span>
+                        <span className="font-medium">{latestMedicalRecord.weight} kg</span>
+                      </div>
+                      {latestMedicalRecord.bloodPressure && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500">Blood Pressure</span>
+                          <span className="font-medium">{latestMedicalRecord.bloodPressure}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="pt-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full flex items-center justify-center text-medical-primary"
+                        onClick={() => window.location.href = '/medical-records'}
+                      >
+                        View Medical Records
+                        <ArrowUpRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Appointments Card */}
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle>Your Appointments</CardTitle>
@@ -304,4 +395,3 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
-
