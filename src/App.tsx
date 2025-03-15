@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,10 +20,10 @@ import MedicalRecords from "./pages/MedicalRecords";
 import Inventory from "./pages/Inventory";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
+import HealthMonitoring from "./pages/HealthMonitoring";
 
 const queryClient = new QueryClient();
 
-// Component to check for upcoming appointments
 const AppointmentNotifier = () => {
   const { user } = useAuth();
   const { getAppointmentsByPatientId } = useData();
@@ -32,13 +31,11 @@ const AppointmentNotifier = () => {
   useEffect(() => {
     if (!user) return;
     
-    // Get user appointments
     const userAppointments = getAppointmentsByPatientId(user.id);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const twoDaysFromNow = addDays(today, 2);
     
-    // Filter for confirmed appointments in the next 2 days
     const upcomingAppointments = userAppointments.filter(appointment => {
       if (appointment.status !== 'confirmed') return false;
       
@@ -49,7 +46,6 @@ const AppointmentNotifier = () => {
       });
     });
     
-    // Show notifications for upcoming appointments
     upcomingAppointments.forEach(appointment => {
       const appointmentDate = format(parseISO(appointment.date), 'MMMM d, yyyy');
       toast.info(
@@ -84,6 +80,7 @@ const App = () => (
               <Route path="/records" element={<MedicalRecords />} />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/health-monitoring" element={<HealthMonitoring />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

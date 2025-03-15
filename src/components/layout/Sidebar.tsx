@@ -13,6 +13,7 @@ import {
   Package,
   Settings,
   UserCircle,
+  Activity,
 } from "lucide-react";
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
@@ -41,6 +42,11 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       path: "/records",
       name: "Medical Records",
       icon: ClipboardCheck,
+    },
+    {
+      path: "/health-monitoring",
+      name: "Health Monitoring",
+      icon: Activity,
     },
     // Only show inventory to admin and doctor roles
     ...(canAccessInventory ? [{
