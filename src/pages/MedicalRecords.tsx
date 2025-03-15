@@ -44,8 +44,8 @@ const MedicalRecords: React.FC = () => {
     medications: [],
     followUpDate: '',
     vitalSigns: {
-      heartRate: '',
-      bloodGlucose: ''
+      heartRate: 0,
+      bloodGlucose: 0
     }
   });
 
@@ -105,8 +105,8 @@ const MedicalRecords: React.FC = () => {
         medications: record.medications || [],
         followUpDate: record.followUpDate || '',
         vitalSigns: {
-          heartRate: record.vitalSigns?.heartRate || '',
-          bloodGlucose: record.vitalSigns?.bloodGlucose || ''
+          heartRate: record.vitalSigns?.heartRate || 0,
+          bloodGlucose: record.vitalSigns?.bloodGlucose || 0
         }
       });
       setEditingRecordId(record.id);
@@ -121,8 +121,8 @@ const MedicalRecords: React.FC = () => {
         medications: [],
         followUpDate: '',
         vitalSigns: {
-          heartRate: '',
-          bloodGlucose: ''
+          heartRate: 0,
+          bloodGlucose: 0
         }
       });
       setEditingRecordId(null);
@@ -316,7 +316,7 @@ const MedicalRecords: React.FC = () => {
                         type="number"
                         value={formData.vitalSigns?.heartRate || ''}
                         onChange={(e) => {
-                          const heartRate = e.target.value ? Number(e.target.value) : undefined;
+                          const heartRate = e.target.value ? Number(e.target.value) : 0;
                           setFormData(prev => ({
                             ...prev,
                             vitalSigns: {
@@ -335,7 +335,7 @@ const MedicalRecords: React.FC = () => {
                         type="number"
                         value={formData.vitalSigns?.bloodGlucose || ''}
                         onChange={(e) => {
-                          const bloodGlucose = e.target.value ? Number(e.target.value) : undefined;
+                          const bloodGlucose = e.target.value ? Number(e.target.value) : 0;
                           setFormData(prev => ({
                             ...prev,
                             vitalSigns: {
@@ -619,3 +619,4 @@ const MedicalRecords: React.FC = () => {
 };
 
 export default MedicalRecords;
+
