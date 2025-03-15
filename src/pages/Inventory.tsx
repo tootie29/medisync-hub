@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -205,5 +206,110 @@ const Inventory = () => {
                   <Button variant="outline" onClick={() => setOpenAddDialog(false)}>Cancel</Button>
                   <Button onClick={handleAddMedicine}>Add to Inventory</Button>
                 </DialogFooter>
-             
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+          
+        {/* Low Stock Alerts */}
+        {medicines.some(med => med.quantity <= med.threshold) && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Low Stock Alert</AlertTitle>
+            <AlertDescription>
+              Some items are running low on stock. Please review and restock as needed.
+            </AlertDescription>
+          </Alert>
+        )}
+          
+        {/* Medicine Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Medicine Stock Levels</CardTitle>
+            <CardDescription>Manage your clinic's medication inventory</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Quantity</TableHead>
+                  <TableHead>Unit</TableHead>
+                  <TableHead>Status</TableHead>
+                  {canManageInventory && <TableHead>Actions</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {medicines.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={canManageInventory ? 6 : 5} className="text-center py-8">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <Package className="h-12 w-12 mb-2" />
+                        <p>No medicine items found</p>
+                        {canManageInventory && (
+                          <Button 
+                            variant="outline" 
+                            className="mt-4 gap-2"
+                            onClick={() => setOpenAddDialog(true)}
+                          >
+                            <PlusCircle className="h-4 w-4" />
+                            Add First Item
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  medicines.map(medicine => (
+                    <TableRow key={medicine.id}>
+                      <TableCell className="font-medium">{medicine.name}</TableCell>
+                      <TableCell>{medicine.category}</TableCell>
+                      <TableCell>{medicine.quantity} {medicine.unit}</TableCell>
+                      <TableCell>{medicine.unit}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          medicine.quantity <= medicine.threshold 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {medicine.quantity <= medicine.threshold ? 'Low Stock' : 'In Stock'}
+                        </span>
+                      </TableCell>
+                      {canManageInventory && (
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Input 
+                              type="number" 
+                              className="w-20"
+                              placeholder="Qty"
+                              value={updateQuantity[medicine.id] || ''}
+                              onChange={(e) => setUpdateQuantity(prev => ({
+                                ...prev,
+                                [medicine.id]: Number(e.target.value)
+                              }))}
+                            />
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleUpdateQuantity(medicine.id)}
+                              className="gap-1"
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                              Update
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
+  );
+};
 
+export default Inventory;
