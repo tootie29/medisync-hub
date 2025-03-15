@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -107,30 +108,32 @@ const AppointmentNotifier = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <DataProvider>
-          <Toaster />
-          <Sonner />
-          <ServerChecker />
-          <BrowserRouter>
-            <AppointmentNotifier />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/appointments" element={<Appointments />} />
-              <Route path="/bmi" element={<BMICalculator />} />
-              <Route path="/records" element={<MedicalRecords />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/health-monitoring" element={<HealthMonitoring />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </DataProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <DataProvider>
+            <Toaster />
+            <Sonner />
+            <ServerChecker />
+            <BrowserRouter>
+              <AppointmentNotifier />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/appointments" element={<Appointments />} />
+                <Route path="/bmi" element={<BMICalculator />} />
+                <Route path="/records" element={<MedicalRecords />} />
+                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/health-monitoring" element={<HealthMonitoring />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </DataProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -7,15 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Bell, Moon, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useTheme } from '@/context/ThemeContext';
 
 const Settings = () => {
   const [notifications, setNotifications] = React.useState(true);
-  const [darkMode, setDarkMode] = React.useState(false);
   const [sound, setSound] = React.useState(true);
+  const { theme, setTheme } = useTheme();
   
   const handleSaveSettings = () => {
     // In a real app, we would save these to the user's profile
     toast.success('Settings saved successfully');
+  };
+
+  const toggleDarkMode = (checked: boolean) => {
+    setTheme(checked ? 'dark' : 'light');
   };
 
   return (
@@ -53,8 +58,8 @@ const Settings = () => {
                   </div>
                 </div>
                 <Switch 
-                  checked={darkMode} 
-                  onCheckedChange={setDarkMode} 
+                  checked={theme === 'dark'} 
+                  onCheckedChange={toggleDarkMode} 
                 />
               </div>
               
