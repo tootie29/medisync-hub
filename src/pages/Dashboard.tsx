@@ -10,8 +10,6 @@ import {
   Clock,
   User,
   Pill,
-  ArrowUpRight,
-  ArrowDownRight,
   Activity,
   AlertCircle,
 } from 'lucide-react';
@@ -28,16 +26,21 @@ const Dashboard: React.FC = () => {
     getMedicalRecordsByPatientId 
   } = useData();
 
+  // Check user roles more explicitly
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   const isDoctor = user?.role === 'doctor';
   const isAdmin = user?.role === 'admin';
+  const isStaff = user?.role === 'staff';
+  const isMedicalStaff = isDoctor || isAdmin;
 
+  // Get appointments based on user role
   const userAppointments = isPatient
     ? getAppointmentsByPatientId(user?.id || '')
     : isDoctor
     ? getAppointmentsByDoctorId(user?.id || '')
     : appointments;
 
+  // Filter upcoming appointments
   const upcomingAppointments = userAppointments
     .filter(appointment => 
       appointment.status === 'confirmed' || 
@@ -55,6 +58,7 @@ const Dashboard: React.FC = () => {
     })
     .slice(0, 5);
 
+  // Get medical records for patients only
   const userMedicalRecords = isPatient
     ? getMedicalRecordsByPatientId(user?.id || '')
     : [];
@@ -65,6 +69,7 @@ const Dashboard: React.FC = () => {
       )[0]
     : null;
 
+  // Get medicines with low stock for medical staff
   const lowStockMedicines = medicines.filter(med => med.quantity < 10);
 
   return (
@@ -87,6 +92,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          {/* Appointments card - visible to all users */}
           <Card className="stats-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -110,7 +116,8 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          {(isDoctor || isAdmin) && (
+          {/* Patients card - only visible to medical staff */}
+          {isMedicalStaff && (
             <Card className="stats-card">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -138,34 +145,34 @@ const Dashboard: React.FC = () => {
             </Card>
           )}
 
-          {(isDoctor || isAdmin || isPatient) && (
-            <Card className="stats-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {isPatient ? 'Your Medical Records' : 'Medical Records'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center">
-                  <div className="text-2xl font-bold">
-                    {isPatient 
-                      ? userMedicalRecords.length 
-                      : medicalRecords.length}
-                  </div>
-                  <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                    <Activity className="h-5 w-5 text-purple-600" />
-                  </div>
+          {/* Medical Records card - visible to patients and medical staff */}
+          <Card className="stats-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {isPatient ? 'Your Medical Records' : 'Medical Records'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between items-center">
+                <div className="text-2xl font-bold">
+                  {isPatient 
+                    ? userMedicalRecords.length 
+                    : medicalRecords.length}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {isPatient && latestRecord 
-                    ? `Last updated on ${formatDate(latestRecord.date)}` 
-                    : 'From all patients'}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+                <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-purple-600" />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {isPatient && latestRecord 
+                  ? `Last updated on ${formatDate(latestRecord.date)}` 
+                  : 'From all patients'}
+              </p>
+            </CardContent>
+          </Card>
 
-          {(isDoctor || isAdmin) && (
+          {/* Medicine Inventory card - only visible to medical staff */}
+          {isMedicalStaff && (
             <Card className="stats-card">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -188,6 +195,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          {/* Upcoming Appointments section - visible to all users */}
           <Card className="col-span-1 md:col-span-2">
             <CardHeader>
               <CardTitle>Upcoming Appointments</CardTitle>
@@ -217,6 +225,18 @@ const Dashboard: React.FC = () => {
                         <p className="text-sm text-gray-600 mt-1">
                           {formatDate(appointment.date)} at {appointment.startTime}
                         </p>
+                        {/* Show patient name for medical staff */}
+                        {isMedicalStaff && appointment.patientName && (
+                          <p className="text-sm text-gray-600">
+                            Patient: {appointment.patientName}
+                          </p>
+                        )}
+                        {/* Show doctor name for patients */}
+                        {isPatient && appointment.doctorName && (
+                          <p className="text-sm text-gray-600">
+                            Doctor: {appointment.doctorName}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -244,6 +264,7 @@ const Dashboard: React.FC = () => {
           </Card>
 
           <div className="space-y-6">
+            {/* Health Status card - only visible to patients */}
             {isPatient && latestRecord && (
               <Card>
                 <CardHeader>
@@ -274,7 +295,8 @@ const Dashboard: React.FC = () => {
               </Card>
             )}
 
-            {(isDoctor || isAdmin) && lowStockMedicines.length > 0 && (
+            {/* Low Stock Alert card - only visible to medical staff */}
+            {isMedicalStaff && lowStockMedicines.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Low Stock Alert</CardTitle>
