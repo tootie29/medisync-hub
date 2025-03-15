@@ -1,21 +1,25 @@
-
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
   Appointment, 
   Medicine, 
   User,
-  SAMPLE_MEDICAL_RECORDS, 
-  SAMPLE_APPOINTMENTS, 
-  SAMPLE_MEDICINES, 
-  SAMPLE_USERS
+  SAMPLE_USERS 
 } from '@/types';
 import { toast } from "sonner";
+import axios from 'axios';
+
+const API_URL = 'http://localhost:3001/api';
 
 interface DataContextType {
   medicalRecords: MedicalRecord[];
   appointments: Appointment[];
   medicines: Medicine[];
+  
+  // Loading states
+  isLoadingRecords: boolean;
+  isLoadingAppointments: boolean;
+  isLoadingMedicines: boolean;
   
   // User functions
   getUserById: (id: string) => User | undefined;
@@ -23,38 +27,90 @@ interface DataContextType {
   // Medical Records functions
   getMedicalRecordsByPatientId: (patientId: string) => MedicalRecord[];
   getMedicalRecordById: (id: string) => MedicalRecord | undefined;
-  addMedicalRecord: (record: Omit<MedicalRecord, 'id' | 'createdAt' | 'updatedAt' | 'bmi'>) => MedicalRecord;
-  updateMedicalRecord: (id: string, record: Partial<MedicalRecord>) => MedicalRecord;
-  deleteMedicalRecord: (id: string) => void;
+  addMedicalRecord: (record: Omit<MedicalRecord, 'id' | 'createdAt' | 'updatedAt' | 'bmi'>) => Promise<MedicalRecord>;
+  updateMedicalRecord: (id: string, record: Partial<MedicalRecord>) => Promise<MedicalRecord>;
+  deleteMedicalRecord: (id: string) => Promise<void>;
   
   // Appointments functions
   getAppointmentsByPatientId: (patientId: string) => Appointment[];
   getAppointmentsByDoctorId: (doctorId: string) => Appointment[];
   getAppointmentById: (id: string) => Appointment | undefined;
-  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>) => Appointment;
-  updateAppointment: (id: string, appointment: Partial<Appointment>) => Appointment;
-  deleteAppointment: (id: string) => void;
+  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Appointment>;
+  updateAppointment: (id: string, appointment: Partial<Appointment>) => Promise<Appointment>;
+  deleteAppointment: (id: string) => Promise<void>;
   
   // Medicines functions
   getMedicineById: (id: string) => Medicine | undefined;
-  addMedicine: (medicine: Omit<Medicine, 'id' | 'createdAt' | 'updatedAt'>) => Medicine;
-  updateMedicine: (id: string, medicine: Partial<Medicine>) => Medicine;
-  deleteMedicine: (id: string) => void;
+  addMedicine: (medicine: Omit<Medicine, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Medicine>;
+  updateMedicine: (id: string, medicine: Partial<Medicine>) => Promise<Medicine>;
+  deleteMedicine: (id: string) => Promise<void>;
+  
+  // Refresh data functions
+  refreshMedicalRecords: () => Promise<void>;
+  refreshAppointments: () => Promise<void>;
+  refreshMedicines: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>(SAMPLE_MEDICAL_RECORDS);
-  const [appointments, setAppointments] = useState<Appointment[]>(SAMPLE_APPOINTMENTS);
-  const [medicines, setMedicines] = useState<Medicine[]>(SAMPLE_MEDICINES);
+  const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
+  
+  const [isLoadingRecords, setIsLoadingRecords] = useState<boolean>(true);
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState<boolean>(true);
+  const [isLoadingMedicines, setIsLoadingMedicines] = useState<boolean>(true);
 
-  // User functions
+  useEffect(() => {
+    refreshMedicalRecords();
+    refreshAppointments();
+    refreshMedicines();
+  }, []);
+
+  const refreshMedicalRecords = async () => {
+    setIsLoadingRecords(true);
+    try {
+      const response = await axios.get(`${API_URL}/medical-records`);
+      setMedicalRecords(response.data);
+    } catch (error) {
+      console.error('Error fetching medical records:', error);
+      toast.error('Failed to load medical records');
+    } finally {
+      setIsLoadingRecords(false);
+    }
+  };
+
+  const refreshAppointments = async () => {
+    setIsLoadingAppointments(true);
+    try {
+      const response = await axios.get(`${API_URL}/appointments`);
+      setAppointments(response.data);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      toast.error('Failed to load appointments');
+    } finally {
+      setIsLoadingAppointments(false);
+    }
+  };
+
+  const refreshMedicines = async () => {
+    setIsLoadingMedicines(true);
+    try {
+      const response = await axios.get(`${API_URL}/medicines`);
+      setMedicines(response.data);
+    } catch (error) {
+      console.error('Error fetching medicines:', error);
+      toast.error('Failed to load medicines');
+    } finally {
+      setIsLoadingMedicines(false);
+    }
+  };
+
   const getUserById = (id: string): User | undefined => {
     return SAMPLE_USERS.find(user => user.id === id);
   };
 
-  // Medical Records functions
   const getMedicalRecordsByPatientId = (patientId: string): MedicalRecord[] => {
     return medicalRecords.filter(record => record.patientId === patientId);
   };
@@ -64,102 +120,90 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const calculateBMI = (height: number, weight: number): number => {
-    // BMI = weight(kg) / (height(m))^2
     const heightInMeters = height / 100;
     const bmi = weight / (heightInMeters * heightInMeters);
     return parseFloat(bmi.toFixed(2));
   };
 
-  const addMedicalRecord = (record: Omit<MedicalRecord, 'id' | 'createdAt' | 'updatedAt' | 'bmi'>): MedicalRecord => {
-    const bmi = calculateBMI(record.height, record.weight);
-    
-    // Handle vitalSigns during record creation
-    // If bloodPressure is provided but vitalSigns isn't, initialize vitalSigns with the bloodPressure
-    let updatedVitalSigns = record.vitalSigns || {};
-    if (record.bloodPressure && !updatedVitalSigns.bloodPressure) {
-      updatedVitalSigns = {
-        ...updatedVitalSigns,
-        bloodPressure: record.bloodPressure
-      };
-    }
-    
-    const newRecord: MedicalRecord = {
-      ...record,
-      id: `${Date.now()}`,
-      bmi,
-      vitalSigns: Object.keys(updatedVitalSigns).length > 0 ? updatedVitalSigns : undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    setMedicalRecords(prev => [...prev, newRecord]);
-    toast.success('Medical record added successfully');
-    return newRecord;
-  };
-
-  const updateMedicalRecord = (id: string, record: Partial<MedicalRecord>): MedicalRecord => {
-    let updatedRecord: MedicalRecord;
-    
-    setMedicalRecords(prev => {
-      const index = prev.findIndex(r => r.id === id);
-      if (index === -1) {
-        toast.error('Medical record not found');
-        throw new Error('Medical record not found');
+  const addMedicalRecord = async (record: Omit<MedicalRecord, 'id' | 'createdAt' | 'updatedAt' | 'bmi'>): Promise<MedicalRecord> => {
+    try {
+      const bmi = calculateBMI(record.height, record.weight);
+      
+      let updatedVitalSigns = record.vitalSigns || {};
+      if (record.bloodPressure && !updatedVitalSigns.bloodPressure) {
+        updatedVitalSigns = {
+          ...updatedVitalSigns,
+          bloodPressure: record.bloodPressure
+        };
       }
       
-      const currentRecord = prev[index];
-      const height = record.height ?? currentRecord.height;
-      const weight = record.weight ?? currentRecord.weight;
-      
-      // Recalculate BMI if height or weight has changed
-      const bmi = (record.height !== undefined || record.weight !== undefined) 
-        ? calculateBMI(height, weight) 
-        : currentRecord.bmi;
-      
-      // Merge vitalSigns if provided
-      const vitalSigns = record.vitalSigns
-        ? { ...currentRecord.vitalSigns, ...record.vitalSigns }
-        : currentRecord.vitalSigns;
-      
-      // Update vitalSigns.bloodPressure if bloodPressure field is updated
-      if (record.bloodPressure && vitalSigns) {
-        vitalSigns.bloodPressure = record.bloodPressure;
-      }
-      
-      updatedRecord = {
-        ...currentRecord,
+      const recordToCreate = {
         ...record,
         bmi,
-        vitalSigns,
-        updatedAt: new Date().toISOString()
+        vitalSigns: Object.keys(updatedVitalSigns).length > 0 ? updatedVitalSigns : undefined
       };
       
-      const newRecords = [...prev];
-      newRecords[index] = updatedRecord;
-      return newRecords;
-    });
-    
-    toast.success('Medical record updated successfully');
-    return updatedRecord!;
+      const response = await axios.post(`${API_URL}/medical-records`, recordToCreate);
+      const newRecord = response.data;
+      
+      setMedicalRecords(prev => [...prev, newRecord]);
+      toast.success('Medical record added successfully');
+      
+      return newRecord;
+    } catch (error) {
+      console.error('Error adding medical record:', error);
+      toast.error('Failed to add medical record');
+      throw error;
+    }
   };
 
-  const deleteMedicalRecord = (id: string): void => {
-    setMedicalRecords(prev => {
-      const index = prev.findIndex(r => r.id === id);
-      if (index === -1) {
-        toast.error('Medical record not found');
-        throw new Error('Medical record not found');
+  const updateMedicalRecord = async (id: string, record: Partial<MedicalRecord>): Promise<MedicalRecord> => {
+    try {
+      if (record.height !== undefined || record.weight !== undefined) {
+        const currentRecord = getMedicalRecordById(id);
+        if (currentRecord) {
+          const height = record.height ?? currentRecord.height;
+          const weight = record.weight ?? currentRecord.weight;
+          record.bmi = calculateBMI(height, weight);
+        }
       }
       
-      const newRecords = [...prev];
-      newRecords.splice(index, 1);
-      return newRecords;
-    });
-    
-    toast.success('Medical record deleted successfully');
+      if (record.bloodPressure && record.vitalSigns) {
+        record.vitalSigns.bloodPressure = record.bloodPressure;
+      }
+      
+      const response = await axios.put(`${API_URL}/medical-records/${id}`, record);
+      const updatedRecord = response.data;
+      
+      setMedicalRecords(prev => 
+        prev.map(r => r.id === id ? updatedRecord : r)
+      );
+      
+      toast.success('Medical record updated successfully');
+      return updatedRecord;
+    } catch (error) {
+      console.error('Error updating medical record:', error);
+      toast.error('Failed to update medical record');
+      throw error;
+    }
   };
 
-  // Appointments functions
+  const deleteMedicalRecord = async (id: string): Promise<void> => {
+    try {
+      await axios.delete(`${API_URL}/medical-records/${id}`);
+      
+      setMedicalRecords(prev => 
+        prev.filter(r => r.id !== id)
+      );
+      
+      toast.success('Medical record deleted successfully');
+    } catch (error) {
+      console.error('Error deleting medical record:', error);
+      toast.error('Failed to delete medical record');
+      throw error;
+    }
+  };
+
   const getAppointmentsByPatientId = (patientId: string): Appointment[] => {
     return appointments.filter(appointment => appointment.patientId === patientId);
   };
@@ -172,137 +216,121 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return appointments.find(appointment => appointment.id === id);
   };
 
-  const addAppointment = (appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Appointment => {
-    const newAppointment: Appointment = {
-      ...appointment,
-      id: `${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    setAppointments(prev => [...prev, newAppointment]);
-    
-    // Find patient and doctor info for notification
-    const patient = SAMPLE_USERS.find(user => user.id === appointment.patientId);
-    const doctor = SAMPLE_USERS.find(user => user.id === appointment.doctorId);
-    
-    // Notify with more detailed information
-    if (patient && doctor) {
-      // This would normally send an email or push notification to the doctor
-      // For now, we'll just show a toast notification
-      toast.info(
-        `Notification sent to Dr. ${doctor.name}`,
-        {
-          description: `New appointment request from ${patient.name} on ${appointment.date} at ${appointment.startTime}.`,
-          duration: 5000,
-        }
+  const addAppointment = async (appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> => {
+    try {
+      const response = await axios.post(`${API_URL}/appointments`, appointment);
+      const newAppointment = response.data;
+      
+      setAppointments(prev => [...prev, newAppointment]);
+      
+      const patient = SAMPLE_USERS.find(user => user.id === appointment.patientId);
+      const doctor = SAMPLE_USERS.find(user => user.id === appointment.doctorId);
+      
+      if (patient && doctor) {
+        toast.info(
+          `Notification sent to Dr. ${doctor.name}`,
+          {
+            description: `New appointment request from ${patient.name} on ${appointment.date} at ${appointment.startTime}.`,
+            duration: 5000,
+          }
+        );
+      }
+      
+      toast.success('Appointment scheduled successfully');
+      return newAppointment;
+    } catch (error) {
+      console.error('Error adding appointment:', error);
+      toast.error('Failed to schedule appointment');
+      throw error;
+    }
+  };
+
+  const updateAppointment = async (id: string, appointment: Partial<Appointment>): Promise<Appointment> => {
+    try {
+      const response = await axios.put(`${API_URL}/appointments/${id}`, appointment);
+      const updatedAppointment = response.data;
+      
+      setAppointments(prev => 
+        prev.map(a => a.id === id ? updatedAppointment : a)
       );
       
-      console.log(`NOTIFICATION: New appointment request from ${patient.name} for Dr. ${doctor.name} on ${appointment.date} at ${appointment.startTime}`);
+      toast.success('Appointment updated successfully');
+      return updatedAppointment;
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      toast.error('Failed to update appointment');
+      throw error;
     }
-    
-    toast.success('Appointment scheduled successfully');
-    return newAppointment;
   };
 
-  const updateAppointment = (id: string, appointment: Partial<Appointment>): Appointment => {
-    let updatedAppointment: Appointment;
-    
-    setAppointments(prev => {
-      const index = prev.findIndex(a => a.id === id);
-      if (index === -1) {
-        toast.error('Appointment not found');
-        throw new Error('Appointment not found');
-      }
+  const deleteAppointment = async (id: string): Promise<void> => {
+    try {
+      await axios.delete(`${API_URL}/appointments/${id}`);
       
-      updatedAppointment = {
-        ...prev[index],
-        ...appointment,
-        updatedAt: new Date().toISOString()
-      };
+      setAppointments(prev => 
+        prev.filter(a => a.id !== id)
+      );
       
-      const newAppointments = [...prev];
-      newAppointments[index] = updatedAppointment;
-      return newAppointments;
-    });
-    
-    toast.success('Appointment updated successfully');
-    return updatedAppointment!;
+      toast.success('Appointment cancelled successfully');
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      toast.error('Failed to cancel appointment');
+      throw error;
+    }
   };
 
-  const deleteAppointment = (id: string): void => {
-    setAppointments(prev => {
-      const index = prev.findIndex(a => a.id === id);
-      if (index === -1) {
-        toast.error('Appointment not found');
-        throw new Error('Appointment not found');
-      }
-      
-      const newAppointments = [...prev];
-      newAppointments.splice(index, 1);
-      return newAppointments;
-    });
-    
-    toast.success('Appointment cancelled successfully');
-  };
-
-  // Medicines functions
   const getMedicineById = (id: string): Medicine | undefined => {
     return medicines.find(medicine => medicine.id === id);
   };
 
-  const addMedicine = (medicine: Omit<Medicine, 'id' | 'createdAt' | 'updatedAt'>): Medicine => {
-    const newMedicine: Medicine = {
-      ...medicine,
-      id: `${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    setMedicines(prev => [...prev, newMedicine]);
-    toast.success('Medicine added to inventory');
-    return newMedicine;
+  const addMedicine = async (medicine: Omit<Medicine, 'id' | 'createdAt' | 'updatedAt'>): Promise<Medicine> => {
+    try {
+      const response = await axios.post(`${API_URL}/medicines`, medicine);
+      const newMedicine = response.data;
+      
+      setMedicines(prev => [...prev, newMedicine]);
+      toast.success('Medicine added to inventory');
+      
+      return newMedicine;
+    } catch (error) {
+      console.error('Error adding medicine:', error);
+      toast.error('Failed to add medicine');
+      throw error;
+    }
   };
 
-  const updateMedicine = (id: string, medicine: Partial<Medicine>): Medicine => {
-    let updatedMedicine: Medicine;
-    
-    setMedicines(prev => {
-      const index = prev.findIndex(m => m.id === id);
-      if (index === -1) {
-        toast.error('Medicine not found');
-        throw new Error('Medicine not found');
-      }
+  const updateMedicine = async (id: string, medicine: Partial<Medicine>): Promise<Medicine> => {
+    try {
+      const response = await axios.put(`${API_URL}/medicines/${id}`, medicine);
+      const updatedMedicine = response.data;
       
-      updatedMedicine = {
-        ...prev[index],
-        ...medicine,
-        updatedAt: new Date().toISOString()
-      };
+      setMedicines(prev => 
+        prev.map(m => m.id === id ? updatedMedicine : m)
+      );
       
-      const newMedicines = [...prev];
-      newMedicines[index] = updatedMedicine;
-      return newMedicines;
-    });
-    
-    toast.success('Medicine inventory updated');
-    return updatedMedicine!;
+      toast.success('Medicine inventory updated');
+      return updatedMedicine;
+    } catch (error) {
+      console.error('Error updating medicine:', error);
+      toast.error('Failed to update medicine');
+      throw error;
+    }
   };
 
-  const deleteMedicine = (id: string): void => {
-    setMedicines(prev => {
-      const index = prev.findIndex(m => m.id === id);
-      if (index === -1) {
-        toast.error('Medicine not found');
-        throw new Error('Medicine not found');
-      }
+  const deleteMedicine = async (id: string): Promise<void> => {
+    try {
+      await axios.delete(`${API_URL}/medicines/${id}`);
       
-      const newMedicines = [...prev];
-      newMedicines.splice(index, 1);
-      return newMedicines;
-    });
-    
-    toast.success('Medicine removed from inventory');
+      setMedicines(prev => 
+        prev.filter(m => m.id !== id)
+      );
+      
+      toast.success('Medicine removed from inventory');
+    } catch (error) {
+      console.error('Error deleting medicine:', error);
+      toast.error('Failed to remove medicine');
+      throw error;
+    }
   };
 
   return (
@@ -311,17 +339,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       appointments,
       medicines,
       
-      // User functions
+      isLoadingRecords,
+      isLoadingAppointments,
+      isLoadingMedicines,
+      
       getUserById,
       
-      // Medical Records functions
       getMedicalRecordsByPatientId,
       getMedicalRecordById,
       addMedicalRecord,
       updateMedicalRecord,
       deleteMedicalRecord,
       
-      // Appointments functions
       getAppointmentsByPatientId,
       getAppointmentsByDoctorId,
       getAppointmentById,
@@ -329,11 +358,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateAppointment,
       deleteAppointment,
       
-      // Medicines functions
       getMedicineById,
       addMedicine,
       updateMedicine,
-      deleteMedicine
+      deleteMedicine,
+      
+      refreshMedicalRecords,
+      refreshAppointments,
+      refreshMedicines
     }}>
       {children}
     </DataContext.Provider>

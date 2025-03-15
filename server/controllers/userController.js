@@ -1,0 +1,83 @@
+
+const userModel = require('../models/userModel');
+
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await userModel.getAll();
+    res.json(users);
+  } catch (error) {
+    console.error('Error in getAllUsers controller:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.getUserById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await userModel.getById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error in getUserById controller:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.createUser = async (req, res) => {
+  try {
+    const userData = req.body;
+    const newUser = await userModel.create(userData);
+    res.status(201).json(newUser);
+  } catch (error) {
+    console.error('Error in createUser controller:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const userData = req.body;
+    const updatedUser = await userModel.update(userId, userData);
+    
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error in updateUser controller:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const deleted = await userModel.delete(userId);
+    
+    if (!deleted) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error in deleteUser controller:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.getUsersByRole = async (req, res) => {
+  try {
+    const role = req.params.role;
+    const users = await userModel.getUsersByRole(role);
+    res.json(users);
+  } catch (error) {
+    console.error('Error in getUsersByRole controller:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

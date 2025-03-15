@@ -1,0 +1,111 @@
+
+const { pool } = require('../db/config');
+const { v4: uuidv4 } = require('uuid');
+
+class UserModel {
+  async getAll() {
+    try {
+      const [rows] = await pool.query('SELECT * FROM users');
+      return rows;
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  }
+
+  async getById(id) {
+    try {
+      const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+      return rows[0];
+    } catch (error) {
+      console.error('Error fetching user by ID:', error);
+      throw error;
+    }
+  }
+
+  async create(userData) {
+    try {
+      const id = userData.id || uuidv4();
+      const { 
+        email, name, role, phone, dateOfBirth, gender, 
+        address, emergencyContact, studentId, department, 
+        staffId, position 
+      } = userData;
+
+      const [result] = await pool.query(
+        `INSERT INTO users (
+          id, email, name, role, phone, date_of_birth, gender, 
+          address, emergency_contact, student_id, department, staff_id, position
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          id, email, name, role, phone, dateOfBirth, gender, 
+          address, emergencyContact, studentId, department, staffId, position
+        ]
+      );
+
+      return { id, ...userData };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  }
+
+  async update(id, userData) {
+    try {
+      const { 
+        email, name, role, phone, dateOfBirth, gender, 
+        address, emergencyContact, studentId, department, 
+        staffId, position 
+      } = userData;
+
+      const [result] = await pool.query(
+        `UPDATE users SET 
+          email = IFNULL(?, email), 
+          name = IFNULL(?, name), 
+          role = IFNULL(?, role), 
+          phone = IFNULL(?, phone), 
+          date_of_birth = IFNULL(?, date_of_birth), 
+          gender = IFNULL(?, gender), 
+          address = IFNULL(?, address), 
+          emergency_contact = IFNULL(?, emergency_contact), 
+          student_id = IFNULL(?, student_id), 
+          department = IFNULL(?, department), 
+          staff_id = IFNULL(?, staff_id), 
+          position = IFNULL(?, position)
+        WHERE id = ?`,
+        [
+          email, name, role, phone, dateOfBirth, gender, 
+          address, emergencyContact, studentId, department, 
+          staffId, position, id
+        ]
+      );
+
+      return { id, ...userData };
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  }
+
+  async delete(id) {
+    try {
+      const [result] = await pool.query('DELETE FROM users WHERE id = ?', [id]);
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  }
+
+  async getUsersByRole(role) {
+    try {
+      const [rows] = await pool.query('SELECT * FROM users WHERE role = ?', [role]);
+      return rows;
+    } catch (error) {
+      console.error('Error fetching users by role:', error);
+      throw error;
+    }
+  }
+}
+
+module.exports = new UserModel();
