@@ -12,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { format, addDays, parseISO, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import axios from "axios";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -32,40 +32,137 @@ const API_BASE_URL = import.meta.env.PROD
   ? 'https://medisync.entrsolutions.com'
   : 'http://localhost:3001';
 
-const queryClient = new QueryClient();
+// Add axios retry configuration
+axios.interceptors.response.use(undefined, async (error) => {
+  const config = error.config;
+  
+  // If the request was canceled or already retried, just throw the error
+  if (error.message === 'canceled' || config._retryCount >= 2) {
+    return Promise.reject(error);
+  }
+  
+  // Initialize retry count
+  config._retryCount = config._retryCount || 0;
+  config._retryCount += 1;
+  
+  // Wait for 1 second before retrying
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Return the promise from the new axios request
+  return axios(config);
+});
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2, // Retry failed queries 2 times
+      retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000), // Exponential backoff
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 const ServerChecker = () => {
   const [isChecking, setIsChecking] = useState(true);
   const [isServerRunning, setIsServerRunning] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [serverError, setServerError] = useState('');
+  const maxRetries = 3;
 
   useEffect(() => {
     const checkServer = async () => {
       try {
-        await axios.get(`${API_BASE_URL}/api/health`);
+        await axios.get(`${API_BASE_URL}/api/health`, { timeout: 5000 });
         setIsServerRunning(true);
+        setServerError('');
       } catch (error) {
-        console.error('Backend server is not running:', error);
-        toast.error(
-          'Backend server not running',
-          { 
-            description: 'Please start your MAMP/XAMPP MySQL server and run "node server/server.js"',
-            duration: 10000
-          }
-        );
+        console.error('Backend server connection issue:', error);
+        
+        // Extract a more specific error message
+        let errorMessage = 'Connection to the server failed';
+        if (error.code === 'ECONNABORTED') {
+          errorMessage = 'Connection timeout. Server may be overloaded.';
+        } else if (error.response) {
+          errorMessage = `Server error: ${error.response.status}`;
+        } else if (error.code === 'ERR_NETWORK') {
+          errorMessage = 'Network error. Server may be offline.';
+        }
+        
+        setServerError(errorMessage);
+        
+        // Implement retry logic
+        if (retryCount < maxRetries) {
+          setRetryCount(prevCount => prevCount + 1);
+          
+          toast.error(
+            'Server connection error',
+            { 
+              description: `${errorMessage}. Retrying... (${retryCount + 1}/${maxRetries})`,
+              duration: 3000
+            }
+          );
+          
+          // Try again after a delay
+          setTimeout(checkServer, 2000);
+        } else {
+          setIsChecking(false);
+          toast.error(
+            'Backend server not running',
+            { 
+              description: 'Please start your MAMP/XAMPP MySQL server and run "node server/server.js"',
+              duration: 10000
+            }
+          );
+        }
       } finally {
-        setIsChecking(false);
+        if (isServerRunning || retryCount >= maxRetries) {
+          setIsChecking(false);
+        }
       }
     };
 
     checkServer();
-  }, []);
+  }, [retryCount]);
 
   if (isChecking) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50">
-        <div className="text-center">
+      <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 bg-opacity-80 dark:bg-opacity-80 z-50">
+        <div className="text-center p-6 rounded-lg bg-white dark:bg-gray-800 shadow-lg max-w-md">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-gray-700">Connecting to server...</p>
+          <p className="text-gray-700 dark:text-gray-300 mb-2">Connecting to server...</p>
+          {retryCount > 0 && (
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              Retry attempt {retryCount}/{maxRetries}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (!isServerRunning && !isChecking) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 bg-opacity-80 dark:bg-opacity-80 z-50">
+        <div className="text-center p-6 rounded-lg bg-white dark:bg-gray-800 shadow-lg max-w-md">
+          <AlertTriangle className="h-8 w-8 mx-auto mb-4 text-red-500" />
+          <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Server Connection Failed</h3>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
+            {serverError || 'Unable to connect to the backend server.'}
+          </p>
+          <div className="text-sm text-gray-600 dark:text-gray-400 border-t pt-4 mt-2">
+            <p className="mb-2">Troubleshooting steps:</p>
+            <ol className="list-decimal list-inside text-left">
+              <li>Check if your MySQL server is running</li>
+              <li>Ensure the Node.js server is started with: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">node server/server.js</code></li>
+              <li>Verify your network connection</li>
+            </ol>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Retry Connection
+            </button>
+          </div>
         </div>
       </div>
     );
