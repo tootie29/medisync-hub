@@ -1,4 +1,3 @@
-
 export type UserRole = 'student' | 'staff' | 'doctor' | 'admin';
 
 export interface User {
@@ -11,6 +10,10 @@ export interface User {
   gender?: 'male' | 'female' | 'other';
   address?: string;
   emergencyContact?: string;
+  studentId?: string;
+  department?: string;
+  staffId?: string;
+  position?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -99,6 +102,8 @@ export const SAMPLE_USERS: User[] = [
     gender: 'male',
     address: '789 Student Blvd',
     emergencyContact: 'Mary Student: 123-456-7894',
+    studentId: '12345',
+    department: 'Engineering',
     createdAt: '2023-01-03T00:00:00Z',
     updatedAt: '2023-01-03T00:00:00Z',
   },
@@ -112,6 +117,8 @@ export const SAMPLE_USERS: User[] = [
     gender: 'female',
     address: '101 Staff Road',
     emergencyContact: 'Mike Staff: 123-456-7896',
+    staffId: '67890',
+    position: 'Nurse',
     createdAt: '2023-01-04T00:00:00Z',
     updatedAt: '2023-01-04T00:00:00Z',
   },
