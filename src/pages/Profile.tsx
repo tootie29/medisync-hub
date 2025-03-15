@@ -1,4 +1,3 @@
-
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/context/AuthContext';
@@ -19,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { toast } from "sonner";
 import { User } from '@/types';
 import { CalendarIcon, Clock, User as UserIcon, Activity, ArrowUpRight } from 'lucide-react';
-import { format, parseISO, isFuture } from 'date-fns';
+import { format, parseISO, isFuture, addDays } from 'date-fns';
 
 const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -36,20 +35,16 @@ const Profile: React.FC = () => {
   });
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Get user appointments
   const userAppointments = user ? getAppointmentsByPatientId(user.id) : [];
   
-  // Get user medical records
   const userMedicalRecords = user ? getMedicalRecordsByPatientId(user.id) : [];
   
-  // Get the latest medical record (for BMI and health data)
   const latestMedicalRecord = userMedicalRecords.length > 0
     ? userMedicalRecords.sort((a, b) => 
         new Date(b.date).getTime() - new Date(a.date).getTime()
       )[0]
     : null;
 
-  // Filter for upcoming appointments (dates in the future)
   const upcomingAppointments = userAppointments
     .filter(app => 
       app.status !== 'cancelled' && 
@@ -93,7 +88,6 @@ const Profile: React.FC = () => {
     }
   };
 
-  // Get BMI category and color
   const getBMICategory = (bmi: number): string => {
     if (bmi < 18.5) return 'Underweight';
     if (bmi < 25) return 'Healthy Weight';
@@ -258,7 +252,6 @@ const Profile: React.FC = () => {
               </form>
             </div>
             
-            {/* Medical Records History */}
             <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 Medical History
@@ -268,7 +261,7 @@ const Profile: React.FC = () => {
                 <div className="space-y-4">
                   {userMedicalRecords
                     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .slice(0, 5) // Show only the last 5 records
+                    .slice(0, 5)
                     .map(record => {
                       const doctor = SAMPLE_USERS.find(u => u.id === record.doctorId);
                       return (
@@ -295,7 +288,6 @@ const Profile: React.FC = () => {
                                 <span className="text-gray-500">Weight:</span> {record.weight} kg
                               </p>
                               <p className="text-sm">
-                                <span className="text-gray-500">BMI:</span>{' '}
                                 <span className={getBMICategoryColor(record.bmi)}>
                                   {record.bmi.toFixed(1)}
                                 </span>
@@ -335,7 +327,6 @@ const Profile: React.FC = () => {
           </div>
 
           <div className="md:col-span-1 space-y-6">
-            {/* Health Status Card */}
             {latestMedicalRecord && (
               <Card className="shadow-sm">
                 <CardHeader className="pb-2">
@@ -401,7 +392,6 @@ const Profile: React.FC = () => {
               </Card>
             )}
             
-            {/* Upcoming Appointments Card */}
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle>Upcoming Appointments</CardTitle>
@@ -411,7 +401,6 @@ const Profile: React.FC = () => {
                   <div className="space-y-4">
                     {upcomingAppointments.map((appointment) => {
                       const doctor = SAMPLE_USERS.find(u => u.id === appointment.doctorId);
-                      // Calculate if this appointment is within 2 days
                       const isWithinTwoDays = parseISO(appointment.date) <= addDays(new Date(), 2);
                       
                       return (
