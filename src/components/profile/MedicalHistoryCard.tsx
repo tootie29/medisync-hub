@@ -51,11 +51,35 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
                       </p>
                       <p className="text-sm">
                         <span className={getBMICategoryColor(record.bmi)}>
-                          {record.bmi.toFixed(1)}
+                          BMI: {record.bmi.toFixed(1)}
                         </span>
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Display vital signs if available */}
+                  {record.vitalSigns && (
+                    <div className="mt-2 border-t pt-2">
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">Vital Signs:</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {record.vitalSigns.heartRate && (
+                          <p className="text-sm">
+                            <span className="text-gray-500">Heart Rate:</span> {record.vitalSigns.heartRate} BPM
+                          </p>
+                        )}
+                        {record.vitalSigns.bloodPressure && (
+                          <p className="text-sm">
+                            <span className="text-gray-500">Blood Pressure:</span> {record.vitalSigns.bloodPressure}
+                          </p>
+                        )}
+                        {record.vitalSigns.bloodGlucose && (
+                          <p className="text-sm">
+                            <span className="text-gray-500">Blood Glucose:</span> {record.vitalSigns.bloodGlucose} mg/dL
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   
                   {record.notes && (
                     <div className="mt-2 pt-2 border-t">

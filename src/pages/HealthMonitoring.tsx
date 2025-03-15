@@ -15,7 +15,14 @@ import { format, parseISO } from "date-fns";
 
 const HealthMonitoring = () => {
   const { user } = useAuth();
-  const { getMedicalRecordsByPatientId, getUserById, medicalRecords } = useData();
+  const { 
+    getMedicalRecordsByPatientId, 
+    getUserById, 
+    medicalRecords, 
+    addMedicalRecord,
+    updateMedicalRecord,
+    getMedicalRecordById
+  } = useData();
   const [activeTab, setActiveTab] = useState("heart-rate");
   const [newReading, setNewReading] = useState({
     heartRate: "",
@@ -93,20 +100,70 @@ const HealthMonitoring = () => {
   }, [user, medicalRecords]);
 
   const handleAddReading = (type) => {
-    // In a real app, this would update the patient's medical record
-    let message = "";
-    
-    if (type === "heartRate") {
-      message = `Heart Rate: ${newReading.heartRate} BPM`;
-    } else if (type === "bloodPressure") {
-      message = `Blood Pressure: ${newReading.bloodPressureSystolic}/${newReading.bloodPressureDiastolic} mmHg`;
-    } else if (type === "bloodGlucose") {
-      message = `Blood Glucose: ${newReading.bloodGlucose} mg/dL`;
+    if (!user) {
+      toast.error("You must be logged in to add readings");
+      return;
     }
     
-    toast.success(`New ${type} reading added!`, {
-      description: `${message}. Your health data has been updated.`,
-    });
+    const today = new Date().toISOString().split('T')[0];
+    let message = "";
+    let vitalSigns = {};
+    
+    // Get the most recent medical record for today, if it exists
+    const userRecords = getMedicalRecordsByPatientId(user.id);
+    const todayRecord = userRecords.find(record => record.date === today);
+    
+    if (type === "heartRate") {
+      const heartRate = Number(newReading.heartRate);
+      message = `Heart Rate: ${heartRate} BPM`;
+      vitalSigns = { heartRate };
+    } else if (type === "bloodPressure") {
+      const bloodPressure = `${newReading.bloodPressureSystolic}/${newReading.bloodPressureDiastolic}`;
+      message = `Blood Pressure: ${bloodPressure} mmHg`;
+      vitalSigns = { bloodPressure };
+    } else if (type === "bloodGlucose") {
+      const bloodGlucose = Number(newReading.bloodGlucose);
+      message = `Blood Glucose: ${bloodGlucose} mg/dL`;
+      vitalSigns = { bloodGlucose };
+    }
+    
+    // If we have a record for today, update it
+    if (todayRecord) {
+      updateMedicalRecord(todayRecord.id, {
+        vitalSigns: {
+          ...todayRecord.vitalSigns,
+          ...vitalSigns
+        }
+      });
+      toast.success(`New ${type} reading added!`, {
+        description: `${message}. Your health data has been updated in your medical record.`,
+      });
+    } else {
+      // Create a new record for today
+      // Get the user's most recent record for height/weight values
+      const latestRecord = userRecords.length > 0 
+        ? userRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+        : null;
+      
+      // Use latest values or defaults
+      const height = latestRecord ? latestRecord.height : 170;
+      const weight = latestRecord ? latestRecord.weight : 70;
+      
+      addMedicalRecord({
+        patientId: user.id,
+        doctorId: user.id, // Self-recorded
+        date: today,
+        height,
+        weight,
+        vitalSigns,
+        diagnosis: "Self-recorded vital signs",
+        notes: `Self-monitoring: ${message}`
+      });
+      
+      toast.success(`New ${type} reading added!`, {
+        description: `${message}. A new medical record has been created with your health data.`,
+      });
+    }
 
     // Reset the form fields
     setNewReading({

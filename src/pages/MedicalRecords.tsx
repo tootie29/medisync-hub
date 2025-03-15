@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
-import { MedicalRecord, SAMPLE_USERS } from '@/types';
+import { MedicalRecord, SAMPLE_USERS, VitalSigns } from '@/types';
 import { format } from 'date-fns';
 import { Activity, Calendar, FileText, Filter } from 'lucide-react';
 import { toast } from 'sonner';
@@ -44,12 +43,15 @@ const MedicalRecords: React.FC = () => {
     notes: '',
     medications: [],
     followUpDate: '',
+    vitalSigns: {
+      heartRate: '',
+      bloodGlucose: ''
+    }
   });
 
   const isDoctor = user?.role === 'doctor' || user?.role === 'admin';
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   
-  // Initialize the selected patient from URL parameter
   useEffect(() => {
     if (patientIdFromUrl) {
       setSelectedPatientId(patientIdFromUrl);
@@ -58,12 +60,10 @@ const MedicalRecords: React.FC = () => {
     }
   }, [patientIdFromUrl, isPatient, user]);
   
-  // Get medical records based on user role or selected patient
   const unsortedMedicalRecords = selectedPatientId 
     ? getMedicalRecordsByPatientId(selectedPatientId)
     : [];
       
-  // Sort medical records based on selected sort option
   const medicalRecords = [...unsortedMedicalRecords].sort((a, b) => {
     switch (sortOption) {
       case 'date-asc':
@@ -75,14 +75,12 @@ const MedicalRecords: React.FC = () => {
     }
   });
 
-  // Handle form input changes
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     let parsedValue: any = value;
     
-    // Parse numeric values
     if (name === 'height' || name === 'weight' || name === 'temperature') {
       parsedValue = parseFloat(value) || 0;
     }
@@ -90,13 +88,11 @@ const MedicalRecords: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: parsedValue }));
   };
   
-  // Handle medication input (comma separated)
   const handleMedicationsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const medicationsList = e.target.value.split(',').map(med => med.trim()).filter(Boolean);
     setFormData(prev => ({ ...prev, medications: medicationsList }));
   };
 
-  // Reset form to default values or to edit a specific record
   const resetForm = (record?: MedicalRecord) => {
     if (record) {
       setFormData({
@@ -108,6 +104,10 @@ const MedicalRecords: React.FC = () => {
         notes: record.notes || '',
         medications: record.medications || [],
         followUpDate: record.followUpDate || '',
+        vitalSigns: {
+          heartRate: record.vitalSigns?.heartRate || '',
+          bloodGlucose: record.vitalSigns?.bloodGlucose || ''
+        }
       });
       setEditingRecordId(record.id);
     } else {
@@ -120,12 +120,15 @@ const MedicalRecords: React.FC = () => {
         notes: '',
         medications: [],
         followUpDate: '',
+        vitalSigns: {
+          heartRate: '',
+          bloodGlucose: ''
+        }
       });
       setEditingRecordId(null);
     }
   };
 
-  // Submit form to add/update record
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -136,11 +139,9 @@ const MedicalRecords: React.FC = () => {
     
     try {
       if (editingRecordId) {
-        // Update existing record
         updateMedicalRecord(editingRecordId, formData);
         setEditingRecordId(null);
       } else {
-        // Add new record
         const patientId = selectedPatientId as string;
         addMedicalRecord({
           patientId,
@@ -154,6 +155,10 @@ const MedicalRecords: React.FC = () => {
           notes: formData.notes,
           medications: formData.medications,
           followUpDate: formData.followUpDate,
+          vitalSigns: {
+            heartRate: formData.vitalSigns.heartRate,
+            bloodGlucose: formData.vitalSigns.bloodGlucose
+          }
         });
       }
       
@@ -165,29 +170,24 @@ const MedicalRecords: React.FC = () => {
     }
   };
 
-  // Format medications list for display
   const formatMedications = (medications?: string[]) => {
     if (!medications || medications.length === 0) return 'None';
     return medications.join(', ');
   };
 
-  // Handle record deletion
   const handleDeleteRecord = (recordId: string) => {
     if (window.confirm('Are you sure you want to delete this medical record?')) {
       deleteMedicalRecord(recordId);
     }
   };
 
-  // Get doctor name by ID
   const getDoctorName = (doctorId: string) => {
     const doctor = getUserById(doctorId);
     return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
   };
 
-  // Get selected patient info
   const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
 
-  // If we're a doctor but no patient is selected, redirect to dashboard
   useEffect(() => {
     if (isDoctor && !selectedPatientId && !patientIdFromUrl) {
       navigate('/dashboard');
@@ -307,6 +307,46 @@ const MedicalRecords: React.FC = () => {
                         onChange={handleChange}
                       />
                     </div>
+                    
+                    <div>
+                      <Label htmlFor="heartRate">Heart Rate (BPM)</Label>
+                      <Input
+                        id="heartRate"
+                        name="heartRate"
+                        type="number"
+                        value={formData.vitalSigns?.heartRate || ''}
+                        onChange={(e) => {
+                          const heartRate = e.target.value ? Number(e.target.value) : undefined;
+                          setFormData(prev => ({
+                            ...prev,
+                            vitalSigns: {
+                              ...prev.vitalSigns,
+                              heartRate
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bloodGlucose">Blood Glucose (mg/dL)</Label>
+                      <Input
+                        id="bloodGlucose"
+                        name="bloodGlucose"
+                        type="number"
+                        value={formData.vitalSigns?.bloodGlucose || ''}
+                        onChange={(e) => {
+                          const bloodGlucose = e.target.value ? Number(e.target.value) : undefined;
+                          setFormData(prev => ({
+                            ...prev,
+                            vitalSigns: {
+                              ...prev.vitalSigns,
+                              bloodGlucose
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    
                     <div className="md:col-span-2">
                       <Label htmlFor="diagnosis">Diagnosis</Label>
                       <Input
@@ -425,18 +465,35 @@ const MedicalRecords: React.FC = () => {
                               <p className="text-sm text-gray-500">BMI</p>
                               <p className="font-medium">{record.bmi.toFixed(1)}</p>
                             </div>
-                            {record.bloodPressure && (
+                            
+                            {(record.bloodPressure || record.vitalSigns?.bloodPressure) && (
                               <div>
                                 <p className="text-sm text-gray-500">Blood Pressure</p>
-                                <p className="font-medium">{record.bloodPressure}</p>
+                                <p className="font-medium">{record.vitalSigns?.bloodPressure || record.bloodPressure}</p>
                               </div>
                             )}
+                            
                             {record.temperature && (
                               <div>
                                 <p className="text-sm text-gray-500">Temperature</p>
                                 <p className="font-medium">{record.temperature} °C</p>
                               </div>
                             )}
+                            
+                            {record.vitalSigns?.heartRate && (
+                              <div>
+                                <p className="text-sm text-gray-500">Heart Rate</p>
+                                <p className="font-medium">{record.vitalSigns.heartRate} BPM</p>
+                              </div>
+                            )}
+                            
+                            {record.vitalSigns?.bloodGlucose && (
+                              <div>
+                                <p className="text-sm text-gray-500">Blood Glucose</p>
+                                <p className="font-medium">{record.vitalSigns.bloodGlucose} mg/dL</p>
+                              </div>
+                            )}
+                            
                             {doctor && (
                               <div>
                                 <p className="text-sm text-gray-500">Attending Doctor</p>
