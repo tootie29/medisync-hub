@@ -4,6 +4,7 @@ import {
   MedicalRecord, 
   Appointment, 
   Medicine, 
+  User,
   SAMPLE_MEDICAL_RECORDS, 
   SAMPLE_APPOINTMENTS, 
   SAMPLE_MEDICINES, 
@@ -15,6 +16,9 @@ interface DataContextType {
   medicalRecords: MedicalRecord[];
   appointments: Appointment[];
   medicines: Medicine[];
+  
+  // User functions
+  getUserById: (id: string) => User | undefined;
   
   // Medical Records functions
   getMedicalRecordsByPatientId: (patientId: string) => MedicalRecord[];
@@ -44,6 +48,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>(SAMPLE_MEDICAL_RECORDS);
   const [appointments, setAppointments] = useState<Appointment[]>(SAMPLE_APPOINTMENTS);
   const [medicines, setMedicines] = useState<Medicine[]>(SAMPLE_MEDICINES);
+
+  // User functions
+  const getUserById = (id: string): User | undefined => {
+    return SAMPLE_USERS.find(user => user.id === id);
+  };
 
   // Medical Records functions
   const getMedicalRecordsByPatientId = (patientId: string): MedicalRecord[] => {
@@ -279,6 +288,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       medicalRecords,
       appointments,
       medicines,
+      
+      // User functions
+      getUserById,
       
       // Medical Records functions
       getMedicalRecordsByPatientId,

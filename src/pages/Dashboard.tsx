@@ -23,7 +23,9 @@ const Dashboard: React.FC = () => {
     medicines,
     getAppointmentsByPatientId, 
     getAppointmentsByDoctorId, 
-    getMedicalRecordsByPatientId 
+    getMedicalRecordsByPatientId,
+    // Adding a new function call to get user information
+    getUserById
   } = useData();
 
   // Check user roles more explicitly
@@ -203,43 +205,49 @@ const Dashboard: React.FC = () => {
             <CardContent>
               {upcomingAppointments.length > 0 ? (
                 <div className="space-y-4">
-                  {upcomingAppointments.map((appointment) => (
-                    <div
-                      key={appointment.id}
-                      className="flex items-start p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="h-10 w-10 rounded-full bg-medical-light flex items-center justify-center mr-3">
-                        <Clock className="h-5 w-5 text-medical-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <h3 className="font-medium">{appointment.reason}</h3>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            appointment.status === 'confirmed' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {appointment.status}
-                          </span>
+                  {upcomingAppointments.map((appointment) => {
+                    // Find patient and doctor names for each appointment
+                    const patientUser = getUserById(appointment.patientId);
+                    const doctorUser = appointment.doctorId ? getUserById(appointment.doctorId) : null;
+                    
+                    return (
+                      <div
+                        key={appointment.id}
+                        className="flex items-start p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="h-10 w-10 rounded-full bg-medical-light flex items-center justify-center mr-3">
+                          <Clock className="h-5 w-5 text-medical-primary" />
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {formatDate(appointment.date)} at {appointment.startTime}
-                        </p>
-                        {/* Show patient name for medical staff */}
-                        {isMedicalStaff && appointment.patientName && (
-                          <p className="text-sm text-gray-600">
-                            Patient: {appointment.patientName}
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <h3 className="font-medium">{appointment.reason}</h3>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              appointment.status === 'confirmed' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {appointment.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {formatDate(appointment.date)} at {appointment.startTime}
                           </p>
-                        )}
-                        {/* Show doctor name for patients */}
-                        {isPatient && appointment.doctorName && (
-                          <p className="text-sm text-gray-600">
-                            Doctor: {appointment.doctorName}
-                          </p>
-                        )}
+                          {/* Show patient name for medical staff */}
+                          {isMedicalStaff && patientUser && (
+                            <p className="text-sm text-gray-600">
+                              Patient: {patientUser.name}
+                            </p>
+                          )}
+                          {/* Show doctor name for patients */}
+                          {isPatient && doctorUser && (
+                            <p className="text-sm text-gray-600">
+                              Doctor: {doctorUser.name}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-6">
