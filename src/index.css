@@ -73,6 +73,7 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -92,6 +93,30 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  .dark .text-gray-500 {
+    @apply text-gray-300;
+  }
+  
+  .dark .bg-white {
+    @apply bg-gray-800;
+  }
+  
+  .dark .border-gray-200 {
+    @apply border-gray-700;
+  }
+  
+  .dark .text-gray-700 {
+    @apply text-gray-300;
+  }
+  
+  .dark .text-gray-600 {
+    @apply text-gray-400;
+  }
+  
+  .dark .shadow-md {
+    @apply shadow-gray-900;
+  }
 }
 
 @layer components {
@@ -100,11 +125,11 @@
   }
   
   .page-title {
-    @apply text-3xl font-bold text-medical-primary mb-6;
+    @apply text-3xl font-bold text-medical-primary dark:text-blue-300 mb-6;
   }
   
   .section-title {
-    @apply text-xl font-semibold text-medical-secondary mb-4;
+    @apply text-xl font-semibold text-medical-secondary dark:text-blue-200 mb-4;
   }
 
   .form-group {
@@ -112,6 +137,14 @@
   }
   
   .stats-card {
-    @apply bg-white p-4 rounded-lg shadow-md border border-medical-light hover:shadow-lg transition-shadow;
+    @apply bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-medical-light dark:border-gray-700 hover:shadow-lg transition-shadow;
+  }
+  
+  .dark .bg-medical-primary {
+    @apply bg-blue-700;
+  }
+  
+  .dark .hover\:bg-medical-secondary:hover {
+    @apply hover:bg-blue-600;
   }
 }

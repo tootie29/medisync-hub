@@ -12,15 +12,11 @@ import { useTheme } from '@/context/ThemeContext';
 const Settings = () => {
   const [notifications, setNotifications] = React.useState(true);
   const [sound, setSound] = React.useState(true);
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   
   const handleSaveSettings = () => {
     // In a real app, we would save these to the user's profile
     toast.success('Settings saved successfully');
-  };
-
-  const toggleDarkMode = (checked: boolean) => {
-    setTheme(checked ? 'dark' : 'light');
   };
 
   return (
@@ -37,10 +33,10 @@ const Settings = () => {
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <Bell className="h-5 w-5 text-gray-500" />
+                  <Bell className="h-5 w-5 text-gray-500 dark:text-gray-300" />
                   <div>
                     <p className="font-medium">Notifications</p>
-                    <p className="text-sm text-gray-500">Receive notifications about your appointments and messages</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-300">Receive notifications about your appointments and messages</p>
                   </div>
                 </div>
                 <Switch 
@@ -51,24 +47,24 @@ const Settings = () => {
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <Moon className="h-5 w-5 text-gray-500" />
+                  <Moon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
                   <div>
                     <p className="font-medium">Dark Mode</p>
-                    <p className="text-sm text-gray-500">Switch between light and dark themes</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-300">Switch between light and dark themes</p>
                   </div>
                 </div>
                 <Switch 
                   checked={theme === 'dark'} 
-                  onCheckedChange={toggleDarkMode} 
+                  onCheckedChange={toggleTheme} 
                 />
               </div>
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <Volume2 className="h-5 w-5 text-gray-500" />
+                  <Volume2 className="h-5 w-5 text-gray-500 dark:text-gray-300" />
                   <div>
                     <p className="font-medium">Sound Effects</p>
-                    <p className="text-sm text-gray-500">Play sounds for notifications and actions</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-300">Play sounds for notifications and actions</p>
                   </div>
                 </div>
                 <Switch 
@@ -80,7 +76,7 @@ const Settings = () => {
               <div className="pt-4">
                 <Button 
                   onClick={handleSaveSettings}
-                  className="bg-medical-primary hover:bg-medical-secondary"
+                  className="bg-medical-primary hover:bg-medical-secondary text-white"
                 >
                   Save Settings
                 </Button>
