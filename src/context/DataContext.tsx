@@ -6,7 +6,8 @@ import {
   Medicine, 
   SAMPLE_MEDICAL_RECORDS, 
   SAMPLE_APPOINTMENTS, 
-  SAMPLE_MEDICINES 
+  SAMPLE_MEDICINES, 
+  SAMPLE_USERS
 } from '@/types';
 import { toast } from "sonner";
 
@@ -149,6 +150,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     setAppointments(prev => [...prev, newAppointment]);
+    
+    // Find patient and doctor info for notification
+    const patient = SAMPLE_USERS.find(user => user.id === appointment.patientId);
+    const doctor = SAMPLE_USERS.find(user => user.id === appointment.doctorId);
+    
+    // Notify with more detailed information
+    if (patient && doctor) {
+      // This would normally send an email or push notification to the doctor
+      // For now, we'll just show a toast notification
+      toast.info(
+        `Notification sent to Dr. ${doctor.name}`,
+        {
+          description: `New appointment request from ${patient.name} on ${appointment.date} at ${appointment.startTime}.`,
+          duration: 5000,
+        }
+      );
+      
+      console.log(`NOTIFICATION: New appointment request from ${patient.name} for Dr. ${doctor.name} on ${appointment.date} at ${appointment.startTime}`);
+    }
+    
     toast.success('Appointment scheduled successfully');
     return newAppointment;
   };
