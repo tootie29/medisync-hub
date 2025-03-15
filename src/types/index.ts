@@ -1,3 +1,4 @@
+
 export type UserRole = 'student' | 'staff' | 'doctor' | 'admin';
 
 export interface User {
@@ -53,9 +54,12 @@ export interface Appointment {
 export interface Medicine {
   id: string;
   name: string;
+  category: string;
+  quantity: number;
+  threshold: number;
+  unit: string;
   description?: string;
   dosage?: string;
-  quantity: number;
   expiryDate?: string;
   supplier?: string;
   createdAt: string;
@@ -194,9 +198,12 @@ export const SAMPLE_MEDICINES: Medicine[] = [
   {
     id: '1',
     name: 'Paracetamol',
+    category: 'Painkillers',
+    quantity: 100,
+    threshold: 20,
+    unit: 'tablets',
     description: 'Pain reliever and fever reducer',
     dosage: '500mg',
-    quantity: 100,
     expiryDate: '2024-06-30',
     supplier: 'PharmaCorp',
     createdAt: '2023-01-15T08:00:00Z',
@@ -205,9 +212,12 @@ export const SAMPLE_MEDICINES: Medicine[] = [
   {
     id: '2',
     name: 'Ibuprofen',
+    category: 'Anti-inflammatory',
+    quantity: 50,
+    threshold: 15,
+    unit: 'tablets',
     description: 'Non-steroidal anti-inflammatory drug',
     dosage: '400mg',
-    quantity: 50,
     expiryDate: '2024-08-15',
     supplier: 'MediSupply',
     createdAt: '2023-01-20T10:15:00Z',
@@ -216,9 +226,12 @@ export const SAMPLE_MEDICINES: Medicine[] = [
   {
     id: '3',
     name: 'Amoxicillin',
+    category: 'Antibiotics',
+    quantity: 30,
+    threshold: 10,
+    unit: 'capsules',
     description: 'Antibiotic medication',
     dosage: '250mg',
-    quantity: 30,
     expiryDate: '2023-12-31',
     supplier: 'PharmaCorp',
     createdAt: '2023-02-01T14:30:00Z',
