@@ -11,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { format, addDays, parseISO, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
-import { Loader2, AlertTriangle, Server } from "lucide-react";
+import { Loader2, AlertTriangle, Server, ExternalLink } from "lucide-react";
 import axios from "axios";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -64,6 +64,35 @@ const queryClient = new QueryClient({
   },
 });
 
+// Add a component to display detailed cPanel setup instructions
+const CPanelSetupInstructions = () => (
+  <div className="mt-6 text-left text-sm border-t border-gray-200 dark:border-gray-700 pt-4">
+    <h4 className="font-semibold mb-2">cPanel Setup Instructions:</h4>
+    <ol className="list-decimal pl-4 space-y-2">
+      <li>Log in to your cPanel account at your hosting provider</li>
+      <li>Navigate to the Node.js section</li>
+      <li>Make sure your application is set up with:</li>
+      <ul className="list-disc pl-6 mt-1 mb-2">
+        <li>Node.js version: 14 or higher</li>
+        <li>Application root: The directory where your server.js is located</li>
+        <li>Application URL: /server</li>
+        <li>Application startup file: server.js</li>
+      </ul>
+      <li>Click "Run NPM Install" to install dependencies</li>
+      <li>Ensure the .env file exists with correct database credentials</li>
+      <li>Set NODE_ENV=production in your .env file</li>
+      <li>Click "Run JS script" to start your server</li>
+    </ol>
+    <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-md">
+      <p className="text-yellow-800 dark:text-yellow-300 text-xs">
+        <strong>Note:</strong> If the server is still unavailable after following these steps, 
+        contact your hosting provider to check if Node.js applications are properly supported and 
+        if there are any firewall rules blocking your application.
+      </p>
+    </div>
+  </div>
+);
+
 const ServerChecker = () => {
   const [isChecking, setIsChecking] = useState(true);
   const [isServerRunning, setIsServerRunning] = useState(false);
@@ -72,6 +101,7 @@ const ServerChecker = () => {
   const [serverUrl, setServerUrl] = useState('');
   const [serverDetails, setServerDetails] = useState<any>(null);
   const maxRetries = 3;
+  const isProduction = window.location.hostname === "medisync.entrsolutions.com";
 
   useEffect(() => {
     // Show the actual server URL we're trying to connect to
@@ -123,7 +153,11 @@ const ServerChecker = () => {
           if (rootError.code === 'ECONNABORTED') {
             errorMessage = 'Connection timeout. Server may be overloaded.';
           } else if (rootError.response) {
-            errorMessage = `Server error: ${rootError.response.status}`;
+            if (rootError.response.status === 503) {
+              errorMessage = 'Server is unavailable (503). The Node.js application is not running.';
+            } else {
+              errorMessage = `Server error: ${rootError.response.status}`;
+            }
           } else if (rootError.code === 'ERR_NETWORK') {
             errorMessage = 'Network error. Server may be offline.';
           }
@@ -195,31 +229,47 @@ const ServerChecker = () => {
             <p className="font-medium mb-1">Attempted to connect to:</p>
             <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs block mb-4">{serverUrl}</code>
             
-            <p className="mb-2">Common issues:</p>
-            <ul className="list-disc list-inside text-left mb-4">
-              <li>Server is not running at <code>{API_BASE_URL}</code></li> 
-              <li>Path structure may be incorrect (should be "/server/api/health")</li>
-              <li>CPanel configuration may need updating</li>
-              <li>Hosting provider firewall may be blocking the connection</li>
-              <li>Database connection issue on the server side</li>
-            </ul>
+            {isProduction ? (
+              <>
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-md">
+                  <p className="text-red-800 dark:text-red-300 font-semibold mb-1">
+                    Node.js Server Not Running
+                  </p>
+                  <p className="text-red-700 dark:text-red-400 text-xs">
+                    The server application is not running in cPanel. You need to start the Node.js application in your cPanel interface.
+                  </p>
+                </div>
+                <CPanelSetupInstructions />
+              </>
+            ) : (
+              <>
+                <p className="mb-2">Common issues:</p>
+                <ul className="list-disc list-inside text-left mb-4">
+                  <li>Server is not running at <code>{API_BASE_URL}</code></li> 
+                  <li>Path structure may be incorrect (should be "/server/api/health")</li>
+                  <li>Database connection issue on the server side</li>
+                </ul>
+              </>
+            )}
             
-            <div className="flex justify-center space-x-3">
+            <div className="flex justify-center space-x-3 mt-4">
               <button 
                 onClick={() => window.location.reload()} 
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
               >
                 Retry Connection
               </button>
-              <a
-                href={`${API_BASE_URL}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
-              >
-                <Server className="h-4 w-4 mr-2" />
-                Test API Root
-              </a>
+              {isProduction && (
+                <a
+                  href="https://medisync.entrsolutions.com/cpanel"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Go to cPanel
+                </a>
+              )}
             </div>
           </div>
         </div>
