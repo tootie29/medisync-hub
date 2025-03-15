@@ -10,8 +10,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { MedicalRecord, SAMPLE_USERS } from '@/types';
 import { format } from 'date-fns';
-import { Activity, Calendar, User } from 'lucide-react';
+import { Activity, Calendar, Search, User, FileText, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
@@ -25,6 +26,9 @@ const MedicalRecords: React.FC = () => {
   const [isAddingRecord, setIsAddingRecord] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [sortOption, setSortOption] = useState<string>('date-desc');
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [formData, setFormData] = useState<Partial<MedicalRecord>>({
     height: 0,
     weight: 0,
@@ -40,16 +44,35 @@ const MedicalRecords: React.FC = () => {
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   
   // For doctors, we'll display a list of patients
-  const patients = SAMPLE_USERS.filter(
+  const allPatients = SAMPLE_USERS.filter(
     u => u.role === 'student' || u.role === 'staff'
   );
   
+  // Filter patients based on search term
+  const patients = searchTerm 
+    ? allPatients.filter(patient => 
+        patient.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : allPatients;
+  
   // Get medical records based on user role
-  const medicalRecords = isPatient 
+  const unsortedMedicalRecords = isPatient 
     ? getMedicalRecordsByPatientId(user?.id || '')
     : selectedPatientId 
       ? getMedicalRecordsByPatientId(selectedPatientId)
       : [];
+      
+  // Sort medical records based on selected sort option
+  const medicalRecords = [...unsortedMedicalRecords].sort((a, b) => {
+    switch (sortOption) {
+      case 'date-asc':
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      case 'date-desc':
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      default:
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+    }
+  });
 
   // Handle form input changes
   const handleChange = (
@@ -161,6 +184,12 @@ const MedicalRecords: React.FC = () => {
     }
   };
 
+  // Get doctor name by ID
+  const getDoctorName = (doctorId: string) => {
+    const doctor = SAMPLE_USERS.find(u => u.id === doctorId);
+    return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
+  };
+
   return (
     <MainLayout>
       <div className="medical-container">
@@ -170,9 +199,32 @@ const MedicalRecords: React.FC = () => {
           <div className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Patients</CardTitle>
+                <CardTitle>Patient Management</CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                  <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search patients..."
+                      className="pl-10"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  {selectedPatientId && (
+                    <Button 
+                      onClick={() => {
+                        setIsAddingRecord(true);
+                        resetForm();
+                      }}
+                      className="bg-medical-primary hover:bg-medical-secondary"
+                    >
+                      Add New Record
+                    </Button>
+                  )}
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {patients.map(patient => (
                     <Button
@@ -193,22 +245,44 @@ const MedicalRecords: React.FC = () => {
 
         <div className="mt-6">
           {(isPatient || selectedPatientId) && (
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
               <h2 className="text-xl font-semibold">
-                {isPatient ? 'Your Medical Records' : 'Patient Medical Records'}
+                {isPatient ? 'Your Medical Records' : `Medical Records for ${SAMPLE_USERS.find(u => u.id === selectedPatientId)?.name || 'Patient'}`}
               </h2>
               
-              {isDoctor && selectedPatientId && (
-                <Button 
-                  onClick={() => {
-                    setIsAddingRecord(true);
-                    resetForm();
-                  }}
-                  className="bg-medical-primary hover:bg-medical-secondary"
-                >
-                  Add New Record
-                </Button>
-              )}
+              <div className="flex flex-wrap gap-2">
+                <div className="flex items-center">
+                  <label htmlFor="sortOption" className="mr-2 text-sm">Sort by:</label>
+                  <select 
+                    id="sortOption"
+                    className="text-sm border rounded px-2 py-1"
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value)}
+                  >
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                  </select>
+                </div>
+                
+                <div className="flex border rounded overflow-hidden">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`px-3 ${viewMode === 'card' ? 'bg-gray-100' : ''}`}
+                    onClick={() => setViewMode('card')}
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`px-3 ${viewMode === 'table' ? 'bg-gray-100' : ''}`}
+                    onClick={() => setViewMode('table')}
+                  >
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -327,24 +401,140 @@ const MedicalRecords: React.FC = () => {
           )}
 
           {medicalRecords.length > 0 ? (
-            <div className="space-y-4">
-              {medicalRecords
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                .map(record => {
-                  const doctor = SAMPLE_USERS.find(u => u.id === record.doctorId);
-                  
-                  return (
-                    <Card key={record.id} className="overflow-hidden">
-                      <CardHeader className="bg-gray-50">
-                        <div className="flex justify-between">
-                          <CardTitle className="text-lg">
-                            Medical Record - {format(new Date(record.date), 'PPP')}
-                          </CardTitle>
+            <>
+              {viewMode === 'card' ? (
+                <div className="space-y-4">
+                  {medicalRecords.map(record => {
+                    const doctor = SAMPLE_USERS.find(u => u.id === record.doctorId);
+                    
+                    return (
+                      <Card key={record.id} className="overflow-hidden">
+                        <CardHeader className="bg-gray-50">
+                          <div className="flex justify-between">
+                            <CardTitle className="text-lg">
+                              Medical Record - {format(new Date(record.date), 'PPP')}
+                            </CardTitle>
+                            {isDoctor && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    resetForm(record);
+                                    setIsAddingRecord(true);
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={() => handleDeleteRecord(record.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            {doctor ? `Examined by Dr. ${doctor.name}` : 'Self-recorded'}
+                            <span className="mx-2">•</span>
+                            Last updated: {format(new Date(record.updatedAt), 'PPP')}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4">
+                            <div>
+                              <p className="text-sm text-gray-500">Height</p>
+                              <p className="font-medium">{record.height} cm</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Weight</p>
+                              <p className="font-medium">{record.weight} kg</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">BMI</p>
+                              <p className="font-medium">{record.bmi.toFixed(1)}</p>
+                            </div>
+                            {record.bloodPressure && (
+                              <div>
+                                <p className="text-sm text-gray-500">Blood Pressure</p>
+                                <p className="font-medium">{record.bloodPressure}</p>
+                              </div>
+                            )}
+                            {record.temperature && (
+                              <div>
+                                <p className="text-sm text-gray-500">Temperature</p>
+                                <p className="font-medium">{record.temperature} °C</p>
+                              </div>
+                            )}
+                            {doctor && (
+                              <div>
+                                <p className="text-sm text-gray-500">Attending Doctor</p>
+                                <p className="font-medium">Dr. {doctor.name}</p>
+                              </div>
+                            )}
+                            {record.diagnosis && (
+                              <div className="md:col-span-2">
+                                <p className="text-sm text-gray-500">Diagnosis</p>
+                                <p className="font-medium">{record.diagnosis}</p>
+                              </div>
+                            )}
+                            <div className="md:col-span-2">
+                              <p className="text-sm text-gray-500">Medications</p>
+                              <p className="font-medium">{formatMedications(record.medications)}</p>
+                            </div>
+                            {record.notes && (
+                              <div className="md:col-span-2">
+                                <p className="text-sm text-gray-500">Notes</p>
+                                <p className="font-medium whitespace-pre-wrap">{record.notes}</p>
+                              </div>
+                            )}
+                            {record.followUpDate && (
+                              <div>
+                                <p className="text-sm text-gray-500">Follow-up Date</p>
+                                <p className="font-medium">{format(new Date(record.followUpDate), 'PPP')}</p>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Card>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Doctor</TableHead>
+                        <TableHead>BMI</TableHead>
+                        <TableHead>Diagnosis</TableHead>
+                        <TableHead>Follow-up</TableHead>
+                        {isDoctor && <TableHead className="text-right">Actions</TableHead>}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {medicalRecords.map(record => (
+                        <TableRow key={record.id}>
+                          <TableCell>{format(new Date(record.date), 'PPP')}</TableCell>
+                          <TableCell>{getDoctorName(record.doctorId)}</TableCell>
+                          <TableCell>{record.bmi.toFixed(1)}</TableCell>
+                          <TableCell>{record.diagnosis || 'N/A'}</TableCell>
+                          <TableCell>
+                            {record.followUpDate 
+                              ? format(new Date(record.followUpDate), 'PPP')
+                              : 'None'
+                            }
+                          </TableCell>
                           {isDoctor && (
-                            <div className="flex gap-2">
+                            <TableCell className="text-right">
                               <Button
                                 size="sm"
                                 variant="outline"
+                                className="mr-2"
                                 onClick={() => {
                                   resetForm(record);
                                   setIsAddingRecord(true);
@@ -360,70 +550,15 @@ const MedicalRecords: React.FC = () => {
                               >
                                 Delete
                               </Button>
-                            </div>
+                            </TableCell>
                           )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4">
-                          <div>
-                            <p className="text-sm text-gray-500">Height</p>
-                            <p className="font-medium">{record.height} cm</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">Weight</p>
-                            <p className="font-medium">{record.weight} kg</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500">BMI</p>
-                            <p className="font-medium">{record.bmi.toFixed(1)}</p>
-                          </div>
-                          {record.bloodPressure && (
-                            <div>
-                              <p className="text-sm text-gray-500">Blood Pressure</p>
-                              <p className="font-medium">{record.bloodPressure}</p>
-                            </div>
-                          )}
-                          {record.temperature && (
-                            <div>
-                              <p className="text-sm text-gray-500">Temperature</p>
-                              <p className="font-medium">{record.temperature} °C</p>
-                            </div>
-                          )}
-                          {doctor && (
-                            <div>
-                              <p className="text-sm text-gray-500">Attending Doctor</p>
-                              <p className="font-medium">Dr. {doctor.name}</p>
-                            </div>
-                          )}
-                          {record.diagnosis && (
-                            <div className="md:col-span-2">
-                              <p className="text-sm text-gray-500">Diagnosis</p>
-                              <p className="font-medium">{record.diagnosis}</p>
-                            </div>
-                          )}
-                          <div className="md:col-span-2">
-                            <p className="text-sm text-gray-500">Medications</p>
-                            <p className="font-medium">{formatMedications(record.medications)}</p>
-                          </div>
-                          {record.notes && (
-                            <div className="md:col-span-2">
-                              <p className="text-sm text-gray-500">Notes</p>
-                              <p className="font-medium whitespace-pre-wrap">{record.notes}</p>
-                            </div>
-                          )}
-                          {record.followUpDate && (
-                            <div>
-                              <p className="text-sm text-gray-500">Follow-up Date</p>
-                              <p className="font-medium">{format(new Date(record.followUpDate), 'PPP')}</p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-            </div>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Card>
+              )}
+            </>
           ) : (
             <Card className="text-center p-6">
               <div className="py-8">
