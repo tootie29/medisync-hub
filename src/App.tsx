@@ -29,7 +29,7 @@ import Settings from "./pages/Settings";
 
 // Define API_URL based on environment or domain
 const API_BASE_URL = import.meta.env.PROD 
-  ? `${window.location.protocol}//${window.location.hostname}`
+  ? 'https://medisync.entrsolutions.com'
   : 'http://localhost:3001';
 
 const queryClient = new QueryClient();

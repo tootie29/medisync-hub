@@ -12,7 +12,7 @@ import axios from 'axios';
 
 // Define API_URL based on environment or domain
 const API_URL = import.meta.env.PROD 
-  ? `${window.location.protocol}//${window.location.hostname}/api`
+  ? 'https://medisync.entrsolutions.com/api'
   : 'http://localhost:3001/api';
 
 interface DataContextType {
