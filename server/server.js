@@ -11,9 +11,15 @@ const medicineRoutes = require('./routes/medicineRoutes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Enhanced CORS configuration with your domain
+// Enhanced CORS configuration with all possible domains
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:8080', 'https://medisync.entrsolutions.com'],
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'https://medisync.entrsolutions.com',
+    /\.lovableproject\.com$/ // Allow all Lovable preview domains
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -45,10 +51,12 @@ async function initializeDB() {
     
     // If connection fails, retry every 10 seconds
     if (!dbConnected) {
+      console.log('Will retry database connection in 10 seconds...');
       setTimeout(initializeDB, 10000);
     }
   } catch (error) {
     console.error('Database initialization error:', error);
+    console.log('Will retry database connection in 10 seconds...');
     setTimeout(initializeDB, 10000);
   }
 }
@@ -56,17 +64,28 @@ async function initializeDB() {
 // Initialize database connection
 initializeDB();
 
-// Health check endpoint
+// Health check endpoint with detailed information
 app.get('/api/health', (req, res) => {
+  const serverInfo = {
+    status: dbConnected ? 'OK' : 'WARNING',
+    timestamp: new Date().toISOString(),
+    server: {
+      running: true,
+      version: process.env.npm_package_version || 'unknown',
+      nodeVersion: process.version,
+      uptime: process.uptime() + ' seconds'
+    },
+    database: {
+      connected: dbConnected,
+      message: dbConnected ? 'Database is connected' : 'Database is not connected - check MySQL service'
+    }
+  };
+
   if (dbConnected) {
-    res.json({ status: 'OK', message: 'Server is running', db: 'Connected' });
+    res.json(serverInfo);
   } else {
     // Return a 200 OK but with a warning message if DB isn't connected
-    res.json({ 
-      status: 'WARNING', 
-      message: 'Server is running but database is not connected', 
-      db: 'Disconnected' 
-    });
+    res.json(serverInfo);
   }
 });
 
@@ -81,13 +100,15 @@ app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({ 
     error: 'Internal Server Error', 
-    message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message 
+    message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message,
+    timestamp: new Date().toISOString()
   });
 });
 
 // Start server
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Health check available at: http://localhost:${PORT}/api/health`);
 });
 
 // Graceful shutdown
