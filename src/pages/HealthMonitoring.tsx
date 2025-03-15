@@ -1,45 +1,21 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useData } from "@/context/DataContext";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, LineChart as LineChartIcon, Activity, Heart } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle, LineChartIcon, Activity, Heart } from "lucide-react";
 import { toast } from "sonner";
-
-// Sample data - in a real app, this would come from your backend
-const healthData = {
-  heartRate: [
-    { date: "2023-10-01", value: 72 },
-    { date: "2023-10-08", value: 75 },
-    { date: "2023-10-15", value: 68 },
-    { date: "2023-10-22", value: 71 },
-    { date: "2023-10-29", value: 73 },
-    { date: "2023-11-05", value: 70 },
-  ],
-  bloodPressure: [
-    { date: "2023-10-01", systolic: 120, diastolic: 80 },
-    { date: "2023-10-08", systolic: 122, diastolic: 82 },
-    { date: "2023-10-15", systolic: 118, diastolic: 78 },
-    { date: "2023-10-22", systolic: 121, diastolic: 79 },
-    { date: "2023-10-29", systolic: 123, diastolic: 81 },
-    { date: "2023-11-05", systolic: 119, diastolic: 80 },
-  ],
-  bloodGlucose: [
-    { date: "2023-10-01", value: 92 },
-    { date: "2023-10-08", value: 95 },
-    { date: "2023-10-15", value: 90 },
-    { date: "2023-10-22", value: 94 },
-    { date: "2023-10-29", value: 91 },
-    { date: "2023-11-05", value: 93 },
-  ],
-};
+import { format, parseISO } from "date-fns";
 
 const HealthMonitoring = () => {
   const { user } = useAuth();
+  const { getMedicalRecordsByPatientId, getUserById, medicalRecords } = useData();
   const [activeTab, setActiveTab] = useState("heart-rate");
   const [newReading, setNewReading] = useState({
     heartRate: "",
@@ -47,11 +23,81 @@ const HealthMonitoring = () => {
     bloodPressureDiastolic: "",
     bloodGlucose: "",
   });
+  const [patientData, setPatientData] = useState({
+    heartRate: [],
+    bloodPressure: [],
+    bloodGlucose: [],
+  });
 
-  const handleAddReading = (type: string) => {
-    // In a real app, this would send data to your backend
+  // Transform medical records into chart data format
+  useEffect(() => {
+    if (!user) return;
+
+    const userRecords = getMedicalRecordsByPatientId(user.id);
+    
+    // Sort records by date (newest first)
+    const sortedRecords = [...userRecords].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    // Extract and format the data for charts
+    const heartRateData = [];
+    const bloodPressureData = [];
+    const bloodGlucoseData = [];
+
+    sortedRecords.forEach(record => {
+      const date = format(new Date(record.date), "yyyy-MM-dd");
+      
+      // Add heart rate data if available
+      if (record.vitalSigns?.heartRate) {
+        heartRateData.push({
+          date,
+          value: record.vitalSigns.heartRate,
+        });
+      }
+      
+      // Add blood pressure data if available
+      if (record.vitalSigns?.bloodPressure) {
+        // Parse blood pressure like "120/80"
+        const [systolic, diastolic] = record.vitalSigns.bloodPressure.split('/').map(Number);
+        bloodPressureData.push({
+          date,
+          systolic,
+          diastolic,
+        });
+      }
+      
+      // Add blood glucose data if available
+      if (record.vitalSigns?.bloodGlucose) {
+        bloodGlucoseData.push({
+          date,
+          value: record.vitalSigns.bloodGlucose,
+        });
+      }
+    });
+
+    // Reverse the arrays to display oldest to newest in charts
+    setPatientData({
+      heartRate: heartRateData.reverse(),
+      bloodPressure: bloodPressureData.reverse(),
+      bloodGlucose: bloodGlucoseData.reverse(),
+    });
+  }, [user, medicalRecords]);
+
+  const handleAddReading = (type) => {
+    // In a real app, this would update the patient's medical record
+    let message = "";
+    
+    if (type === "heartRate") {
+      message = `Heart Rate: ${newReading.heartRate} BPM`;
+    } else if (type === "bloodPressure") {
+      message = `Blood Pressure: ${newReading.bloodPressureSystolic}/${newReading.bloodPressureDiastolic} mmHg`;
+    } else if (type === "bloodGlucose") {
+      message = `Blood Glucose: ${newReading.bloodGlucose} mg/dL`;
+    }
+    
     toast.success(`New ${type} reading added!`, {
-      description: "Your health data has been updated successfully.",
+      description: `${message}. Your health data has been updated.`,
     });
 
     // Reset the form fields
@@ -63,6 +109,13 @@ const HealthMonitoring = () => {
         bloodPressureDiastolic: "" 
       } : {}),
     });
+  };
+
+  // Combine sample data with patient data
+  const combinedData = {
+    heartRate: [...healthData.heartRate, ...patientData.heartRate],
+    bloodPressure: [...healthData.bloodPressure, ...patientData.bloodPressure],
+    bloodGlucose: [...healthData.bloodGlucose, ...patientData.bloodGlucose],
   };
 
   return (
@@ -91,7 +144,7 @@ const HealthMonitoring = () => {
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart
-                    data={healthData.heartRate}
+                    data={combinedData.heartRate}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -108,6 +161,41 @@ const HealthMonitoring = () => {
                     />
                   </LineChart>
                 </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Historical Heart Rate Data</CardTitle>
+                <CardDescription>Your previous heart rate readings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">Heart Rate (BPM)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {patientData.heartRate.length > 0 ? (
+                        patientData.heartRate.map((item, index) => (
+                          <tr key={index} className="border-b">
+                            <td className="p-2">{item.date}</td>
+                            <td className="p-2">{item.value}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={2} className="p-2 text-center text-muted-foreground">
+                            No heart rate data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
 
@@ -149,7 +237,7 @@ const HealthMonitoring = () => {
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart
-                    data={healthData.bloodPressure}
+                    data={combinedData.bloodPressure}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -173,6 +261,43 @@ const HealthMonitoring = () => {
                     />
                   </LineChart>
                 </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Historical Blood Pressure Data</CardTitle>
+                <CardDescription>Your previous blood pressure readings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">Systolic (mmHg)</th>
+                        <th className="p-2 text-left">Diastolic (mmHg)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {patientData.bloodPressure.length > 0 ? (
+                        patientData.bloodPressure.map((item, index) => (
+                          <tr key={index} className="border-b">
+                            <td className="p-2">{item.date}</td>
+                            <td className="p-2">{item.systolic}</td>
+                            <td className="p-2">{item.diastolic}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={3} className="p-2 text-center text-muted-foreground">
+                            No blood pressure data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
 
@@ -229,7 +354,7 @@ const HealthMonitoring = () => {
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart
-                    data={healthData.bloodGlucose}
+                    data={combinedData.bloodGlucose}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -246,6 +371,41 @@ const HealthMonitoring = () => {
                     />
                   </LineChart>
                 </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Historical Blood Glucose Data</CardTitle>
+                <CardDescription>Your previous blood glucose readings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">Blood Glucose (mg/dL)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {patientData.bloodGlucose.length > 0 ? (
+                        patientData.bloodGlucose.map((item, index) => (
+                          <tr key={index} className="border-b">
+                            <td className="p-2">{item.date}</td>
+                            <td className="p-2">{item.value}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={2} className="p-2 text-center text-muted-foreground">
+                            No blood glucose data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
 
@@ -281,6 +441,34 @@ const HealthMonitoring = () => {
       </div>
     </MainLayout>
   );
+};
+
+// Sample data - this is combined with patient data from medical records
+const healthData = {
+  heartRate: [
+    { date: "2023-10-01", value: 72 },
+    { date: "2023-10-08", value: 75 },
+    { date: "2023-10-15", value: 68 },
+    { date: "2023-10-22", value: 71 },
+    { date: "2023-10-29", value: 73 },
+    { date: "2023-11-05", value: 70 },
+  ],
+  bloodPressure: [
+    { date: "2023-10-01", systolic: 120, diastolic: 80 },
+    { date: "2023-10-08", systolic: 122, diastolic: 82 },
+    { date: "2023-10-15", systolic: 118, diastolic: 78 },
+    { date: "2023-10-22", systolic: 121, diastolic: 79 },
+    { date: "2023-10-29", systolic: 123, diastolic: 81 },
+    { date: "2023-11-05", systolic: 119, diastolic: 80 },
+  ],
+  bloodGlucose: [
+    { date: "2023-10-01", value: 92 },
+    { date: "2023-10-08", value: 95 },
+    { date: "2023-10-15", value: 90 },
+    { date: "2023-10-22", value: 94 },
+    { date: "2023-10-29", value: 91 },
+    { date: "2023-11-05", value: 93 },
+  ],
 };
 
 export default HealthMonitoring;
