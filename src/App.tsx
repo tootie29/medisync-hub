@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,6 +27,11 @@ import Dashboard from "./pages/Dashboard";
 import HealthMonitoring from "./pages/HealthMonitoring";
 import Settings from "./pages/Settings";
 
+// Define API_URL based on environment or domain
+const API_BASE_URL = import.meta.env.PROD 
+  ? `${window.location.protocol}//${window.location.hostname}`
+  : 'http://localhost:3001';
+
 const queryClient = new QueryClient();
 
 const ServerChecker = () => {
@@ -35,7 +41,7 @@ const ServerChecker = () => {
   useEffect(() => {
     const checkServer = async () => {
       try {
-        await axios.get('http://localhost:3001/api/health');
+        await axios.get(`${API_BASE_URL}/api/health`);
         setIsServerRunning(true);
       } catch (error) {
         console.error('Backend server is not running:', error);

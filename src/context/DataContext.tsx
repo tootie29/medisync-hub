@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -9,7 +10,10 @@ import {
 import { toast } from "sonner";
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api';
+// Define API_URL based on environment or domain
+const API_URL = import.meta.env.PROD 
+  ? `${window.location.protocol}//${window.location.hostname}/api`
+  : 'http://localhost:3001/api';
 
 interface DataContextType {
   medicalRecords: MedicalRecord[];
