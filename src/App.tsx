@@ -27,9 +27,9 @@ import Dashboard from "./pages/Dashboard";
 import HealthMonitoring from "./pages/HealthMonitoring";
 import Settings from "./pages/Settings";
 
-// Define API_URL based on environment or domain
+// Define API_URL based on domain - updated for production server path
 const API_BASE_URL = window.location.hostname === "medisync.entrsolutions.com" 
-  ? 'https://medisync.entrsolutions.com'
+  ? 'https://medisync.entrsolutions.com/server'
   : 'http://localhost:3001';
 
 // Add axios retry configuration
@@ -72,7 +72,7 @@ const ServerChecker = () => {
 
   useEffect(() => {
     // Show the actual server URL we're trying to connect to
-    setServerUrl(API_BASE_URL);
+    setServerUrl(`${API_BASE_URL}/api/health`);
     
     const checkServer = async () => {
       try {

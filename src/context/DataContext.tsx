@@ -10,9 +10,9 @@ import {
 import { toast } from "sonner";
 import axios from 'axios';
 
-// Define API_URL based on environment or domain
+// Define API_URL based on domain - updated for production server path
 const API_URL = window.location.hostname === "medisync.entrsolutions.com" 
-  ? 'https://medisync.entrsolutions.com/api'
+  ? 'https://medisync.entrsolutions.com/server/api'
   : 'http://localhost:3001/api';
 
 interface DataContextType {

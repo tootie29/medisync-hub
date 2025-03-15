@@ -11,7 +11,7 @@ const medicineRoutes = require('./routes/medicineRoutes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Enhanced CORS configuration with all possible domains
+// Enhanced CORS configuration with production domain
 app.use(cors({
   origin: [
     'http://localhost:5173',
