@@ -20,6 +20,7 @@ import BMICalculator from "./pages/BMICalculator";
 import MedicalRecords from "./pages/MedicalRecords";
 import Inventory from "./pages/Inventory";
 import Profile from "./pages/Profile";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/appointments" element={<Appointments />} />
               <Route path="/bmi" element={<BMICalculator />} />
               <Route path="/records" element={<MedicalRecords />} />
