@@ -7,6 +7,7 @@ const userRoutes = require('./routes/userRoutes');
 const medicalRecordRoutes = require('./routes/medicalRecordRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -14,6 +15,18 @@ const PORT = process.env.PORT || 3001;
 // Production check
 const isProduction = process.env.NODE_ENV === 'production' || process.env.PRODUCTION === 'true';
 console.log(`Running in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
+
+// Get base path for production in cPanel
+const getBasePath = () => {
+  if (isProduction) {
+    // For cPanel, the application might be accessed via /server path
+    return '/server';
+  }
+  return '';
+};
+
+const BASE_PATH = getBasePath();
+console.log(`Using base path: "${BASE_PATH}"`);
 
 // Enhanced CORS configuration for production and development
 app.use(cors({
@@ -76,7 +89,7 @@ async function initializeDB() {
 initializeDB();
 
 // Health check endpoint with detailed information
-app.get('/api/health', (req, res) => {
+app.get(`${BASE_PATH}/api/health`, (req, res) => {
   const serverInfo = {
     status: dbConnected ? 'OK' : 'WARNING',
     timestamp: new Date().toISOString(),
@@ -85,7 +98,8 @@ app.get('/api/health', (req, res) => {
       version: process.env.npm_package_version || 'unknown',
       nodeVersion: process.version,
       uptime: process.uptime() + ' seconds',
-      environment: isProduction ? 'production' : 'development'
+      environment: isProduction ? 'production' : 'development',
+      basePath: BASE_PATH
     },
     database: {
       connected: dbConnected,
@@ -98,20 +112,47 @@ app.get('/api/health', (req, res) => {
 });
 
 // Basic root route for easy verification
-app.get('/', (req, res) => {
+app.get(`${BASE_PATH}/`, (req, res) => {
   res.json({ 
     status: 'running',
     message: 'MediSync API server is running. Use /api endpoints for data access.',
-    healthCheck: '/api/health',
+    healthCheck: `${BASE_PATH}/api/health`,
+    timestamp: new Date().toISOString(),
+    basePath: BASE_PATH
+  });
+});
+
+// Routes - update all routes with the base path
+app.use(`${BASE_PATH}/api/users`, userRoutes);
+app.use(`${BASE_PATH}/api/medical-records`, medicalRecordRoutes);
+app.use(`${BASE_PATH}/api/appointments`, appointmentRoutes);
+app.use(`${BASE_PATH}/api/medicines`, medicineRoutes);
+
+// Special route for cPanel verification
+app.get('/', (req, res) => {
+  res.json({
+    status: 'running',
+    message: 'MediSync API server is running at the root level.',
+    productionBasePath: '/server',
+    apiHealth: `${BASE_PATH}/api/health`,
     timestamp: new Date().toISOString()
   });
 });
 
-// Routes
-app.use('/api/users', userRoutes);
-app.use('/api/medical-records', medicalRecordRoutes);
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/medicines', medicineRoutes);
+// Catch-all route for debugging path issues in production
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `The requested URL ${req.originalUrl} was not found on this server.`,
+    basePath: BASE_PATH,
+    suggestedEndpoints: {
+      root: BASE_PATH ? BASE_PATH : '/',
+      health: `${BASE_PATH}/api/health`,
+      users: `${BASE_PATH}/api/users`
+    },
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -126,9 +167,10 @@ app.use((err, req, res, next) => {
 // Start server
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Health check available at: http://localhost:${PORT}/api/health`);
+  console.log(`Health check available at: http://localhost:${PORT}${BASE_PATH}/api/health`);
   if (isProduction) {
-    console.log('Running in production mode on https://medisync.entrsolutions.com/server');
+    console.log(`Running in production mode. Base path: ${BASE_PATH}`);
+    console.log(`Production URL: https://medisync.entrsolutions.com${BASE_PATH}/api/health`);
   }
 });
 
