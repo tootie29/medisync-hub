@@ -73,10 +73,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addMedicalRecord = (record: Omit<MedicalRecord, 'id' | 'createdAt' | 'updatedAt' | 'bmi'>): MedicalRecord => {
     const bmi = calculateBMI(record.height, record.weight);
     
+    // Handle vitalSigns during record creation
+    // If bloodPressure is provided but vitalSigns isn't, initialize vitalSigns with the bloodPressure
+    let updatedVitalSigns = record.vitalSigns || {};
+    if (record.bloodPressure && !updatedVitalSigns.bloodPressure) {
+      updatedVitalSigns = {
+        ...updatedVitalSigns,
+        bloodPressure: record.bloodPressure
+      };
+    }
+    
     const newRecord: MedicalRecord = {
       ...record,
       id: `${Date.now()}`,
       bmi,
+      vitalSigns: Object.keys(updatedVitalSigns).length > 0 ? updatedVitalSigns : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -105,10 +116,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? calculateBMI(height, weight) 
         : currentRecord.bmi;
       
+      // Merge vitalSigns if provided
+      const vitalSigns = record.vitalSigns
+        ? { ...currentRecord.vitalSigns, ...record.vitalSigns }
+        : currentRecord.vitalSigns;
+      
+      // Update vitalSigns.bloodPressure if bloodPressure field is updated
+      if (record.bloodPressure && vitalSigns) {
+        vitalSigns.bloodPressure = record.bloodPressure;
+      }
+      
       updatedRecord = {
         ...currentRecord,
         ...record,
         bmi,
+        vitalSigns,
         updatedAt: new Date().toISOString()
       };
       

@@ -1,4 +1,3 @@
-
 export type UserRole = 'student' | 'staff' | 'doctor' | 'admin';
 
 export interface User {
@@ -19,6 +18,12 @@ export interface User {
   updatedAt: string;
 }
 
+export interface VitalSigns {
+  heartRate?: number;
+  bloodPressure?: string;
+  bloodGlucose?: number;
+}
+
 export interface MedicalRecord {
   id: string;
   patientId: string;
@@ -33,6 +38,7 @@ export interface MedicalRecord {
   medications?: string[];
   notes?: string;
   followUpDate?: string;
+  vitalSigns?: VitalSigns;
   createdAt: string;
   updatedAt: string;
 }
@@ -66,7 +72,6 @@ export interface Medicine {
   updatedAt: string;
 }
 
-// Sample data structures
 export const ROLES: UserRole[] = ['student', 'staff', 'doctor', 'admin'];
 
 export const SAMPLE_USERS: User[] = [
@@ -143,6 +148,11 @@ export const SAMPLE_MEDICAL_RECORDS: MedicalRecord[] = [
     medications: ['Paracetamol', 'Vitamin C'],
     notes: 'Patient should rest and drink plenty of fluids.',
     followUpDate: '2023-03-22',
+    vitalSigns: {
+      heartRate: 72,
+      bloodPressure: '120/80',
+      bloodGlucose: 95
+    },
     createdAt: '2023-03-15T10:30:00Z',
     updatedAt: '2023-03-15T10:30:00Z',
   },
@@ -160,6 +170,11 @@ export const SAMPLE_MEDICAL_RECORDS: MedicalRecord[] = [
     medications: ['Ibuprofen'],
     notes: 'Monitor temperature for the next 48 hours.',
     followUpDate: '2023-04-17',
+    vitalSigns: {
+      heartRate: 78,
+      bloodPressure: '130/85',
+      bloodGlucose: 100
+    },
     createdAt: '2023-04-10T14:15:00Z',
     updatedAt: '2023-04-10T14:15:00Z',
   },

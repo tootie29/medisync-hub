@@ -65,6 +65,14 @@ const HealthMonitoring = () => {
           systolic,
           diastolic,
         });
+      } else if (record.bloodPressure) {
+        // Fall back to the direct bloodPressure field if vitalSigns.bloodPressure is not available
+        const [systolic, diastolic] = record.bloodPressure.split('/').map(Number);
+        bloodPressureData.push({
+          date,
+          systolic,
+          diastolic,
+        });
       }
       
       // Add blood glucose data if available
