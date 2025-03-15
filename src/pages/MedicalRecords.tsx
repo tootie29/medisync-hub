@@ -10,9 +10,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { MedicalRecord, SAMPLE_USERS } from '@/types';
 import { format } from 'date-fns';
-import { Activity, Calendar, Search, User, FileText, Filter } from 'lucide-react';
+import { Activity, Calendar, FileText, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
@@ -20,13 +21,18 @@ const MedicalRecords: React.FC = () => {
     getMedicalRecordsByPatientId, 
     addMedicalRecord, 
     updateMedicalRecord,
-    deleteMedicalRecord
+    deleteMedicalRecord,
+    getUserById
   } = useData();
+  
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryParams = new URLSearchParams(location.search);
+  const patientIdFromUrl = queryParams.get('patient');
   
   const [isAddingRecord, setIsAddingRecord] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string>('');
   const [sortOption, setSortOption] = useState<string>('date-desc');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [formData, setFormData] = useState<Partial<MedicalRecord>>({
@@ -43,24 +49,19 @@ const MedicalRecords: React.FC = () => {
   const isDoctor = user?.role === 'doctor' || user?.role === 'admin';
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   
-  // For doctors, we'll display a list of patients
-  const allPatients = SAMPLE_USERS.filter(
-    u => u.role === 'student' || u.role === 'staff'
-  );
+  // Initialize the selected patient from URL parameter
+  useEffect(() => {
+    if (patientIdFromUrl) {
+      setSelectedPatientId(patientIdFromUrl);
+    } else if (isPatient && user) {
+      setSelectedPatientId(user.id);
+    }
+  }, [patientIdFromUrl, isPatient, user]);
   
-  // Filter patients based on search term
-  const patients = searchTerm 
-    ? allPatients.filter(patient => 
-        patient.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : allPatients;
-  
-  // Get medical records based on user role
-  const unsortedMedicalRecords = isPatient 
-    ? getMedicalRecordsByPatientId(user?.id || '')
-    : selectedPatientId 
-      ? getMedicalRecordsByPatientId(selectedPatientId)
-      : [];
+  // Get medical records based on user role or selected patient
+  const unsortedMedicalRecords = selectedPatientId 
+    ? getMedicalRecordsByPatientId(selectedPatientId)
+    : [];
       
   // Sort medical records based on selected sort option
   const medicalRecords = [...unsortedMedicalRecords].sort((a, b) => {
@@ -140,7 +141,7 @@ const MedicalRecords: React.FC = () => {
         setEditingRecordId(null);
       } else {
         // Add new record
-        const patientId = isPatient ? user?.id as string : selectedPatientId as string;
+        const patientId = selectedPatientId as string;
         addMedicalRecord({
           patientId,
           doctorId: user?.id as string,
@@ -164,13 +165,6 @@ const MedicalRecords: React.FC = () => {
     }
   };
 
-  // Handle patient selection (for doctors)
-  const handlePatientSelect = (patientId: string) => {
-    setSelectedPatientId(patientId);
-    setIsAddingRecord(false);
-    setEditingRecordId(null);
-  };
-
   // Format medications list for display
   const formatMedications = (medications?: string[]) => {
     if (!medications || medications.length === 0) return 'None';
@@ -186,71 +180,45 @@ const MedicalRecords: React.FC = () => {
 
   // Get doctor name by ID
   const getDoctorName = (doctorId: string) => {
-    const doctor = SAMPLE_USERS.find(u => u.id === doctorId);
+    const doctor = getUserById(doctorId);
     return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
   };
+
+  // Get selected patient info
+  const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
+
+  // If we're a doctor but no patient is selected, redirect to dashboard
+  useEffect(() => {
+    if (isDoctor && !selectedPatientId && !patientIdFromUrl) {
+      navigate('/dashboard');
+    }
+  }, [isDoctor, selectedPatientId, patientIdFromUrl, navigate]);
 
   return (
     <MainLayout>
       <div className="medical-container">
         <h1 className="page-title">Medical Records</h1>
 
-        {isDoctor && (
-          <div className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Patient Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <div className="relative flex-grow">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search patients..."
-                      className="pl-10"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  {selectedPatientId && (
-                    <Button 
-                      onClick={() => {
-                        setIsAddingRecord(true);
-                        resetForm();
-                      }}
-                      className="bg-medical-primary hover:bg-medical-secondary"
-                    >
-                      Add New Record
-                    </Button>
-                  )}
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {patients.map(patient => (
-                    <Button
-                      key={patient.id}
-                      variant={selectedPatientId === patient.id ? "default" : "outline"}
-                      className="justify-start"
-                      onClick={() => handlePatientSelect(patient.id)}
-                    >
-                      <User className="mr-2 h-4 w-4" />
-                      {patient.name}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         <div className="mt-6">
-          {(isPatient || selectedPatientId) && (
+          {selectedPatient && (
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
               <h2 className="text-xl font-semibold">
-                {isPatient ? 'Your Medical Records' : `Medical Records for ${SAMPLE_USERS.find(u => u.id === selectedPatientId)?.name || 'Patient'}`}
+                {isPatient ? 'Your Medical Records' : `Medical Records for ${selectedPatient.name}`}
               </h2>
               
               <div className="flex flex-wrap gap-2">
+                {isDoctor && (
+                  <Button 
+                    onClick={() => {
+                      setIsAddingRecord(true);
+                      resetForm();
+                    }}
+                    className="bg-medical-primary hover:bg-medical-secondary"
+                  >
+                    Add New Record
+                  </Button>
+                )}
+                
                 <div className="flex items-center">
                   <label htmlFor="sortOption" className="mr-2 text-sm">Sort by:</label>
                   <select 
@@ -405,7 +373,7 @@ const MedicalRecords: React.FC = () => {
               {viewMode === 'card' ? (
                 <div className="space-y-4">
                   {medicalRecords.map(record => {
-                    const doctor = SAMPLE_USERS.find(u => u.id === record.doctorId);
+                    const doctor = getUserById(record.doctorId);
                     
                     return (
                       <Card key={record.id} className="overflow-hidden">
@@ -569,9 +537,7 @@ const MedicalRecords: React.FC = () => {
                 <p className="mt-1 text-sm text-gray-500">
                   {selectedPatientId 
                     ? "This patient doesn't have any medical records yet." 
-                    : isPatient 
-                      ? "You don't have any medical records yet." 
-                      : "Select a patient to view or add medical records."}
+                    : "Select a patient to view or add medical records."}
                 </p>
                 {isDoctor && selectedPatientId && (
                   <div className="mt-6">
