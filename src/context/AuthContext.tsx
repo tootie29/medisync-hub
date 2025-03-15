@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, SAMPLE_USERS } from '@/types';
+import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -10,6 +10,7 @@ interface AuthContextType {
   logout: () => void;
   register: (userData: Partial<User>, password: string) => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
+  isRegistering: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in (from localStorage)
@@ -66,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (userData: Partial<User>, password: string) => {
     setIsLoading(true);
+    setIsRegistering(true);
     try {
       // In a real app, this would be an API call to create a new user
       const existingUser = SAMPLE_USERS.find(u => u.email === userData.email);
@@ -73,12 +76,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Email already in use');
       }
 
+      // Validate role-specific fields
+      if (userData.role === 'student' && !userData.studentId) {
+        throw new Error('Student ID is required for student registration');
+      }
+      
+      if (userData.role === 'staff' && !userData.staffId) {
+        throw new Error('Staff ID is required for staff registration');
+      }
+
       // For the demo, we'll just simulate creating a new user
       const newUser: User = {
         id: `${SAMPLE_USERS.length + 1}`,
         email: userData.email!,
         name: userData.name!,
-        role: userData.role || 'student',
+        role: userData.role as UserRole || 'student',
         phone: userData.phone || '',
         dateOfBirth: userData.dateOfBirth || '',
         gender: userData.gender || undefined,
@@ -101,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     } finally {
       setIsLoading(false);
+      setIsRegistering(false);
     }
   };
 
@@ -131,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, register, updateProfile }}>
+    <AuthContext.Provider value={{ user, isLoading, isRegistering, login, logout, register, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
