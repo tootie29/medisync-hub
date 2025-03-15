@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PatientRecordsTable from '@/components/dashboard/PatientRecordsTable';
 import {
   Calendar,
   Clock,
@@ -24,7 +25,6 @@ const Dashboard: React.FC = () => {
     getAppointmentsByPatientId, 
     getAppointmentsByDoctorId, 
     getMedicalRecordsByPatientId,
-    // Adding a new function call to get user information
     getUserById
   } = useData();
 
@@ -336,6 +336,13 @@ const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Patient Records Table - only visible to medical staff */}
+        {isMedicalStaff && (
+          <div className="mt-8">
+            <PatientRecordsTable />
+          </div>
+        )}
       </div>
     </MainLayout>
   );
