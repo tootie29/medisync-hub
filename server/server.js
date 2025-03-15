@@ -11,19 +11,30 @@ const medicineRoutes = require('./routes/medicineRoutes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Enhanced CORS configuration with production domain
+// Production check
+const isProduction = process.env.NODE_ENV === 'production' || process.env.PRODUCTION === 'true';
+console.log(`Running in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
+
+// Enhanced CORS configuration for production and development
 app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:8080',
     'http://localhost:3000',
     'https://medisync.entrsolutions.com',
-    /\.lovableproject\.com$/ // Allow all Lovable preview domains
+    /\.lovableproject\.com$/, // Allow all Lovable preview domains
+    /\.entrsolutions\.com$/ // Allow all entrsolutions subdomains
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
+
+// Log all requests to help with debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
 // Middleware
 app.use(bodyParser.json());
@@ -73,7 +84,8 @@ app.get('/api/health', (req, res) => {
       running: true,
       version: process.env.npm_package_version || 'unknown',
       nodeVersion: process.version,
-      uptime: process.uptime() + ' seconds'
+      uptime: process.uptime() + ' seconds',
+      environment: isProduction ? 'production' : 'development'
     },
     database: {
       connected: dbConnected,
@@ -81,12 +93,18 @@ app.get('/api/health', (req, res) => {
     }
   };
 
-  if (dbConnected) {
-    res.json(serverInfo);
-  } else {
-    // Return a 200 OK but with a warning message if DB isn't connected
-    res.json(serverInfo);
-  }
+  console.log('Health check requested. Server info:', serverInfo);
+  res.json(serverInfo);
+});
+
+// Basic root route for easy verification
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'running',
+    message: 'MediSync API server is running. Use /api endpoints for data access.',
+    healthCheck: '/api/health',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Routes
@@ -109,6 +127,9 @@ app.use((err, req, res, next) => {
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check available at: http://localhost:${PORT}/api/health`);
+  if (isProduction) {
+    console.log('Running in production mode on https://medisync.entrsolutions.com/server');
+  }
 });
 
 // Graceful shutdown

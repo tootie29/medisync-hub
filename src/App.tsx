@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,6 +30,9 @@ import Settings from "./pages/Settings";
 const API_BASE_URL = window.location.hostname === "medisync.entrsolutions.com" 
   ? 'https://medisync.entrsolutions.com/server'
   : 'http://localhost:3001';
+
+console.log('Current hostname:', window.location.hostname);
+console.log('API base URL:', API_BASE_URL);
 
 // Add axios retry configuration
 axios.interceptors.response.use(undefined, async (error) => {
@@ -68,67 +70,90 @@ const ServerChecker = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [serverError, setServerError] = useState('');
   const [serverUrl, setServerUrl] = useState('');
+  const [serverDetails, setServerDetails] = useState<any>(null);
   const maxRetries = 3;
 
   useEffect(() => {
     // Show the actual server URL we're trying to connect to
-    setServerUrl(`${API_BASE_URL}/api/health`);
+    const healthCheckUrl = `${API_BASE_URL}/api/health`;
+    setServerUrl(healthCheckUrl);
+    console.log('Checking server health at:', healthCheckUrl);
+    
+    // Also try the root URL if health check fails
+    const rootUrl = API_BASE_URL;
     
     const checkServer = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/health`, { timeout: 5000 });
+        console.log('Attempting server health check...');
+        const response = await axios.get(healthCheckUrl, { timeout: 8000 });
         console.log('Server health check response:', response.data);
         setIsServerRunning(true);
         setServerError('');
+        setServerDetails(response.data);
         
         // Check if DB is connected
         if (response.data.status === 'WARNING') {
           toast.warning(
             'Database connection issue',
             { 
-              description: response.data.message,
+              description: response.data.database.message,
               duration: 5000
             }
           );
         }
       } catch (error) {
-        console.error('Backend server connection issue:', error);
+        console.error('Health endpoint error:', error);
         
-        // Extract a more specific error message
-        let errorMessage = 'Connection to the server failed';
-        if (error.code === 'ECONNABORTED') {
-          errorMessage = 'Connection timeout. Server may be overloaded.';
-        } else if (error.response) {
-          errorMessage = `Server error: ${error.response.status}`;
-        } else if (error.code === 'ERR_NETWORK') {
-          errorMessage = 'Network error. Server may be offline.';
-        }
-        
-        setServerError(errorMessage);
-        
-        // Implement retry logic
-        if (retryCount < maxRetries) {
-          setRetryCount(prevCount => prevCount + 1);
+        // Try root URL as fallback
+        try {
+          console.log('Trying server root URL as fallback...');
+          const rootResponse = await axios.get(rootUrl, { timeout: 5000 });
+          console.log('Server root response:', rootResponse.data);
+          setIsServerRunning(true);
+          setServerError('');
+          setServerDetails({ 
+            note: 'Connected to server root, but health check failed',
+            rootData: rootResponse.data
+          });
+        } catch (rootError) {
+          console.error('Backend server connection issue:', rootError);
           
-          toast.error(
-            'Server connection error',
-            { 
-              description: `${errorMessage}. Retrying... (${retryCount + 1}/${maxRetries})`,
-              duration: 3000
-            }
-          );
+          // Extract a more specific error message
+          let errorMessage = 'Connection to the server failed';
+          if (rootError.code === 'ECONNABORTED') {
+            errorMessage = 'Connection timeout. Server may be overloaded.';
+          } else if (rootError.response) {
+            errorMessage = `Server error: ${rootError.response.status}`;
+          } else if (rootError.code === 'ERR_NETWORK') {
+            errorMessage = 'Network error. Server may be offline.';
+          }
           
-          // Try again after a delay
-          setTimeout(checkServer, 2000);
-        } else {
-          setIsChecking(false);
-          toast.error(
-            'Backend server not running',
-            { 
-              description: 'Unable to connect to the backend server after multiple attempts.',
-              duration: 10000
-            }
-          );
+          setServerError(errorMessage);
+          
+          // Implement retry logic
+          if (retryCount < maxRetries) {
+            setRetryCount(prevCount => prevCount + 1);
+            
+            toast.error(
+              'Server connection error',
+              { 
+                description: `${errorMessage}. Retrying... (${retryCount + 1}/${maxRetries})`,
+                duration: 3000
+              }
+            );
+            
+            // Try again after a delay
+            setTimeout(checkServer, 2000);
+          } else {
+            setIsChecking(false);
+            toast.error(
+              'Backend server not running',
+              { 
+                description: 'Unable to connect to the backend server after multiple attempts.',
+                duration: 10000
+              }
+            );
+          }
         }
       } finally {
         if (isServerRunning || retryCount >= maxRetries) {
@@ -169,14 +194,16 @@ const ServerChecker = () => {
           <div className="text-sm text-gray-500 dark:text-gray-400 border-t pt-4 mt-2">
             <p className="font-medium mb-1">Attempted to connect to:</p>
             <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs block mb-4">{serverUrl}</code>
-            <p className="mb-2">Troubleshooting steps:</p>
-            <ol className="list-decimal list-inside text-left mb-4">
-              <li>Check if your backend server is running</li>
-              <li>Verify the server URL is correct ({API_BASE_URL})</li>
-              <li>Ensure your MySQL server is running</li>
-              <li>Check network connectivity and firewall settings</li>
-              <li>Look for errors in your server console</li>
-            </ol>
+            
+            <p className="mb-2">Common issues:</p>
+            <ul className="list-disc list-inside text-left mb-4">
+              <li>Server is not running at <code>{API_BASE_URL}</code></li> 
+              <li>Path structure may be incorrect (should be "/server/api/health")</li>
+              <li>CPanel configuration may need updating</li>
+              <li>Hosting provider firewall may be blocking the connection</li>
+              <li>Database connection issue on the server side</li>
+            </ul>
+            
             <div className="flex justify-center space-x-3">
               <button 
                 onClick={() => window.location.reload()} 
@@ -185,13 +212,13 @@ const ServerChecker = () => {
                 Retry Connection
               </button>
               <a
-                href={`${API_BASE_URL}/api/health`}
+                href={`${API_BASE_URL}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
               >
                 <Server className="h-4 w-4 mr-2" />
-                Test API
+                Test API Root
               </a>
             </div>
           </div>
