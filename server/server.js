@@ -43,26 +43,51 @@ const getBasePath = () => {
 const BASE_PATH = getBasePath();
 console.log(`Using base path: "${BASE_PATH}"`);
 
-// Enhanced CORS configuration for production and development with support for separate domains
+// Enhanced CORS configuration with explicit allowed origins
+const allowedOrigins = [
+  // Local development
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'http://localhost:3000',
+  
+  // Production domains - explicitly include full domain
+  'https://climasys.entrsolutions.com',
+  'https://app.climasys.entrsolutions.com',
+  'https://www.climasys.entrsolutions.com',
+  
+  // Lovable preview domains
+  /\.lovableproject\.com$/
+];
+
+console.log('CORS: Allowed origins configured:', allowedOrigins);
+
+// Setup CORS with detailed configuration
 app.use(cors({
-  origin: [
-    // Local development
-    'http://localhost:5173',
-    'http://localhost:8080',
-    'http://localhost:3000',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
     
-    // Production domains
-    'https://climasys.entrsolutions.com',
-    'https://app.climasys.entrsolutions.com',
-    'https://www.climasys.entrsolutions.com',
+    // Check if the origin is allowed
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return allowedOrigin === origin;
+      } else if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return false;
+    });
     
-    // Allow all Lovable preview domains and entrsolutions subdomains
-    /\.lovableproject\.com$/,
-    /\.entrsolutions\.com$/
-  ],
+    if (isAllowed) {
+      console.log(`CORS: Allowing origin: ${origin}`);
+      return callback(null, true);
+    } else {
+      console.log(`CORS: Blocking origin: ${origin}`);
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Log all requests to help with debugging

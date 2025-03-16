@@ -57,6 +57,25 @@ Your server should now be running at http://localhost:8080
 
 2. Set up DNS records for both domains pointing to your hosting server
 
+#### CORS Configuration for Separate Domains
+
+When using separate domains for your frontend and API, you must properly configure CORS:
+
+1. In your server's `.env` file, add:
+```
+CORS_ALLOWED_ORIGIN=https://climasys.entrsolutions.com
+```
+
+2. Your API server's CORS configuration (in server.js) should explicitly allow the frontend domain:
+```javascript
+app.use(cors({
+  origin: ['https://climasys.entrsolutions.com', 'https://app.climasys.entrsolutions.com'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+```
+
 #### cPanel Configuration for API Server
 
 1. Log in to your cPanel account
@@ -79,6 +98,7 @@ DB_PASSWORD=your_database_password
 DB_NAME=your_cpanel_username_databasename
 NODE_ENV=production
 APPLICATION_URL=
+CORS_ALLOWED_ORIGIN=https://climasys.entrsolutions.com
 ```
 
 Note: Leave `APPLICATION_URL` empty because the API is served from the root of its own domain.
@@ -127,6 +147,35 @@ APPLICATION_URL=/server
 
 2. Click "Run NPM Install" to install all dependencies
 3. Click "Run JS Script" to start the server
+
+### Troubleshooting CORS Issues
+
+If you encounter CORS errors:
+
+1. **Check Server Logs**
+   - Look for CORS-related messages in your server logs
+   - Verify that your frontend's origin is in the allowed list
+
+2. **Check CORS Headers**
+   - Use browser developer tools (Network tab) to inspect the response headers
+   - Ensure `Access-Control-Allow-Origin` includes your frontend domain
+
+3. **Check Server Configuration**
+   - Verify the CORS configuration in `server.js`
+   - Ensure the `origin` list includes your frontend domain
+
+4. **Use Explicit Origin**
+   - Replace regex patterns with explicit domain strings for reliability
+
+5. **Test with curl**
+   - Use curl to test API endpoints and check CORS headers:
+   ```
+   curl -H "Origin: https://climasys.entrsolutions.com" \
+        -H "Access-Control-Request-Method: GET" \
+        -H "Access-Control-Request-Headers: X-Requested-With" \
+        -X OPTIONS --verbose \
+        https://api.climasys.entrsolutions.com/api/health
+   ```
 
 ### Verify Deployment
 

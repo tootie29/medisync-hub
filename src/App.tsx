@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,13 +33,16 @@ import NotFound from "@/pages/NotFound";
 const API_BASE_URL = (() => {
   const hostname = window.location.hostname;
   
-  // Production environment with separate API domain
-  if (hostname === "climasys.entrsolutions.com") {
-    return 'https://api.climasys.entrsolutions.com'; // Separate API domain
-  }
-  // Alternative production domain
-  else if (hostname === "app.climasys.entrsolutions.com") {
-    return 'https://api.climasys.entrsolutions.com'; // Same API domain
+  // In production, we're either using a separate API domain or a subdirectory
+  if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
+    // Check if your API is on a separate domain
+    const usingSubdomain = false; // Set to true if using api.climasys.entrsolutions.com
+    
+    if (usingSubdomain) {
+      return 'https://api.climasys.entrsolutions.com'; // Separate API domain
+    } else {
+      return 'https://climasys.entrsolutions.com/server'; // Same domain with /server path
+    }
   }
   // Development environment
   else {
@@ -46,6 +50,7 @@ const API_BASE_URL = (() => {
   }
 })();
 
+console.log('Using API URL:', API_BASE_URL + '/api');
 console.log('Current hostname:', window.location.hostname);
 console.log('API base URL:', API_BASE_URL);
 

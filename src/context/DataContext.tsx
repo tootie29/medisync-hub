@@ -11,9 +11,25 @@ import { toast } from "sonner";
 import axios from 'axios';
 
 // Define API_URL based on domain - updated for production with correct path
-const API_URL = window.location.hostname === "climasys.entrsolutions.com" 
-  ? 'https://climasys.entrsolutions.com/server/api'  // Updated domain with /server prefix
-  : 'http://localhost:3001/api';
+const API_URL = (() => {
+  const hostname = window.location.hostname;
+  
+  // In production, we're either using a separate API domain or a subdirectory
+  if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
+    // Check if your API is on a separate domain
+    const usingSubdomain = false; // Set to true if using api.climasys.entrsolutions.com
+    
+    if (usingSubdomain) {
+      return 'https://api.climasys.entrsolutions.com/api'; // Separate API domain
+    } else {
+      return 'https://climasys.entrsolutions.com/server/api'; // Same domain with /server path
+    }
+  }
+  // Development environment
+  else {
+    return 'http://localhost:8080/api'; // Local development server
+  }
+})();
 
 console.log('Using API URL:', API_URL);
 
