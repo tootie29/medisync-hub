@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -13,7 +14,7 @@ import axios from 'axios';
 const API_URL = (() => {
   const hostname = window.location.hostname;
   
-  // In production, we're either using a separate API domain or a subdirectory
+  // In production, we're using a separate API subdomain
   if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
     // Using separate API subdomain for production
     return 'https://api.climasys.entrsolutions.com/api';
