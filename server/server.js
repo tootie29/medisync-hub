@@ -235,6 +235,9 @@ app.use((err, req, res, next) => {
   }
 });
 
+// Create a server reference at the top level scope
+let serverInstance = null;
+
 // Try multiple ports if the initial one fails
 // This helps in cPanel environments where the exact port might vary
 const tryPort = (port, maxAttempts = 3) => {
@@ -244,13 +247,15 @@ const tryPort = (port, maxAttempts = 3) => {
     console.log(`Attempting to start server on port ${port} (attempt ${currentAttempt}/${maxAttempts})`);
     
     try {
-      return app.listen(port, () => {
+      const server = app.listen(port, () => {
         console.log(`Server successfully running on port ${port}`);
         console.log(`Health check available at: http://localhost:${port}/api/health`);
         if (isProduction) {
           console.log(`Running in production mode.`);
           console.log(`Production API URL: https://api.climasys.entrsolutions.com/api/health`);
         }
+        // Store server reference for shutdown
+        serverInstance = server;
       }).on('error', (err) => {
         if (err.code === 'EADDRINUSE') {
           console.error(`Port ${port} is already in use.`);
@@ -274,6 +279,8 @@ const tryPort = (port, maxAttempts = 3) => {
           process.exit(1);
         }
       });
+      
+      return server;
     } catch (err) {
       console.error('Failed to start server:', err);
       process.exit(1);
@@ -297,8 +304,8 @@ function shutDown() {
     }
   }
   
-  if (server) {
-    server.close(() => {
+  if (serverInstance) {
+    serverInstance.close(() => {
       console.log('Closed out remaining connections');
       process.exit(0);
     });
@@ -387,5 +394,5 @@ console.log(`Created stop script at ${STOP_SCRIPT}`);
 // First check for existing server, then start a new one
 checkExistingServer().then(() => {
   // Start server with automatic port adjustment
-  let server = tryPort(PORT);
+  tryPort(PORT);
 });
