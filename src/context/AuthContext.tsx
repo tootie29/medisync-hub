@@ -4,8 +4,27 @@ import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
 import axios from 'axios';
 
-// Define the API URL - you may need to adjust this based on your server configuration
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// Define the API URL with fallback options to make it more robust
+const getApiUrl = () => {
+  // First try the environment variable
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  
+  // Check if we're running in the Lovable preview environment
+  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
+  
+  if (envApiUrl) {
+    return envApiUrl;
+  } else if (isLovablePreview) {
+    // For Lovable preview, use sample data instead of API calls
+    console.log('Running in Lovable preview - using sample data instead of API');
+    return null;
+  } else {
+    // Local development fallback
+    return 'http://localhost:8080/api';
+  }
+};
+
+const API_URL = getApiUrl();
 
 interface AuthContextType {
   user: User | null;
@@ -76,6 +95,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Registering user with data:', userData);
       
+      // If API_URL is null (in preview mode), use sample data instead
+      if (!API_URL) {
+        console.log('Using sample data for registration in preview mode');
+        // Create a mock user based on sample data structure
+        const newUser: User = {
+          id: `user-${Date.now()}`,
+          email: userData.email || '',
+          name: userData.name || '',
+          role: userData.role as UserRole,
+          phone: userData.phone || '',
+          dateOfBirth: userData.dateOfBirth || '',
+          gender: userData.gender as 'male' | 'female' | 'other',
+          address: userData.address || '',
+          emergencyContact: userData.emergencyContact || '',
+          ...(userData.role === 'student' && {
+            studentId: userData.studentId || '',
+            department: userData.department || '',
+          }),
+          ...(userData.role === 'staff' && {
+            staffId: userData.staffId || '',
+            position: userData.position || '',
+          }),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Set the user in state and localStorage
+        setUser(newUser);
+        localStorage.setItem('medisyncUser', JSON.stringify(newUser));
+        toast.success('Registration successful (preview mode)!');
+        return;
+      }
+
       // Prepare the user data for API submission
       const userForAPI = {
         ...userData,

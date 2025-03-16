@@ -8,14 +8,18 @@ import {
   TabsList, 
   TabsTrigger 
 } from '@/components/ui/tabs';
-import { GraduationCap, Users, ArrowLeft } from 'lucide-react';
+import { GraduationCap, Users, ArrowLeft, InfoIcon } from 'lucide-react';
 import RegistrationForm from '@/components/forms/RegistrationForm';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Register: React.FC = () => {
   const [activeTab, setActiveTab] = useState('student');
   const navigate = useNavigate();
+  
+  // Check if we're running in the Lovable preview environment
+  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -44,6 +48,16 @@ const Register: React.FC = () => {
           Back
         </Button>
       </div>
+      
+      {isLovablePreview && (
+        <Alert variant="info" className="mb-4">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>Preview Mode</AlertTitle>
+          <AlertDescription>
+            Running in preview mode. Registration will save to local storage only (no database connection).
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Tabs defaultValue="student" value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
