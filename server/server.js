@@ -144,15 +144,19 @@ if (isProduction) {
   // Set the static folder
   app.use(express.static(path.join(__dirname, '../dist')));
   
-  // Create a simple welcome page at root level for easier diagnostics
-  app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+  // Create a route to handle 404 errors for API routes
+  app.use('/api/*', (req, res) => {
+    res.status(404).json({
+      error: 'Not Found',
+      message: `The requested API endpoint ${req.originalUrl} was not found.`,
+      availableEndpoints: ['/api/health', '/api/users', '/api/medical-records', '/api/appointments', '/api/medicines'],
+      timestamp: new Date().toISOString()
+    });
   });
   
-  // For any route that doesn't match an API endpoint,
-  // serve the React app and let React Router handle it
+  // For any non-API route, serve the React app's index.html
   app.get('*', (req, res) => {
-    console.log('Redirecting to React app:', req.originalUrl);
+    console.log('Serving React app for path:', req.originalUrl);
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
 } else {
