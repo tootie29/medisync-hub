@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '@/components/layout/AuthLayout';
 import { 
@@ -16,10 +16,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Register: React.FC = () => {
   const [activeTab, setActiveTab] = useState('student');
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const navigate = useNavigate();
   
-  // Check if we're running in the Lovable preview environment
-  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
+  useEffect(() => {
+    // Check if we're running in the Lovable preview environment
+    const isLovable = window.location.hostname.includes('lovableproject.com');
+    setIsPreviewMode(isLovable);
+  }, []);
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -49,7 +53,7 @@ const Register: React.FC = () => {
         </Button>
       </div>
       
-      {isLovablePreview && (
+      {isPreviewMode && (
         <Alert variant="info" className="mb-4">
           <InfoIcon className="h-4 w-4" />
           <AlertTitle>Preview Mode</AlertTitle>

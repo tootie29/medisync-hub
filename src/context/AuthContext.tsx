@@ -1,30 +1,35 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
 import axios from 'axios';
 
-// Define the API URL with fallback options to make it more robust
+// Define the API URL with improved environment detection
 const getApiUrl = () => {
-  // First try the environment variable
-  const envApiUrl = import.meta.env.VITE_API_URL;
-  
-  // Check if we're running in the Lovable preview environment
+  // First check if we're running in the Lovable preview environment
   const isLovablePreview = window.location.hostname.includes('lovableproject.com');
-  
-  if (envApiUrl) {
-    return envApiUrl;
-  } else if (isLovablePreview) {
-    // For Lovable preview, use sample data instead of API calls
+  if (isLovablePreview) {
     console.log('Running in Lovable preview - using sample data instead of API');
     return null;
-  } else {
-    // Local development fallback
-    return 'http://localhost:8080/api';
   }
+  
+  // For production environments
+  const hostname = window.location.hostname;
+  if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
+    return 'https://api.climasys.entrsolutions.com/api';
+  }
+  
+  // Environment variable (if set)
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  if (envApiUrl) {
+    return envApiUrl;
+  }
+  
+  // Local development fallback
+  return 'http://localhost:8080/api';
 };
 
 const API_URL = getApiUrl();
+console.log('Using API URL in AuthContext:', API_URL);
 
 interface AuthContextType {
   user: User | null;

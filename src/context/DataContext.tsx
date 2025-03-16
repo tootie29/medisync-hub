@@ -9,30 +9,37 @@ import {
 import { toast } from "sonner";
 import axios from 'axios';
 
-// Define API_URL based on domain - updated for production with correct path
-const API_URL = (() => {
-  const hostname = window.location.hostname;
+// Define the API URL with improved environment detection
+const getApiUrl = () => {
+  // First check if we're running in the Lovable preview environment
+  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
+  if (isLovablePreview) {
+    console.log('Running in Lovable preview - using sample data instead of API');
+    return null;
+  }
   
-  // In production, we're using a separate API subdomain
-  if (hostname === "climasys.entrsolutions.com") {
-    // Using separate API subdomain for production
+  // For production environments
+  const hostname = window.location.hostname;
+  if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
     return 'https://api.climasys.entrsolutions.com/api';
   }
-  // Development environment
-  else if (hostname === "localhost" || hostname.includes('lovableproject.com')) {
-    return 'http://localhost:8080/api'; // Local development server
+  
+  // Environment variable (if set)
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  if (envApiUrl) {
+    return envApiUrl;
   }
-  // Default fallback
-  else {
-    return 'https://api.climasys.entrsolutions.com/api'; // Always use production API as fallback
-  }
-})();
+  
+  // Local development fallback
+  return 'http://localhost:8080/api';
+};
 
-console.log('Using API URL:', API_URL);
+const API_URL = getApiUrl();
+console.log('Using API URL in DataContext:', API_URL);
 
 // Create a custom axios instance with improved retry logic
 const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: API_URL || 'http://localhost:8080/api', // Fallback for preview mode
   timeout: 15000, // 15 seconds timeout
   headers: {
     'Content-Type': 'application/json',
@@ -44,6 +51,12 @@ apiClient.interceptors.response.use(
   response => response,
   async error => {
     if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+    
+    // For Lovable preview, return mock data instead of retrying
+    if (window.location.hostname.includes('lovableproject.com')) {
+      console.log('API error in preview mode, will fall back to sample data');
       return Promise.reject(error);
     }
     
@@ -124,13 +137,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoadingAppointments, setIsLoadingAppointments] = useState<boolean>(true);
   const [isLoadingMedicines, setIsLoadingMedicines] = useState<boolean>(true);
   
+  const isPreviewMode = window.location.hostname.includes('lovableproject.com');
+
   useEffect(() => {
+    if (isPreviewMode) {
+      console.log('Running in preview mode - using sample data');
+      setIsLoadingRecords(false);
+      setIsLoadingAppointments(false);
+      setIsLoadingMedicines(false);
+      // In preview mode, we won't load any data from API
+      return;
+    }
+
     refreshMedicalRecords();
     refreshAppointments();
     refreshMedicines();
   }, []);
 
   const refreshMedicalRecords = async () => {
+    if (isPreviewMode) return;
+    
     setIsLoadingRecords(true);
     try {
       const response = await apiClient.get('/medical-records');
@@ -144,6 +170,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshAppointments = async () => {
+    if (isPreviewMode) return;
+    
     setIsLoadingAppointments(true);
     try {
       const response = await apiClient.get('/appointments');
@@ -157,6 +185,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshMedicines = async () => {
+    if (isPreviewMode) return;
+    
     setIsLoadingMedicines(true);
     try {
       const response = await apiClient.get('/medicines');
@@ -204,6 +234,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         bmi,
         vitalSigns: Object.keys(updatedVitalSigns).length > 0 ? updatedVitalSigns : undefined
       };
+      
+      if (isPreviewMode) {
+        // In preview mode, create a mock record with a fake ID
+        const mockRecord: MedicalRecord = {
+          ...recordToCreate,
+          id: `record-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          bmi
+        };
+        
+        setMedicalRecords(prev => [...prev, mockRecord]);
+        toast.success('Medical record added successfully (preview mode)');
+        
+        return mockRecord;
+      }
       
       const response = await apiClient.post('/medical-records', recordToCreate);
       const newRecord = response.data;
@@ -280,6 +326,34 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addAppointment = async (appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> => {
     try {
+      if (isPreviewMode) {
+        // In preview mode, create a mock appointment with a fake ID
+        const mockAppointment: Appointment = {
+          ...appointment,
+          id: `appointment-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        setAppointments(prev => [...prev, mockAppointment]);
+        
+        const patient = SAMPLE_USERS.find(user => user.id === appointment.patientId);
+        const doctor = SAMPLE_USERS.find(user => user.id === appointment.doctorId);
+        
+        if (patient && doctor) {
+          toast.info(
+            `Notification sent to Dr. ${doctor.name}`,
+            {
+              description: `New appointment request from ${patient.name} on ${appointment.date} at ${appointment.startTime}.`,
+              duration: 5000,
+            }
+          );
+        }
+        
+        toast.success('Appointment scheduled successfully (preview mode)');
+        return mockAppointment;
+      }
+      
       const response = await apiClient.post('/appointments', appointment);
       const newAppointment = response.data;
       
@@ -347,6 +421,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addMedicine = async (medicine: Omit<Medicine, 'id' | 'createdAt' | 'updatedAt'>): Promise<Medicine> => {
     try {
+      if (isPreviewMode) {
+        // In preview mode, create a mock medicine with a fake ID
+        const mockMedicine: Medicine = {
+          ...medicine,
+          id: `medicine-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        setMedicines(prev => [...prev, mockMedicine]);
+        toast.success('Medicine added to inventory (preview mode)');
+        
+        return mockMedicine;
+      }
+      
       const response = await apiClient.post('/medicines', medicine);
       const newMedicine = response.data;
       

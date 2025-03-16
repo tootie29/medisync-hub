@@ -13,33 +13,28 @@ import { toast } from "sonner";
 import { Loader2, AlertTriangle, Server, ExternalLink, RefreshCw, Database } from "lucide-react";
 import axios from "axios";
 
-import Index from "@/pages/Index";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import Dashboard from "@/pages/Dashboard";
-import Appointments from "@/pages/Appointments";
-import BMICalculator from "@/pages/BMICalculator";
-import MedicalRecords from "@/pages/MedicalRecords";
-import Inventory from "@/pages/Inventory";
-import Profile from "@/pages/Profile";
-import HealthMonitoring from "@/pages/HealthMonitoring";
-import Settings from "@/pages/Settings";
-import NotFound from "@/pages/NotFound";
-
-const API_BASE_URL = (() => {
-  const hostname = window.location.hostname;
+const getApiBaseUrl = () => {
+  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
+  if (isLovablePreview) {
+    console.log('Running in Lovable preview - using sample data instead of API');
+    return null;
+  }
   
+  const hostname = window.location.hostname;
   if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
     return 'https://api.climasys.entrsolutions.com';
   }
-  else {
-    return 'http://localhost:8080';
+  
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  if (envApiUrl) {
+    return envApiUrl;
   }
-})();
+  
+  return 'http://localhost:8080';
+};
 
-console.log('Using API URL:', API_BASE_URL + '/api');
-console.log('Current hostname:', window.location.hostname);
-console.log('API base URL:', API_BASE_URL);
+const API_BASE_URL = getApiBaseUrl();
+console.log('Using API URL in App:', API_BASE_URL);
 
 axios.interceptors.response.use(undefined, async (error) => {
   const config = error.config;
@@ -136,6 +131,7 @@ const ServerChecker = () => {
   const [skipCheck, setSkipCheck] = useState(false);
   const maxRetries = 3;
   const isProduction = window.location.hostname === "climasys.entrsolutions.com";
+  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
 
   const handleManualCheck = () => {
     setIsChecking(true);
@@ -150,8 +146,21 @@ const ServerChecker = () => {
   };
 
   useEffect(() => {
+    if (isLovablePreview) {
+      setSkipCheck(true);
+      setIsChecking(false);
+      console.log('Running in Lovable preview - skipping server check');
+      return;
+    }
+    
     const shouldSkipCheck = localStorage.getItem('skipServerCheck') === 'true';
     if (shouldSkipCheck) {
+      setSkipCheck(true);
+      setIsChecking(false);
+      return;
+    }
+    
+    if (!API_BASE_URL) {
       setSkipCheck(true);
       setIsChecking(false);
       return;
@@ -254,7 +263,7 @@ const ServerChecker = () => {
     if (isChecking) {
       checkServer();
     }
-  }, [retryCount, isChecking]);
+  }, [retryCount, isChecking, isLovablePreview, API_BASE_URL]);
 
   if (isChecking && !skipCheck) {
     return (
