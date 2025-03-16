@@ -14,7 +14,7 @@ const API_URL = (() => {
   const hostname = window.location.hostname;
   
   // In production, we're using a separate API subdomain
-  if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
+  if (hostname === "climasys.entrsolutions.com") {
     // Using separate API subdomain for production
     return 'https://api.climasys.entrsolutions.com/api';
   }
@@ -24,42 +24,52 @@ const API_URL = (() => {
   }
   // Default fallback
   else {
-    return '/api'; // Relative path as fallback
+    return 'https://api.climasys.entrsolutions.com/api'; // Always use production API as fallback
   }
 })();
 
 console.log('Using API URL:', API_URL);
 
-// Create a custom axios instance with timeout and retry logic
+// Create a custom axios instance with improved retry logic
 const apiClient = axios.create({
   baseURL: API_URL,
-  timeout: 10000, // 10 seconds
+  timeout: 15000, // 15 seconds timeout
+  headers: {
+    'Content-Type': 'application/json',
+  }
 });
 
 // Add response interceptor for error handling
 apiClient.interceptors.response.use(
   response => response,
   async error => {
-    // Don't show error toasts when component unmounts during request
     if (axios.isCancel(error)) {
       return Promise.reject(error);
     }
     
-    // Use silent failure for background operations
-    if (error.config && error.config.silentError) {
+    const originalRequest = error.config;
+    
+    // Don't retry if we've already tried 3 times
+    if (originalRequest._retryCount >= 3) {
+      console.error('Request failed after multiple retries:', error.message);
       return Promise.reject(error);
     }
     
-    if (error.response) {
-      console.error('API Error:', error.response.status, error.response.data);
-    } else if (error.request) {
-      console.error('API Request Error (No Response):', error.request);
-    } else {
-      console.error('API Setup Error:', error.message);
+    // Initialize retry count
+    if (originalRequest._retryCount === undefined) {
+      originalRequest._retryCount = 0;
     }
     
-    // Allow the calling code to handle the error if needed
-    return Promise.reject(error);
+    // Increment retry count
+    originalRequest._retryCount++;
+    
+    console.log(`Retrying request (${originalRequest._retryCount}/3)...`);
+    
+    // Wait before retrying (exponential backoff)
+    const delay = originalRequest._retryCount * 1000;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    return apiClient(originalRequest);
   }
 );
 
@@ -113,15 +123,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoadingRecords, setIsLoadingRecords] = useState<boolean>(true);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState<boolean>(true);
   const [isLoadingMedicines, setIsLoadingMedicines] = useState<boolean>(true);
-
+  
   useEffect(() => {
-    // Only fetch data if server check was successful or skipped
-    if (localStorage.getItem('skipServerCheck') === 'true' || 
-        localStorage.getItem('lastSuccessfulServerCheck')) {
-      refreshMedicalRecords();
-      refreshAppointments();
-      refreshMedicines();
-    }
+    refreshMedicalRecords();
+    refreshAppointments();
+    refreshMedicines();
   }, []);
 
   const refreshMedicalRecords = async () => {
@@ -131,8 +137,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setMedicalRecords(response.data);
     } catch (error) {
       console.error('Error fetching medical records:', error);
-      // Don't show a toast here as the interceptor will handle it
-      // Just use sample data as fallback
       setMedicalRecords([]);
     } finally {
       setIsLoadingRecords(false);

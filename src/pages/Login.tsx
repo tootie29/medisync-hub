@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -7,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
+import { AlertCircle } from 'lucide-react';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -14,6 +14,11 @@ const Login: React.FC = () => {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
+  const [connectivityError, setConnectivityError] = React.useState(false);
+
+  const handleRetry = () => {
+    window.location.reload();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,13 +29,24 @@ const Login: React.FC = () => {
     }
     
     setIsLoading(true);
+    setConnectivityError(false);
     
     try {
       await login(email, password);
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      // Toast notification is already handled in the auth context
+      
+      // Check if this is a network connectivity error
+      if (error.message && (
+          error.message.includes('Network Error') || 
+          error.message.includes('Failed to fetch') ||
+          error.message.includes('ERR_NETWORK')
+        )) {
+        setConnectivityError(true);
+      }
+      
+      // Other errors are handled in the auth context
     } finally {
       setIsLoading(false);
     }
@@ -38,6 +54,28 @@ const Login: React.FC = () => {
 
   return (
     <AuthLayout>
+      {connectivityError && (
+        <div className="bg-destructive/15 p-3 rounded-md mb-4">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+            <div>
+              <h3 className="font-medium text-destructive">Connection Error</h3>
+              <p className="text-sm text-destructive/90 mt-1">
+                Unable to connect to the server. Please check your internet connection and try again.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                onClick={handleRetry}
+              >
+                Retry Connection
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <Label htmlFor="email">Email</Label>
