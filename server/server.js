@@ -44,20 +44,22 @@ const BASE_PATH = getBasePath();
 console.log(`Using base path: "${BASE_PATH}"`);
 
 // Enhanced CORS configuration with explicit allowed origins
-const allowedOrigins = [
-  // Local development
-  'http://localhost:5173',
-  'http://localhost:8080',
-  'http://localhost:3000',
-  
-  // Production domains - explicitly include full domain
-  'https://climasys.entrsolutions.com',
-  'https://app.climasys.entrsolutions.com',
-  'https://www.climasys.entrsolutions.com',
-  
-  // Lovable preview domains
-  /\.lovableproject\.com$/
-];
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGIN ? 
+  [process.env.CORS_ALLOWED_ORIGIN] : 
+  [
+    // Local development
+    'http://localhost:5173',
+    'http://localhost:8080',
+    'http://localhost:3000',
+    
+    // Production domains - explicitly include full domain
+    'https://climasys.entrsolutions.com',
+    'https://app.climasys.entrsolutions.com',
+    'https://www.climasys.entrsolutions.com',
+    
+    // Lovable preview domains
+    /\.lovableproject\.com$/
+  ];
 
 console.log('CORS: Allowed origins configured:', allowedOrigins);
 

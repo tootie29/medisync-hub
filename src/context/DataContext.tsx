@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -16,18 +15,16 @@ const API_URL = (() => {
   
   // In production, we're either using a separate API domain or a subdirectory
   if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
-    // Check if your API is on a separate domain
-    const usingSubdomain = false; // Set to true if using api.climasys.entrsolutions.com
-    
-    if (usingSubdomain) {
-      return 'https://api.climasys.entrsolutions.com/api'; // Separate API domain
-    } else {
-      return 'https://climasys.entrsolutions.com/server/api'; // Same domain with /server path
-    }
+    // Using separate API subdomain for production
+    return 'https://api.climasys.entrsolutions.com/api';
   }
   // Development environment
-  else {
+  else if (hostname === "localhost" || hostname.includes('lovableproject.com')) {
     return 'http://localhost:8080/api'; // Local development server
+  }
+  // Default fallback
+  else {
+    return '/api'; // Relative path as fallback
   }
 })();
 
