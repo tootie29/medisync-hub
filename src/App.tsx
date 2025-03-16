@@ -14,6 +14,20 @@ import { toast } from "sonner";
 import { Loader2, AlertTriangle, Server, ExternalLink, RefreshCw, Database } from "lucide-react";
 import axios from "axios";
 
+// Import all page components
+import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Dashboard from "@/pages/Dashboard";
+import Appointments from "@/pages/Appointments";
+import BMICalculator from "@/pages/BMICalculator";
+import MedicalRecords from "@/pages/MedicalRecords";
+import Inventory from "@/pages/Inventory";
+import Profile from "@/pages/Profile";
+import HealthMonitoring from "@/pages/HealthMonitoring";
+import Settings from "@/pages/Settings";
+import NotFound from "@/pages/NotFound";
+
 // Define API_URL based on domain - updated to support multiple possible server domains
 const API_BASE_URL = (() => {
   const hostname = window.location.hostname;
