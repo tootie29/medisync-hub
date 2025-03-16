@@ -1,5 +1,6 @@
 
 const userModel = require('../models/userModel');
+const { v4: uuidv4 } = require('uuid');
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -30,7 +31,37 @@ exports.getUserById = async (req, res) => {
 exports.createUser = async (req, res) => {
   try {
     const userData = req.body;
-    const newUser = await userModel.create(userData);
+    console.log('Received user data:', userData);
+    
+    // Generate a UUID if one isn't provided
+    if (!userData.id) {
+      userData.id = uuidv4();
+    }
+    
+    // Convert any camelCase properties to snake_case for the database
+    // This ensures compatibility between frontend and backend naming conventions
+    const userDataForDb = {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      phone: userData.phone,
+      date_of_birth: userData.date_of_birth || userData.dateOfBirth,
+      gender: userData.gender,
+      address: userData.address,
+      emergency_contact: userData.emergency_contact || userData.emergencyContact,
+      student_id: userData.student_id || userData.studentId,
+      department: userData.department,
+      staff_id: userData.staff_id || userData.staffId,
+      position: userData.position,
+      // Store password hash in a real application
+      // For this demo, we're not implementing actual authentication yet
+      // In a production app, you would hash the password before storing it
+    };
+    
+    console.log('Processed user data for DB:', userDataForDb);
+    
+    const newUser = await userModel.create(userDataForDb);
     res.status(201).json(newUser);
   } catch (error) {
     console.error('Error in createUser controller:', error);

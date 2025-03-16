@@ -2,6 +2,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
+import axios from 'axios';
+
+// Define the API URL - you may need to adjust this based on your server configuration
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 interface AuthContextType {
   user: User | null;
@@ -70,45 +74,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setIsRegistering(true);
     try {
-      // In a real app, this would be an API call to create a new user
-      const existingUser = SAMPLE_USERS.find(u => u.email === userData.email);
-      if (existingUser) {
-        throw new Error('Email already in use');
-      }
-
-      // Validate role-specific fields
-      if (userData.role === 'student' && !userData.studentId) {
-        throw new Error('Student ID is required for student registration');
+      console.log('Registering user with data:', userData);
+      
+      // Prepare the user data for API submission
+      const userForAPI = {
+        ...userData,
+        password, // Include password in the API call
+        // Convert camelCase to snake_case for backend compatibility
+        date_of_birth: userData.dateOfBirth,
+        emergency_contact: userData.emergencyContact,
+        student_id: userData.studentId,
+        staff_id: userData.staffId,
+      };
+      
+      console.log('Sending registration data to API:', userForAPI);
+      
+      // Make the actual API call to create the user
+      const response = await axios.post(`${API_URL}/users`, userForAPI);
+      console.log('Registration API response:', response);
+      
+      if (response.status !== 201) {
+        throw new Error('Registration failed');
       }
       
-      if (userData.role === 'staff' && !userData.staffId) {
-        throw new Error('Staff ID is required for staff registration');
-      }
-
-      // For the demo, we'll just simulate creating a new user
-      const newUser: User = {
-        id: `${SAMPLE_USERS.length + 1}`,
-        email: userData.email!,
-        name: userData.name!,
-        role: userData.role as UserRole || 'student',
-        phone: userData.phone || '',
-        dateOfBirth: userData.dateOfBirth || '',
-        gender: userData.gender || undefined,
-        address: userData.address || '',
-        emergencyContact: userData.emergencyContact || '',
-        // Include any additional fields from userData
-        ...userData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      const newUser = response.data;
+      
+      // Convert API response format to match our frontend User type
+      const userForFrontend: User = {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role as UserRole,
+        phone: newUser.phone || '',
+        dateOfBirth: newUser.date_of_birth || newUser.dateOfBirth || '',
+        gender: newUser.gender || undefined,
+        address: newUser.address || '',
+        emergencyContact: newUser.emergency_contact || newUser.emergencyContact || '',
+        ...(newUser.role === 'student' && {
+          studentId: newUser.student_id || newUser.studentId || '',
+          department: newUser.department || '',
+        }),
+        ...(newUser.role === 'staff' && {
+          staffId: newUser.staff_id || newUser.staffId || '',
+          position: newUser.position || '',
+        }),
+        createdAt: newUser.created_at || new Date().toISOString(),
+        updatedAt: newUser.updated_at || new Date().toISOString(),
       };
-
-      // In a real app, you would save the user to the database and hash the password
       
       // Set the user in state and localStorage
-      setUser(newUser);
-      localStorage.setItem('medisyncUser', JSON.stringify(newUser));
+      setUser(userForFrontend);
+      localStorage.setItem('medisyncUser', JSON.stringify(userForFrontend));
       toast.success('Registration successful!');
     } catch (error) {
+      console.error('Registration error:', error);
       toast.error(error instanceof Error ? error.message : 'Registration failed');
       throw error;
     } finally {

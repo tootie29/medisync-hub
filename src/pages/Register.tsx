@@ -11,6 +11,7 @@ import {
 import { GraduationCap, Users, ArrowLeft } from 'lucide-react';
 import RegistrationForm from '@/components/forms/RegistrationForm';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const Register: React.FC = () => {
   const [activeTab, setActiveTab] = useState('student');
@@ -22,6 +23,13 @@ const Register: React.FC = () => {
 
   const handleBack = () => {
     navigate(-1); // Go back to the previous page
+  };
+
+  const handleSuccess = () => {
+    toast.success("Registration successful! Redirecting to dashboard...");
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 1500);
   };
 
   return (
@@ -50,11 +58,11 @@ const Register: React.FC = () => {
         </TabsList>
         
         <TabsContent value="student">
-          <RegistrationForm role="student" />
+          <RegistrationForm role="student" onSuccess={handleSuccess} />
         </TabsContent>
 
         <TabsContent value="staff">
-          <RegistrationForm role="staff" />
+          <RegistrationForm role="staff" onSuccess={handleSuccess} />
         </TabsContent>
 
         <div className="mt-6 text-sm text-center">
