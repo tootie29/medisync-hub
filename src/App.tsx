@@ -13,31 +13,14 @@ import { toast } from "sonner";
 import { Loader2, AlertTriangle, Server, ExternalLink, RefreshCw, Database } from "lucide-react";
 import axios from "axios";
 
-// Import all page components
-import Index from "@/pages/Index";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import Dashboard from "@/pages/Dashboard";
-import Appointments from "@/pages/Appointments";
-import BMICalculator from "@/pages/BMICalculator";
-import MedicalRecords from "@/pages/MedicalRecords";
-import Inventory from "@/pages/Inventory";
-import Profile from "@/pages/Profile";
-import HealthMonitoring from "@/pages/HealthMonitoring";
-import Settings from "@/pages/Settings";
-import NotFound from "@/pages/NotFound";
-
-// Define API_URL based on domain - updated to support the separate API subdomain
 const API_BASE_URL = (() => {
   const hostname = window.location.hostname;
   
-  // In production, we're using a separate API domain
   if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
-    return 'https://api.climasys.entrsolutions.com'; // Separate API domain
+    return 'https://api.climasys.entrsolutions.com';
   }
-  // Development environment
   else {
-    return 'http://localhost:8080'; // Local development server
+    return 'http://localhost:8080';
   }
 })();
 
@@ -45,37 +28,31 @@ console.log('Using API URL:', API_BASE_URL + '/api');
 console.log('Current hostname:', window.location.hostname);
 console.log('API base URL:', API_BASE_URL);
 
-// Add axios retry configuration
 axios.interceptors.response.use(undefined, async (error) => {
   const config = error.config;
   
-  // If the request was canceled or already retried, just throw the error
   if (error.message === 'canceled' || config._retryCount >= 2) {
     return Promise.reject(error);
   }
   
-  // Initialize retry count
   config._retryCount = config._retryCount || 0;
   config._retryCount += 1;
   
-  // Wait for 1 second before retrying
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Return the promise from the new axios request
   return axios(config);
 });
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2, // Retry failed queries 2 times
-      retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000), // Exponential backoff
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 2,
+      retryDelay: attempt => Math.min(1000 * 2 ** attempt, 10000),
+      staleTime: 5 * 60 * 1000,
     },
   },
 });
 
-// Add a component to display detailed cPanel setup instructions
 const CPanelSetupInstructions = () => (
   <div className="mt-6 text-left text-sm border-t border-gray-200 dark:border-gray-700 pt-4">
     <h4 className="font-semibold mb-2">cPanel Setup Instructions:</h4>
@@ -117,7 +94,6 @@ const CPanelSetupInstructions = () => (
   </div>
 );
 
-// Update ServerConfigurationChecker component to show correct API domain info
 const ServerConfigurationChecker = ({ isProduction }) => {
   if (!isProduction) return null;
 
@@ -161,7 +137,6 @@ const ServerChecker = () => {
   };
 
   useEffect(() => {
-    // Check if we should skip the server check
     const shouldSkipCheck = localStorage.getItem('skipServerCheck') === 'true';
     if (shouldSkipCheck) {
       setSkipCheck(true);
@@ -169,12 +144,10 @@ const ServerChecker = () => {
       return;
     }
     
-    // Show the actual server URL we're trying to connect to
     const healthCheckUrl = `${API_BASE_URL}/api/health`;
     setServerUrl(healthCheckUrl);
     console.log('Checking server health at:', healthCheckUrl);
     
-    // Also try the root URL if health check fails
     const rootUrl = API_BASE_URL;
     
     const checkServer = async () => {
@@ -186,7 +159,6 @@ const ServerChecker = () => {
         setServerError('');
         setServerDetails(response.data);
         
-        // Check if DB is connected
         if (response.data.status === 'WARNING') {
           toast.warning(
             'Database connection issue',
@@ -197,13 +169,11 @@ const ServerChecker = () => {
           );
         }
         
-        // Remember that we successfully connected
         localStorage.setItem('lastSuccessfulServerCheck', new Date().toISOString());
         setIsChecking(false);
       } catch (error) {
         console.error('Health endpoint error:', error);
         
-        // Try root URL as fallback
         try {
           console.log('Trying server root URL as fallback...');
           const rootResponse = await axios.get(rootUrl, { timeout: 5000 });
@@ -216,14 +186,12 @@ const ServerChecker = () => {
           });
           setIsChecking(false);
           
-          // Remember that we successfully connected
           localStorage.setItem('lastSuccessfulServerCheck', new Date().toISOString());
         } catch (rootError) {
           console.error('Backend server connection issue:', rootError);
           
-          // Extract a more specific error message
           let errorMessage = 'Connection to the server failed';
-          let errorType = 'server';  // server, path, database, or firewall
+          let errorType = 'server';
           
           if (rootError.code === 'ECONNABORTED') {
             errorMessage = 'Connection timeout. Server may be overloaded.';
@@ -244,7 +212,6 @@ const ServerChecker = () => {
           
           setServerError(errorMessage);
           
-          // Implement retry logic
           if (retryCount < maxRetries) {
             setRetryCount(prevCount => prevCount + 1);
             
@@ -256,7 +223,6 @@ const ServerChecker = () => {
               }
             );
             
-            // Try again after a delay
             setTimeout(checkServer, 2000);
           } else {
             setIsChecking(false);
@@ -382,10 +348,8 @@ const AppointmentNotifier = () => {
   const { user } = useAuth();
   
   useEffect(() => {
-    // We need to conditionally use the DataContext hook
     if (!user) return;
     
-    // Import useData here to prevent the error
     const { getAppointmentsByPatientId } = require('@/context/DataContext').useData();
     
     const userAppointments = getAppointmentsByPatientId(user.id);
@@ -418,7 +382,6 @@ const AppointmentNotifier = () => {
   return null;
 };
 
-// Updated App component with proper route paths and navigation handling
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -432,7 +395,9 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/Login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/Register" element={<Register />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/appointments" element={<Appointments />} />
                 <Route path="/bmi" element={<BMICalculator />} />
@@ -441,9 +406,6 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/health-monitoring" element={<HealthMonitoring />} />
                 <Route path="/settings" element={<Settings />} />
-                
-                <Route path="/Login" element={<Navigate to="/login" replace />} />
-                <Route path="/Register" element={<Navigate to="/register" replace />} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
