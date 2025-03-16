@@ -34,6 +34,8 @@ const pool = mysql.createPool({
 async function testConnection() {
   try {
     console.log('Attempting database connection...');
+    console.log(`Connection details: ${process.env.DB_USER}@${process.env.DB_HOST}/${process.env.DB_NAME}`);
+    
     const connection = await pool.getConnection();
     console.log('Database connected successfully!');
     
@@ -47,6 +49,15 @@ async function testConnection() {
       try {
         const [tables] = await connection.query('SHOW TABLES');
         console.log('Database tables:', tables.map(t => Object.values(t)[0]).join(', '));
+        
+        // Check for specific tables
+        const expectedTables = ['users', 'medical_records', 'appointments', 'medicines'];
+        const foundTables = tables.map(t => Object.values(t)[0]);
+        
+        const missingTables = expectedTables.filter(table => !foundTables.includes(table));
+        if (missingTables.length > 0) {
+          console.warn('Warning: Some expected tables are missing:', missingTables.join(', '));
+        }
       } catch (tableError) {
         console.error('Failed to query tables:', tableError.message);
       }
@@ -68,15 +79,18 @@ async function testConnection() {
           break;
         case 'ER_ACCESS_DENIED_ERROR':
           console.error('Invalid database credentials - check DB_USER and DB_PASSWORD in your .env file');
+          console.error('Attempted with user:', process.env.DB_USER);
           break;
         case 'ER_BAD_DB_ERROR':
           console.error('Database does not exist - check DB_NAME in your .env file');
+          console.error('Attempted database name:', process.env.DB_NAME);
           break;
         case 'ETIMEDOUT':
           console.error('Connection timeout - MySQL server may be too slow to respond');
           break;
         case 'ENOTFOUND':
           console.error('Host not found - check DB_HOST in your .env file');
+          console.error('Attempted host:', process.env.DB_HOST);
           break;
         default:
           console.error('Check your MySQL server configuration and .env file');
