@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -97,50 +98,11 @@ async function initializeDB() {
 // Initialize database connection
 initializeDB();
 
-// Create a simple welcome page at root level for easier diagnostics
-app.get('/', (req, res) => {
-  res.send(`
-    <html>
-      <head>
-        <title>MediSync API Server</title>
-        <style>
-          body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-          h1 { color: #2563eb; }
-          .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-          .success { color: #059669; }
-          .warning { color: #d97706; }
-          code { background: #f3f4f6; padding: 2px 4px; border-radius: 4px; }
-        </style>
-      </head>
-      <body>
-        <h1>MediSync API Server</h1>
-        <div class="card">
-          <h2>Server Status: <span class="success">Running</span></h2>
-          <p>The server is operational. If you're trying to access the API, use the base path: 
-          <code>${BASE_PATH}/api</code></p>
-          <p>For health check information, visit: <a href="${BASE_PATH}/api/health">${BASE_PATH}/api/health</a></p>
-        </div>
-        <div class="card">
-          <h2>Environment</h2>
-          <p>Running in: <strong>${isProduction ? 'Production' : 'Development'}</strong> mode</p>
-          <p>Base Path: <code>${BASE_PATH}</code></p>
-          <p>Database: <strong>${dbConnected ? 
-            '<span class="success">Connected</span>' : 
-            '<span class="warning">Not Connected</span>'}</strong></p>
-        </div>
-        <div class="card">
-          <h2>API Endpoints</h2>
-          <ul>
-            <li><code>${BASE_PATH}/api/users</code> - User management</li>
-            <li><code>${BASE_PATH}/api/medical-records</code> - Medical records</li>
-            <li><code>${BASE_PATH}/api/appointments</code> - Appointments</li>
-            <li><code>${BASE_PATH}/api/medicines</code> - Medicines inventory</li>
-          </ul>
-        </div>
-      </body>
-    </html>
-  `);
-});
+// API Routes - using BASE_PATH (which is an empty string)
+app.use(`${BASE_PATH}/api/users`, userRoutes);
+app.use(`${BASE_PATH}/api/medical-records`, medicalRecordRoutes);
+app.use(`${BASE_PATH}/api/appointments`, appointmentRoutes);
+app.use(`${BASE_PATH}/api/medicines`, medicineRoutes);
 
 // Health check endpoint with detailed information
 app.get(`${BASE_PATH}/api/health`, (req, res) => {
@@ -176,52 +138,69 @@ app.get(`${BASE_PATH}/api/health`, (req, res) => {
   res.json(serverInfo);
 });
 
-// Basic root route for easy verification
-app.get(`${BASE_PATH}/`, (req, res) => {
-  res.json({ 
-    status: 'running',
-    message: 'MediSync API server is running. Use /api endpoints for data access.',
-    healthCheck: `${BASE_PATH}/api/health`,
-    timestamp: new Date().toISOString(),
-    basePath: BASE_PATH,
-    database: {
-      connected: dbConnected,
-      message: dbConnected ? 'Database is connected' : 'Database connection issue - check configuration'
-    }
+// Serve static files from the React app in production
+if (isProduction) {
+  console.log('Serving static files from the React app');
+  // Set the static folder
+  app.use(express.static(path.join(__dirname, '../dist')));
+  
+  // Create a simple welcome page at root level for easier diagnostics
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
-});
-
-// Routes - using BASE_PATH (which is an empty string)
-app.use(`${BASE_PATH}/api/users`, userRoutes);
-app.use(`${BASE_PATH}/api/medical-records`, medicalRecordRoutes);
-app.use(`${BASE_PATH}/api/appointments`, appointmentRoutes);
-app.use(`${BASE_PATH}/api/medicines`, medicineRoutes);
-
-// Special route for cPanel verification
-app.get('/server', (req, res) => {
-  res.redirect(`${BASE_PATH}/`);
-});
-
-// Catch-all route for debugging path issues in production
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `The requested URL ${req.originalUrl} was not found on this server.`,
-    basePath: BASE_PATH,
-    suggestedEndpoints: {
-      root: BASE_PATH ? BASE_PATH : '/',
-      health: `${BASE_PATH}/api/health`,
-      users: `${BASE_PATH}/api/users`
-    },
-    requestInfo: {
-      path: req.path,
-      originalUrl: req.originalUrl,
-      baseUrl: req.baseUrl,
-      host: req.get('host') || 'unknown'
-    },
-    timestamp: new Date().toISOString()
+  
+  // For any route that doesn't match an API endpoint,
+  // serve the React app and let React Router handle it
+  app.get('*', (req, res) => {
+    console.log('Redirecting to React app:', req.originalUrl);
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
-});
+} else {
+  // Create a simple welcome page at root level for development
+  app.get('/', (req, res) => {
+    res.send(`
+      <html>
+        <head>
+          <title>MediSync API Server</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            h1 { color: #2563eb; }
+            .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+            .success { color: #059669; }
+            .warning { color: #d97706; }
+            code { background: #f3f4f6; padding: 2px 4px; border-radius: 4px; }
+          </style>
+        </head>
+        <body>
+          <h1>MediSync API Server</h1>
+          <div class="card">
+            <h2>Server Status: <span class="success">Running</span></h2>
+            <p>The server is operational. If you're trying to access the API, use the base path: 
+            <code>${BASE_PATH}/api</code></p>
+            <p>For health check information, visit: <a href="${BASE_PATH}/api/health">${BASE_PATH}/api/health</a></p>
+          </div>
+          <div class="card">
+            <h2>Environment</h2>
+            <p>Running in: <strong>${isProduction ? 'Production' : 'Development'}</strong> mode</p>
+            <p>Base Path: <code>${BASE_PATH}</code></p>
+            <p>Database: <strong>${dbConnected ? 
+              '<span class="success">Connected</span>' : 
+              '<span class="warning">Not Connected</span>'}</strong></p>
+          </div>
+          <div class="card">
+            <h2>API Endpoints</h2>
+            <ul>
+              <li><code>${BASE_PATH}/api/users</code> - User management</li>
+              <li><code>${BASE_PATH}/api/medical-records</code> - Medical records</li>
+              <li><code>${BASE_PATH}/api/appointments</code> - Appointments</li>
+              <li><code>${BASE_PATH}/api/medicines</code> - Medicines inventory</li>
+            </ul>
+          </div>
+        </body>
+      </html>
+    `);
+  });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {
