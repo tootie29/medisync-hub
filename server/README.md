@@ -3,7 +3,7 @@
 
 This is the backend server for the MediHub application.
 
-## Setup Instructions
+## Local Development Setup
 
 ### Prerequisites
 
@@ -44,6 +44,65 @@ node server.js
 ```
 
 Your server should now be running at http://localhost:3001
+
+## cPanel Production Deployment
+
+### cPanel Configuration
+
+1. Log in to your cPanel account
+2. Go to the Node.js section
+3. Create a new Node.js application with the following settings:
+   - Node.js version: 14.x or higher
+   - Application mode: Production
+   - Application root: The directory where your server.js is located (e.g., `/home/username/server`)
+   - Application URL: `/server` (no trailing slash)
+   - Application startup file: `server.js`
+
+### Environment Setup
+
+1. Create a `.env` file in the server directory with production settings:
+```
+DB_HOST=localhost
+DB_USER=your_cpanel_username_databaseuser
+DB_PASSWORD=your_database_password
+DB_NAME=your_cpanel_username_databasename
+NODE_ENV=production
+```
+
+> **Note:** cPanel often prefixes database names and users with your cPanel username. 
+> Example: If your cPanel username is "medisync" and you created a database named "medi_hub" 
+> with a user "admin", your configuration might be:
+> ```
+> DB_USER=medisync_admin
+> DB_NAME=medisync_medi_hub
+> ```
+
+2. Click "Run NPM Install" to install all dependencies
+3. Click "Run JS Script" to start the server
+
+### Verify Deployment
+
+Visit `https://yourdomain.com/server/api/health` to check if the server is running correctly.
+
+You should see a JSON response with server health information.
+
+### Troubleshooting
+
+If you encounter any issues:
+
+1. **503 Service Unavailable**
+   - Ensure the Node.js application is running (check if "Run JS Script" has been clicked)
+   - Verify your Application URL is set to `/server` (without a trailing slash)
+   - Check cPanel error logs for Node.js errors
+
+2. **Database Connection Issues**
+   - Verify database credentials in the `.env` file
+   - Check if the database exists and the user has proper permissions
+   - Try running a manual MySQL connection test
+
+3. **Path Issues**
+   - Ensure the Application URL is set to `/server`
+   - Make sure all API requests use the correct path: `/server/api/...`
 
 ## API Endpoints
 

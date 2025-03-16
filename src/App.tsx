@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { format, addDays, parseISO, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
-import { Loader2, AlertTriangle, Server, ExternalLink } from "lucide-react";
+import { Loader2, AlertTriangle, Server, ExternalLink, RefreshCw, Database } from "lucide-react";
 import axios from "axios";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -75,23 +76,56 @@ const CPanelSetupInstructions = () => (
       <ul className="list-disc pl-6 mt-1 mb-2">
         <li>Node.js version: 14 or higher</li>
         <li>Application root: The directory where your server.js is located</li>
-        <li>Application URL: /server</li>
+        <li>Application URL: /server (without trailing slash)</li>
         <li>Application startup file: server.js</li>
       </ul>
+      <li>Create a .env file in your server directory with these settings:</li>
+      <div className="bg-gray-100 dark:bg-gray-800 p-2 my-2 rounded overflow-auto">
+        <pre className="text-xs text-gray-800 dark:text-gray-200">
+          DB_HOST=localhost<br/>
+          DB_USER=your_cpanel_username_dbuser<br/>
+          DB_PASSWORD=your_database_password<br/>
+          DB_NAME=your_cpanel_username_dbname<br/>
+          NODE_ENV=production
+        </pre>
+      </div>
       <li>Click "Run NPM Install" to install dependencies</li>
-      <li>Ensure the .env file exists with correct database credentials</li>
-      <li>Set NODE_ENV=production in your .env file</li>
       <li>Click "Run JS script" to start your server</li>
+      <li>Test your server by visiting:<br/>
+        <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">
+          https://medisync.entrsolutions.com/server/api/health
+        </code>
+      </li>
     </ol>
     <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-md">
       <p className="text-yellow-800 dark:text-yellow-300 text-xs">
         <strong>Note:</strong> If the server is still unavailable after following these steps, 
-        contact your hosting provider to check if Node.js applications are properly supported and 
-        if there are any firewall rules blocking your application.
+        check your cPanel error logs for Node.js errors and ensure your MySQL database exists
+        with correct credentials.
       </p>
     </div>
   </div>
 );
+
+// Add new component to check server configurations that might be incorrect
+const ServerConfigurationChecker = ({ isProduction }) => {
+  if (!isProduction) return null;
+
+  return (
+    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md text-sm">
+      <h5 className="font-medium mb-2 text-blue-800 dark:text-blue-300 flex items-center">
+        <Server className="h-4 w-4 mr-1" /> Common cPanel Configuration Issues:
+      </h5>
+      <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-400 text-xs">
+        <li>Application URL must be set to <strong>/server</strong> (without a trailing slash)</li>
+        <li>Node.js application must be started with "Run JS Script" button</li>
+        <li>The <strong>.env</strong> file must exist with correct database credentials</li>
+        <li>The MySQL database specified in .env must exist in cPanel</li>
+        <li>The database user must have correct permissions</li>
+      </ul>
+    </div>
+  );
+};
 
 const ServerChecker = () => {
   const [isChecking, setIsChecking] = useState(true);
@@ -100,8 +134,15 @@ const ServerChecker = () => {
   const [serverError, setServerError] = useState('');
   const [serverUrl, setServerUrl] = useState('');
   const [serverDetails, setServerDetails] = useState<any>(null);
+  const [lastChecked, setLastChecked] = useState(new Date());
   const maxRetries = 3;
   const isProduction = window.location.hostname === "medisync.entrsolutions.com";
+
+  const handleManualCheck = () => {
+    setIsChecking(true);
+    setRetryCount(0);
+    setLastChecked(new Date());
+  };
 
   useEffect(() => {
     // Show the actual server URL we're trying to connect to
@@ -150,16 +191,23 @@ const ServerChecker = () => {
           
           // Extract a more specific error message
           let errorMessage = 'Connection to the server failed';
+          let errorType = 'server';  // server, path, database, or firewall
+          
           if (rootError.code === 'ECONNABORTED') {
             errorMessage = 'Connection timeout. Server may be overloaded.';
           } else if (rootError.response) {
             if (rootError.response.status === 503) {
               errorMessage = 'Server is unavailable (503). The Node.js application is not running.';
+              errorType = 'server';
+            } else if (rootError.response.status === 404) {
+              errorMessage = 'Path not found (404). The server path may be incorrect.';
+              errorType = 'path';
             } else {
               errorMessage = `Server error: ${rootError.response.status}`;
             }
           } else if (rootError.code === 'ERR_NETWORK') {
-            errorMessage = 'Network error. Server may be offline.';
+            errorMessage = 'Network error. Server may be offline or blocked by firewall.';
+            errorType = 'firewall';
           }
           
           setServerError(errorMessage);
@@ -196,8 +244,10 @@ const ServerChecker = () => {
       }
     };
 
-    checkServer();
-  }, [retryCount]);
+    if (isChecking) {
+      checkServer();
+    }
+  }, [retryCount, isChecking]);
 
   if (isChecking) {
     return (
@@ -229,16 +279,23 @@ const ServerChecker = () => {
             <p className="font-medium mb-1">Attempted to connect to:</p>
             <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs block mb-4">{serverUrl}</code>
             
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Last check: {lastChecked.toLocaleTimeString()}</p>
+            
             {isProduction ? (
               <>
                 <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-md">
-                  <p className="text-red-800 dark:text-red-300 font-semibold mb-1">
-                    Node.js Server Not Running
-                  </p>
+                  <div className="flex items-center mb-2">
+                    <Server className="h-4 w-4 text-red-500 mr-2" />
+                    <p className="text-red-800 dark:text-red-300 font-semibold">
+                      Node.js Server Not Running
+                    </p>
+                  </div>
                   <p className="text-red-700 dark:text-red-400 text-xs">
                     The server application is not running in cPanel. You need to start the Node.js application in your cPanel interface.
                   </p>
                 </div>
+                
+                <ServerConfigurationChecker isProduction={isProduction} />
                 <CPanelSetupInstructions />
               </>
             ) : (
@@ -254,10 +311,11 @@ const ServerChecker = () => {
             
             <div className="flex justify-center space-x-3 mt-4">
               <button 
-                onClick={() => window.location.reload()} 
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                onClick={handleManualCheck} 
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center"
               >
-                Retry Connection
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Check Again
               </button>
               {isProduction && (
                 <a
