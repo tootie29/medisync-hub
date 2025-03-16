@@ -8,9 +8,15 @@ const appointmentRoutes = require('./routes/appointmentRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
 const path = require('path');
 const dotenv = require('dotenv');
+const fs = require('fs');
 
 // Load environment variables from .env file
 dotenv.config();
+
+// Create server PID file to help with management
+const PID_FILE = path.join(__dirname, 'server.pid');
+fs.writeFileSync(PID_FILE, process.pid.toString());
+console.log(`Process ID ${process.pid} written to ${PID_FILE}`);
 
 const app = express();
 
@@ -175,6 +181,17 @@ app.get(`/api/health`, (req, res) => {
   res.json(serverInfo);
 });
 
+// Manual shutdown endpoint (only available in development)
+if (!isProduction) {
+  app.get('/shutdown', (req, res) => {
+    res.send('Server is shutting down...');
+    console.log('Shutdown requested via /shutdown endpoint');
+    setTimeout(() => {
+      shutDown();
+    }, 1000);
+  });
+}
+
 // Create a route to handle 404 errors for API routes
 app.use(`/api/*`, (req, res) => {
   res.status(404).json({
@@ -267,12 +284,20 @@ const tryPort = (port, maxAttempts = 3) => {
 // Start server with automatic port adjustment
 let server = tryPort(PORT);
 
-// Graceful shutdown
-process.on('SIGTERM', shutDown);
-process.on('SIGINT', shutDown);
-
+// Improved graceful shutdown
 function shutDown() {
   console.log('Received kill signal, shutting down gracefully');
+  
+  // Remove PID file
+  if (fs.existsSync(PID_FILE)) {
+    try {
+      fs.unlinkSync(PID_FILE);
+      console.log(`Removed PID file: ${PID_FILE}`);
+    } catch (error) {
+      console.error(`Failed to remove PID file: ${error.message}`);
+    }
+  }
+  
   if (server) {
     server.close(() => {
       console.log('Closed out remaining connections');
@@ -288,3 +313,41 @@ function shutDown() {
     process.exit(0);
   }
 }
+
+// Graceful shutdown
+process.on('SIGTERM', shutDown);
+process.on('SIGINT', shutDown);
+process.on('SIGUSR2', shutDown); // For Nodemon restart
+
+// Create a stopServer script to help with cPanel management
+const STOP_SCRIPT = path.join(__dirname, 'stop.js');
+fs.writeFileSync(STOP_SCRIPT, `
+// Simple script to stop the server
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
+
+const PID_FILE = path.join(__dirname, 'server.pid');
+
+if (fs.existsSync(PID_FILE)) {
+  const pid = fs.readFileSync(PID_FILE, 'utf8').trim();
+  console.log(\`Stopping server with PID \${pid}...\`);
+  
+  try {
+    process.kill(parseInt(pid, 10), 'SIGTERM');
+    console.log(\`Signal sent to process \${pid}\`);
+  } catch (error) {
+    console.error(\`Error stopping process: \${error.message}\`);
+    
+    // If the process doesn't exist, clean up the PID file
+    if (error.code === 'ESRCH') {
+      fs.unlinkSync(PID_FILE);
+      console.log(\`Removed stale PID file\`);
+    }
+  }
+} else {
+  console.log('No server.pid file found. Server may not be running.');
+}
+`);
+
+console.log(`Created stop script at ${STOP_SCRIPT}`);
