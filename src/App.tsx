@@ -1,15 +1,13 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { DataProvider } from "@/context/DataContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useData } from "@/context/DataContext";
 import { format, addDays, parseISO, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle, Server, ExternalLink, RefreshCw, Database } from "lucide-react";
@@ -382,10 +380,13 @@ const ServerChecker = () => {
 
 const AppointmentNotifier = () => {
   const { user } = useAuth();
-  const { getAppointmentsByPatientId } = useData();
   
   useEffect(() => {
+    // We need to conditionally use the DataContext hook
     if (!user) return;
+    
+    // Import useData here to prevent the error
+    const { getAppointmentsByPatientId } = require('@/context/DataContext').useData();
     
     const userAppointments = getAppointmentsByPatientId(user.id);
     const today = new Date();
@@ -417,6 +418,7 @@ const AppointmentNotifier = () => {
   return null;
 };
 
+// Updated App component with proper route paths and navigation handling
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -427,7 +429,6 @@ const App = () => (
             <Sonner />
             <ServerChecker />
             <BrowserRouter>
-              <AppointmentNotifier />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
@@ -440,6 +441,10 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/health-monitoring" element={<HealthMonitoring />} />
                 <Route path="/settings" element={<Settings />} />
+                {/* Add a redirect for the case-sensitive versions */}
+                <Route path="/Login" element={<Navigate to="/login" replace />} />
+                <Route path="/Register" element={<Navigate to="/register" replace />} />
+                {/* Catch all route for 404s */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

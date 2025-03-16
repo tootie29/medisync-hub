@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -18,6 +19,10 @@ const Login: React.FC = () => {
 
   const handleRetry = () => {
     window.location.reload();
+  };
+
+  const handleBack = () => {
+    navigate(-1); // Go back to the previous page
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,9 +49,10 @@ const Login: React.FC = () => {
           error.message.includes('ERR_NETWORK')
         )) {
         setConnectivityError(true);
+      } else {
+        // Show the error message
+        toast.error(error.message || 'Login failed');
       }
-      
-      // Other errors are handled in the auth context
     } finally {
       setIsLoading(false);
     }
@@ -54,6 +60,17 @@ const Login: React.FC = () => {
 
   return (
     <AuthLayout>
+      <div className="mb-4">
+        <Button 
+          variant="ghost" 
+          className="p-0 h-auto flex items-center text-gray-500 hover:text-gray-700"
+          onClick={handleBack}
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </Button>
+      </div>
+
       {connectivityError && (
         <div className="bg-destructive/15 p-3 rounded-md mb-4">
           <div className="flex items-start gap-2">
