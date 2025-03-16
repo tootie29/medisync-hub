@@ -441,10 +441,10 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/health-monitoring" element={<HealthMonitoring />} />
                 <Route path="/settings" element={<Settings />} />
-                {/* Add a redirect for the case-sensitive versions */}
+                
                 <Route path="/Login" element={<Navigate to="/login" replace />} />
                 <Route path="/Register" element={<Navigate to="/register" replace />} />
-                {/* Catch all route for 404s */}
+                
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
