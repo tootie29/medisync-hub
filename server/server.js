@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -41,57 +40,29 @@ console.log('=====================');
 const BASE_PATH = '';
 console.log(`Using base path: "${BASE_PATH}"`);
 
-// Enhanced CORS configuration with explicit allowed origins
-const allowedOrigins = process.env.CORS_ALLOWED_ORIGIN ? 
-  [process.env.CORS_ALLOWED_ORIGIN] : 
-  [
-    // Local development
-    'http://localhost:5173',
-    'http://localhost:8080',
-    'http://localhost:3000',
-    
-    // Production domains - explicitly include full domain
-    'https://climasys.entrsolutions.com',
-    'https://app.climasys.entrsolutions.com',
-    'https://www.climasys.entrsolutions.com',
-    
-    // Lovable preview domains
-    /\.lovableproject\.com$/
-  ];
-
-console.log('CORS: Allowed origins configured:', allowedOrigins);
-
-// Setup CORS with detailed configuration
-app.use(cors({
+// Enhanced CORS configuration - temporarily allow all origins for troubleshooting
+// This is more permissive to help diagnose connection issues
+const corsOptions = {
   origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true);
+    // During troubleshooting, allow requests from any origin
+    // Later, this should be restricted to only your frontend domain
+    callback(null, true);
     
-    console.log(`CORS check for origin: ${origin}`);
-    
-    // Check if the origin is allowed
-    const isAllowed = allowedOrigins.some(allowedOrigin => {
-      if (typeof allowedOrigin === 'string') {
-        return allowedOrigin === origin;
-      } else if (allowedOrigin instanceof RegExp) {
-        return allowedOrigin.test(origin);
-      }
-      return false;
-    });
-    
-    if (isAllowed) {
-      console.log(`CORS: Allowing origin: ${origin}`);
-      return callback(null, true);
+    // Log origin for debugging
+    if (origin) {
+      console.log(`CORS: Request from origin: ${origin}`);
     } else {
-      console.log(`CORS: Blocking origin: ${origin}`);
-      return callback(new Error('Not allowed by CORS'), false);
+      console.log(`CORS: Request with no origin`);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
   maxAge: 86400 // 24 hours
-}));
+};
+
+console.log('CORS: Temporarily allowing all origins for troubleshooting');
+app.use(cors(corsOptions));
 
 // Log all requests to help with debugging
 app.use((req, res, next) => {
