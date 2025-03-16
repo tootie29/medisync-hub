@@ -25,7 +25,7 @@ const app = express();
 const PORT = parseInt(process.env.PORT || 8080, 10);
 
 // Production check
-const isProduction = process.env.NODE_ENV === 'production' || process.env.PRODUCTION === 'true';
+const isProduction = process.env.NODE_ENV === 'production';
 console.log(`Running in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
 
 // Log startup information to help with debugging
@@ -82,18 +82,17 @@ let dbConnected = false;
 // Test database connection
 async function initializeDB() {
   try {
+    console.log('Testing database connection...');
     dbConnected = await testConnection();
     console.log('Database connection status:', dbConnected ? 'Connected' : 'Disconnected');
-    
-    // Log environment variables (without sensitive data)
-    console.log('DB_HOST:', process.env.DB_HOST || 'not set');
-    console.log('DB_USER:', process.env.DB_USER ? '(set)' : 'not set');
-    console.log('DB_NAME:', process.env.DB_NAME || 'not set');
     
     // If connection fails, retry every 30 seconds
     if (!dbConnected) {
       console.log('Will retry database connection in 30 seconds...');
       setTimeout(initializeDB, 30000);
+    } else {
+      // Only start listening for requests if DB is connected
+      startServer();
     }
   } catch (error) {
     console.error('Database initialization error:', error);
@@ -101,9 +100,6 @@ async function initializeDB() {
     setTimeout(initializeDB, 30000);
   }
 }
-
-// Initialize database connection
-initializeDB();
 
 // API Routes - keep them at root level for the API subdomain
 app.use(`/api/users`, userRoutes);
@@ -190,7 +186,7 @@ app.use((err, req, res, next) => {
   console.error('Server error:', err);
   
   // Send more detailed error information in development mode
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProduction) {
     res.status(500).json({ 
       error: 'Internal Server Error', 
       message: err.message,
@@ -209,57 +205,36 @@ app.use((err, req, res, next) => {
 // Create a server reference at the top level scope
 let serverInstance = null;
 
-// Try multiple ports if the initial one fails
-// This helps in cPanel environments where the exact port might vary
-const tryPort = (port, maxAttempts = 3) => {
-  let currentAttempt = 1;
+// Function to start the server after successful DB connection
+function startServer() {
+  console.log(`Attempting to start server on port ${PORT}`);
   
-  const attemptListen = (port) => {
-    console.log(`Attempting to start server on port ${port} (attempt ${currentAttempt}/${maxAttempts})`);
-    
-    try {
-      const server = app.listen(port, () => {
-        console.log(`Server successfully running on port ${port}`);
-        console.log(`Health check available at: http://localhost:${port}/api/health`);
-        if (isProduction) {
-          console.log(`Running in production mode.`);
-          console.log(`Production API URL: https://api.climasys.entrsolutions.com/api/health`);
-        }
-        // Store server reference for shutdown
-        serverInstance = server;
-      }).on('error', (err) => {
-        if (err.code === 'EADDRINUSE') {
-          console.error(`Port ${port} is already in use.`);
-          
-          if (currentAttempt < maxAttempts) {
-            currentAttempt++;
-            // Make sure we increment the port as a number, not a string concatenation
-            const nextPort = parseInt(port, 10) + 1;
-            console.log(`Trying next port: ${nextPort}`);
-            return attemptListen(nextPort);
-          } else {
-            console.error('Failed to find an available port after multiple attempts.');
-            console.log('Try one of these solutions:');
-            console.log('1. Stop any other Node.js applications in cPanel that might be using these ports');
-            console.log(`2. Use the stop.js script to stop any existing server instances: node stop.js`);
-            console.log('3. Update your .env file with a different PORT value');
-            process.exit(1);
-          }
-        } else {
-          console.error('Server error:', err);
-          process.exit(1);
-        }
-      });
-      
-      return server;
-    } catch (err) {
-      console.error('Failed to start server:', err);
-      process.exit(1);
-    }
-  };
-  
-  return attemptListen(port);
-};
+  try {
+    serverInstance = app.listen(PORT, () => {
+      console.log(`Server successfully running on port ${PORT}`);
+      console.log(`Health check available at: http://localhost:${PORT}/api/health`);
+      if (isProduction) {
+        console.log(`Running in production mode.`);
+        console.log(`Production API URL: https://api.climasys.entrsolutions.com/api/health`);
+      }
+    }).on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use.`);
+        console.log('Try one of these solutions:');
+        console.log('1. Stop any other Node.js applications that might be using this port');
+        console.log(`2. Use the stop.js script to stop any existing server instances: node stop.js`);
+        console.log('3. Update your .env file with a different PORT value');
+        process.exit(1);
+      } else {
+        console.error('Server error:', err);
+        process.exit(1);
+      }
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+}
 
 // Improved graceful shutdown
 function shutDown() {
@@ -309,7 +284,8 @@ const checkExistingServer = () => {
         console.log(`Signal sent to existing process ${pid}, waiting 2 seconds before starting new server...`);
         
         // Wait 2 seconds before continuing
-        return new Promise(resolve => setTimeout(resolve, 2000));
+        return new Promise(resolve => setTimeout(resolve, 2000))
+          .then(() => initializeDB());
       } catch (error) {
         // If the process doesn't exist or we can't kill it, just remove the PID file
         if (error.code === 'ESRCH') {
@@ -318,14 +294,14 @@ const checkExistingServer = () => {
         } else {
           console.error(`Error stopping existing server: ${error.message}`);
         }
-        return Promise.resolve();
+        initializeDB();
       }
     } catch (error) {
       console.error(`Error reading PID file: ${error.message}`);
-      return Promise.resolve();
+      initializeDB();
     }
   } else {
-    return Promise.resolve();
+    initializeDB();
   }
 };
 
@@ -362,8 +338,5 @@ if (fs.existsSync(PID_FILE)) {
 
 console.log(`Created stop script at ${STOP_SCRIPT}`);
 
-// First check for existing server, then start a new one
-checkExistingServer().then(() => {
-  // Start server with automatic port adjustment
-  tryPort(PORT);
-});
+// First check for existing server, then start the initialization process
+checkExistingServer();
