@@ -87,9 +87,10 @@ app.use(cors({
       return callback(new Error('Not allowed by CORS'), false);
     }
   },
-  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
 }));
 
 // Log all requests to help with debugging
@@ -99,12 +100,14 @@ app.use((req, res, next) => {
 });
 
 // Middleware
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '5mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '5mb' }));
 
 // Add request timeout middleware
 app.use((req, res, next) => {
-  // Set timeout to 30 seconds
-  req.setTimeout(30000, () => {
+  // Set timeout to 60 seconds instead of 30
+  req.setTimeout(60000, () => {
+    console.error(`Request timeout: ${req.method} ${req.originalUrl}`);
     res.status(503).json({ 
       error: 'Request timeout', 
       message: 'The server is taking too long to respond. Please try again later.' 
@@ -127,15 +130,15 @@ async function initializeDB() {
     console.log('DB_USER:', process.env.DB_USER ? '(set)' : 'not set');
     console.log('DB_NAME:', process.env.DB_NAME || 'not set');
     
-    // If connection fails, retry every 10 seconds
+    // If connection fails, retry every 30 seconds
     if (!dbConnected) {
-      console.log('Will retry database connection in 10 seconds...');
-      setTimeout(initializeDB, 10000);
+      console.log('Will retry database connection in 30 seconds...');
+      setTimeout(initializeDB, 30000);
     }
   } catch (error) {
     console.error('Database initialization error:', error);
-    console.log('Will retry database connection in 10 seconds...');
-    setTimeout(initializeDB, 10000);
+    console.log('Will retry database connection in 30 seconds...');
+    setTimeout(initializeDB, 30000);
   }
 }
 
@@ -182,16 +185,24 @@ app.get(`/api/health`, (req, res) => {
   res.json(serverInfo);
 });
 
-// Manual shutdown endpoint (only available in development)
-if (!isProduction) {
-  app.get('/shutdown', (req, res) => {
-    res.send('Server is shutting down...');
-    console.log('Shutdown requested via /shutdown endpoint');
-    setTimeout(() => {
-      shutDown();
-    }, 1000);
+// Root endpoint with detailed documentation
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'online',
+    message: 'ClimaSys API Server',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: isProduction ? 'production' : 'development',
+    documentation: 'API endpoints are available at /api/*',
+    availableEndpoints: [
+      '/api/health',
+      '/api/users',
+      '/api/medical-records',
+      '/api/appointments',
+      '/api/medicines'
+    ],
+    timestamp: new Date().toISOString()
   });
-}
+});
 
 // Create a route to handle 404 errors for API routes
 app.use(`/api/*`, (req, res) => {
