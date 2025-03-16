@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -26,11 +25,7 @@ console.log('=====================');
 
 // Get base path for production in cPanel
 const getBasePath = () => {
-  if (isProduction) {
-    // For direct domain access (https://medisync.entrsolutions.com/)
-    // you would use an empty string '' here
-    return '';
-  }
+  // In all cases, we're using an empty string for direct domain access
   return '';
 };
 
@@ -196,7 +191,7 @@ app.get(`${BASE_PATH}/`, (req, res) => {
   });
 });
 
-// Routes - update all routes with the base path
+// Routes - using BASE_PATH (which is an empty string)
 app.use(`${BASE_PATH}/api/users`, userRoutes);
 app.use(`${BASE_PATH}/api/medical-records`, medicalRecordRoutes);
 app.use(`${BASE_PATH}/api/appointments`, appointmentRoutes);

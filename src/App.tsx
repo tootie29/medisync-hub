@@ -26,9 +26,9 @@ import Dashboard from "./pages/Dashboard";
 import HealthMonitoring from "./pages/HealthMonitoring";
 import Settings from "./pages/Settings";
 
-// Define API_URL based on domain - updated for production with empty base path
+// Define API_URL based on domain - updated for production with correct path structure
 const API_BASE_URL = window.location.hostname === "medisync.entrsolutions.com" 
-  ? 'https://medisync.entrsolutions.com'  // Updated to use root path
+  ? 'https://medisync.entrsolutions.com'  // No /server prefix for production
   : 'http://localhost:3001';
 
 console.log('Current hostname:', window.location.hostname);

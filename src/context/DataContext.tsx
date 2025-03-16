@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -10,10 +9,12 @@ import {
 import { toast } from "sonner";
 import axios from 'axios';
 
-// Define API_URL based on domain - updated for production server path
+// Define API_URL based on domain - updated for production with correct path
 const API_URL = window.location.hostname === "medisync.entrsolutions.com" 
-  ? 'https://medisync.entrsolutions.com/server/api'
+  ? 'https://medisync.entrsolutions.com/api'  // No /server prefix for production
   : 'http://localhost:3001/api';
+
+console.log('Using API URL:', API_URL);
 
 interface DataContextType {
   medicalRecords: MedicalRecord[];
