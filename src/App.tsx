@@ -13,6 +13,19 @@ import { toast } from "sonner";
 import { Loader2, AlertTriangle, Server, ExternalLink, RefreshCw, Database } from "lucide-react";
 import axios from "axios";
 
+import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Dashboard from "@/pages/Dashboard";
+import Appointments from "@/pages/Appointments";
+import BMICalculator from "@/pages/BMICalculator";
+import MedicalRecords from "@/pages/MedicalRecords";
+import Inventory from "@/pages/Inventory";
+import Profile from "@/pages/Profile";
+import HealthMonitoring from "@/pages/HealthMonitoring";
+import Settings from "@/pages/Settings";
+import NotFound from "@/pages/NotFound";
+
 const getApiBaseUrl = () => {
   const isLovablePreview = window.location.hostname.includes('lovableproject.com');
   if (isLovablePreview) {
