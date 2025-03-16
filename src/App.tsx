@@ -27,8 +27,8 @@ import HealthMonitoring from "./pages/HealthMonitoring";
 import Settings from "./pages/Settings";
 
 // Define API_URL based on domain - updated for production with correct path structure
-const API_BASE_URL = window.location.hostname === "medisync.entrsolutions.com" 
-  ? 'https://medisync.entrsolutions.com'  // No /server prefix for production
+const API_BASE_URL = window.location.hostname === "climasys.entrsolutions.com" 
+  ? 'https://climasys.entrsolutions.com/server'  // Updated domain with /server prefix
   : 'http://localhost:3001';
 
 console.log('Current hostname:', window.location.hostname);
@@ -92,7 +92,7 @@ const CPanelSetupInstructions = () => (
       <li>Click "Run JS script" to start your server</li>
       <li>Test your server by visiting:<br/>
         <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">
-          https://medisync.entrsolutions.com/api/health
+          https://climasys.entrsolutions.com/api/health
         </code>
       </li>
     </ol>
@@ -135,7 +135,7 @@ const ServerChecker = () => {
   const [serverDetails, setServerDetails] = useState<any>(null);
   const [lastChecked, setLastChecked] = useState(new Date());
   const maxRetries = 3;
-  const isProduction = window.location.hostname === "medisync.entrsolutions.com";
+  const isProduction = window.location.hostname === "climasys.entrsolutions.com";
 
   const handleManualCheck = () => {
     setIsChecking(true);
@@ -318,7 +318,7 @@ const ServerChecker = () => {
               </button>
               {isProduction && (
                 <a
-                  href="https://medisync.entrsolutions.com/cpanel"
+                  href="https://climasys.entrsolutions.com/cpanel"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"

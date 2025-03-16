@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -10,8 +11,8 @@ import { toast } from "sonner";
 import axios from 'axios';
 
 // Define API_URL based on domain - updated for production with correct path
-const API_URL = window.location.hostname === "medisync.entrsolutions.com" 
-  ? 'https://medisync.entrsolutions.com/api'  // No /server prefix for production
+const API_URL = window.location.hostname === "climasys.entrsolutions.com" 
+  ? 'https://climasys.entrsolutions.com/server/api'  // Updated domain with /server prefix
   : 'http://localhost:3001/api';
 
 console.log('Using API URL:', API_URL);

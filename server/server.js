@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -43,7 +42,7 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:8080',
     'http://localhost:3000',
-    'https://medisync.entrsolutions.com',
+    'https://climasys.entrsolutions.com',
     /\.lovableproject\.com$/, // Allow all Lovable preview domains
     /\.entrsolutions\.com$/ // Allow all entrsolutions subdomains
   ],
@@ -143,7 +142,6 @@ app.get(`${BASE_PATH}/api/health`, (req, res) => {
 });
 
 // For production, only handle API routes - do not serve static files or handle other routes
-// as the React app is deployed separately at the root domain
 if (isProduction) {
   console.log('Running in production mode - only handling API routes');
   
@@ -160,7 +158,7 @@ if (isProduction) {
   // For any non-API route, return a message explaining the server structure
   app.get('*', (req, res) => {
     res.status(200).json({
-      message: 'MediSync API Server',
+      message: 'ClimaSys API Server',
       note: 'This server only handles API endpoints. The React frontend is served from the root domain.',
       apiRoot: `${BASE_PATH}/api`,
       availableEndpoints: [`${BASE_PATH}/api/health`, `${BASE_PATH}/api/users`, `${BASE_PATH}/api/medical-records`, `${BASE_PATH}/api/appointments`, `${BASE_PATH}/api/medicines`],
@@ -173,7 +171,7 @@ if (isProduction) {
     res.send(`
       <html>
         <head>
-          <title>MediSync API Server</title>
+          <title>ClimaSys API Server</title>
           <style>
             body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
             h1 { color: #2563eb; }
@@ -184,7 +182,7 @@ if (isProduction) {
           </style>
         </head>
         <body>
-          <h1>MediSync API Server</h1>
+          <h1>ClimaSys API Server</h1>
           <div class="card">
             <h2>Server Status: <span class="success">Running</span></h2>
             <p>The server is operational. If you're trying to access the API, use the base path: 
@@ -230,7 +228,7 @@ const server = app.listen(PORT, () => {
   console.log(`Health check available at: http://localhost:${PORT}${BASE_PATH}/api/health`);
   if (isProduction) {
     console.log(`Running in production mode. Base path: ${BASE_PATH}`);
-    console.log(`Production API URL: https://medisync.entrsolutions.com${BASE_PATH}/api/health`);
+    console.log(`Production API URL: https://climasys.entrsolutions.com${BASE_PATH}/api/health`);
   }
 });
 
