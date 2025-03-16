@@ -43,18 +43,7 @@ console.log(`Using base path: "${BASE_PATH}"`);
 // Enhanced CORS configuration - temporarily allow all origins for troubleshooting
 // This is more permissive to help diagnose connection issues
 const corsOptions = {
-  origin: function(origin, callback) {
-    // During troubleshooting, allow requests from any origin
-    // Later, this should be restricted to only your frontend domain
-    callback(null, true);
-    
-    // Log origin for debugging
-    if (origin) {
-      console.log(`CORS: Request from origin: ${origin}`);
-    } else {
-      console.log(`CORS: Request with no origin`);
-    }
-  },
+  origin: '*', // Allow all origins for now
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
