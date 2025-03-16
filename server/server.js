@@ -30,17 +30,8 @@ console.log(`Working directory: ${process.cwd()}`);
 console.log(`PORT: ${PORT}`);
 console.log('=====================');
 
-// Get base path for production in cPanel
-const getBasePath = () => {
-  // If APPLICATION_URL is set in .env, use it
-  if (process.env.APPLICATION_URL) {
-    return process.env.APPLICATION_URL;
-  }
-  // For API-only server, use empty base path
-  return '';
-};
-
-const BASE_PATH = getBasePath();
+// For API-only server, use empty base path
+const BASE_PATH = '';
 console.log(`Using base path: "${BASE_PATH}"`);
 
 // Enhanced CORS configuration with explicit allowed origins
@@ -68,6 +59,8 @@ app.use(cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (like mobile apps, curl requests)
     if (!origin) return callback(null, true);
+    
+    console.log(`CORS check for origin: ${origin}`);
     
     // Check if the origin is allowed
     const isAllowed = allowedOrigins.some(allowedOrigin => {
@@ -142,14 +135,14 @@ async function initializeDB() {
 // Initialize database connection
 initializeDB();
 
-// API Routes - using BASE_PATH (which might be /server in production)
-app.use(`${BASE_PATH}/api/users`, userRoutes);
-app.use(`${BASE_PATH}/api/medical-records`, medicalRecordRoutes);
-app.use(`${BASE_PATH}/api/appointments`, appointmentRoutes);
-app.use(`${BASE_PATH}/api/medicines`, medicineRoutes);
+// API Routes - keep them at root level for the API subdomain
+app.use(`/api/users`, userRoutes);
+app.use(`/api/medical-records`, medicalRecordRoutes);
+app.use(`/api/appointments`, appointmentRoutes);
+app.use(`/api/medicines`, medicineRoutes);
 
 // Health check endpoint with detailed information
-app.get(`${BASE_PATH}/api/health`, (req, res) => {
+app.get(`/api/health`, (req, res) => {
   const serverInfo = {
     status: dbConnected ? 'OK' : 'WARNING',
     timestamp: new Date().toISOString(),
@@ -182,85 +175,46 @@ app.get(`${BASE_PATH}/api/health`, (req, res) => {
   res.json(serverInfo);
 });
 
-// For production, only handle API routes - do not serve static files or handle other routes
-if (isProduction) {
-  console.log('Running in production mode - only handling API routes');
-  
-  // Create a route to handle 404 errors for API routes
-  app.use(`${BASE_PATH}/api/*`, (req, res) => {
-    res.status(404).json({
-      error: 'Not Found',
-      message: `The requested API endpoint ${req.originalUrl} was not found.`,
-      availableEndpoints: [`${BASE_PATH}/api/health`, `${BASE_PATH}/api/users`, `${BASE_PATH}/api/medical-records`, `${BASE_PATH}/api/appointments`, `${BASE_PATH}/api/medicines`],
-      timestamp: new Date().toISOString()
-    });
-  });
-  
-  // For any non-API route, return a message explaining the server structure
-  app.get('*', (req, res) => {
-    res.status(200).json({
-      message: 'ClimaSys API Server',
-      note: 'This server only handles API endpoints. The React frontend is served from the root domain.',
-      apiRoot: `${BASE_PATH}/api`,
-      availableEndpoints: [`${BASE_PATH}/api/health`, `${BASE_PATH}/api/users`, `${BASE_PATH}/api/medical-records`, `${BASE_PATH}/api/appointments`, `${BASE_PATH}/api/medicines`],
-      timestamp: new Date().toISOString()
-    });
-  });
-} else {
-  // Create a simple welcome page at root level for development
-  app.get('/', (req, res) => {
-    res.send(`
-      <html>
-        <head>
-          <title>ClimaSys API Server</title>
-          <style>
-            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-            h1 { color: #2563eb; }
-            .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-            .success { color: #059669; }
-            .warning { color: #d97706; }
-            code { background: #f3f4f6; padding: 2px 4px; border-radius: 4px; }
-          </style>
-        </head>
-        <body>
-          <h1>ClimaSys API Server</h1>
-          <div class="card">
-            <h2>Server Status: <span class="success">Running</span></h2>
-            <p>The server is operational. If you're trying to access the API, use the base path: 
-            <code>${BASE_PATH}/api</code></p>
-            <p>For health check information, visit: <a href="${BASE_PATH}/api/health">${BASE_PATH}/api/health</a></p>
-          </div>
-          <div class="card">
-            <h2>Environment</h2>
-            <p>Running in: <strong>${isProduction ? 'Production' : 'Development'}</strong> mode</p>
-            <p>Base Path: <code>${BASE_PATH}</code></p>
-            <p>Database: <strong>${dbConnected ? 
-              '<span class="success">Connected</span>' : 
-              '<span class="warning">Not Connected</span>'}</strong></p>
-          </div>
-          <div class="card">
-            <h2>API Endpoints</h2>
-            <ul>
-              <li><code>${BASE_PATH}/api/users</code> - User management</li>
-              <li><code>${BASE_PATH}/api/medical-records</code> - Medical records</li>
-              <li><code>${BASE_PATH}/api/appointments</code> - Appointments</li>
-              <li><code>${BASE_PATH}/api/medicines</code> - Medicines inventory</li>
-            </ul>
-          </div>
-        </body>
-      </html>
-    `);
-  });
-}
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({ 
-    error: 'Internal Server Error', 
-    message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message,
+// Create a route to handle 404 errors for API routes
+app.use(`/api/*`, (req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `The requested API endpoint ${req.originalUrl} was not found.`,
+    availableEndpoints: [`/api/health`, `/api/users`, `/api/medical-records`, `/api/appointments`, `/api/medicines`],
     timestamp: new Date().toISOString()
   });
+});
+
+// For any non-API route, return a message explaining the server structure
+app.get('*', (req, res) => {
+  res.status(200).json({
+    message: 'ClimaSys API Server',
+    note: 'This server only handles API endpoints. The React frontend is served from the root domain.',
+    apiRoot: `/api`,
+    availableEndpoints: [`/api/health`, `/api/users`, `/api/medical-records`, `/api/appointments`, `/api/medicines`],
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Global error handler with more detailed error information
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  
+  // Send more detailed error information in development mode
+  if (process.env.NODE_ENV !== 'production') {
+    res.status(500).json({ 
+      error: 'Internal Server Error', 
+      message: err.message,
+      stack: err.stack,
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    res.status(500).json({ 
+      error: 'Internal Server Error', 
+      message: 'An unexpected error occurred',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Try multiple ports if the initial one fails
@@ -274,10 +228,10 @@ const tryPort = (port, maxAttempts = 3) => {
     try {
       return app.listen(port, () => {
         console.log(`Server successfully running on port ${port}`);
-        console.log(`Health check available at: http://localhost:${port}${BASE_PATH}/api/health`);
+        console.log(`Health check available at: http://localhost:${port}/api/health`);
         if (isProduction) {
-          console.log(`Running in production mode. Base path: ${BASE_PATH}`);
-          console.log(`Production API URL: https://climasys.entrsolutions.com${BASE_PATH}/api/health`);
+          console.log(`Running in production mode.`);
+          console.log(`Production API URL: https://api.climasys.entrsolutions.com/api/health`);
         }
       }).on('error', (err) => {
         if (err.code === 'EADDRINUSE') {

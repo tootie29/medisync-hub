@@ -7,6 +7,7 @@ console.log('Database configuration:');
 console.log('- Host:', process.env.DB_HOST || 'localhost');
 console.log('- User:', process.env.DB_USER || 'root');
 console.log('- Database:', process.env.DB_NAME || 'medi_hub');
+console.log('- Debug:', process.env.DB_DEBUG === 'true' ? 'enabled' : 'disabled');
 
 // Create connection pool with enhanced configuration for cPanel
 const pool = mysql.createPool({
@@ -25,8 +26,8 @@ const pool = mysql.createPool({
   // In case of connection issues
   maxIdle: 5, 
   idleTimeout: 60000,
-  // Debug connection issues
-  debug: process.env.NODE_ENV !== 'production' && process.env.DB_DEBUG === 'true'
+  // Debug connection issues - modified to use DB_DEBUG env var
+  debug: process.env.DB_DEBUG === 'true'
 });
 
 // Test database connection with retry mechanism and more detailed logging
@@ -41,6 +42,14 @@ async function testConnection() {
       const [rows] = await connection.query('SELECT VERSION() as version');
       console.log(`MySQL Version: ${rows[0].version}`);
       console.log('Database connection verified with query');
+      
+      // Additional test: Try to see if tables exist
+      try {
+        const [tables] = await connection.query('SHOW TABLES');
+        console.log('Database tables:', tables.map(t => Object.values(t)[0]).join(', '));
+      } catch (tableError) {
+        console.error('Failed to query tables:', tableError.message);
+      }
     } catch (queryError) {
       console.error('Connected but query failed:', queryError.message);
     }
