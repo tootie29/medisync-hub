@@ -26,7 +26,11 @@ console.log('=====================');
 
 // Get base path for production in cPanel
 const getBasePath = () => {
-  // In all cases, we're using an empty string for direct domain access
+  // If the server is running in a subdirectory like /server
+  if (isProduction && process.env.APPLICATION_URL) {
+    return process.env.APPLICATION_URL;
+  }
+  // For direct domain access or development
   return '';
 };
 
@@ -98,7 +102,7 @@ async function initializeDB() {
 // Initialize database connection
 initializeDB();
 
-// API Routes - using BASE_PATH (which is an empty string)
+// API Routes - using BASE_PATH (which might be /server in production)
 app.use(`${BASE_PATH}/api/users`, userRoutes);
 app.use(`${BASE_PATH}/api/medical-records`, medicalRecordRoutes);
 app.use(`${BASE_PATH}/api/appointments`, appointmentRoutes);
@@ -138,26 +142,30 @@ app.get(`${BASE_PATH}/api/health`, (req, res) => {
   res.json(serverInfo);
 });
 
-// Serve static files from the React app in production
+// For production, only handle API routes - do not serve static files or handle other routes
+// as the React app is deployed separately at the root domain
 if (isProduction) {
-  console.log('Serving static files from the React app');
-  // Set the static folder
-  app.use(express.static(path.join(__dirname, '../dist')));
+  console.log('Running in production mode - only handling API routes');
   
   // Create a route to handle 404 errors for API routes
-  app.use('/api/*', (req, res) => {
+  app.use(`${BASE_PATH}/api/*`, (req, res) => {
     res.status(404).json({
       error: 'Not Found',
       message: `The requested API endpoint ${req.originalUrl} was not found.`,
-      availableEndpoints: ['/api/health', '/api/users', '/api/medical-records', '/api/appointments', '/api/medicines'],
+      availableEndpoints: [`${BASE_PATH}/api/health`, `${BASE_PATH}/api/users`, `${BASE_PATH}/api/medical-records`, `${BASE_PATH}/api/appointments`, `${BASE_PATH}/api/medicines`],
       timestamp: new Date().toISOString()
     });
   });
   
-  // For any non-API route, serve the React app's index.html
+  // For any non-API route, return a message explaining the server structure
   app.get('*', (req, res) => {
-    console.log('Serving React app for path:', req.originalUrl);
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+    res.status(200).json({
+      message: 'MediSync API Server',
+      note: 'This server only handles API endpoints. The React frontend is served from the root domain.',
+      apiRoot: `${BASE_PATH}/api`,
+      availableEndpoints: [`${BASE_PATH}/api/health`, `${BASE_PATH}/api/users`, `${BASE_PATH}/api/medical-records`, `${BASE_PATH}/api/appointments`, `${BASE_PATH}/api/medicines`],
+      timestamp: new Date().toISOString()
+    });
   });
 } else {
   // Create a simple welcome page at root level for development
@@ -222,7 +230,7 @@ const server = app.listen(PORT, () => {
   console.log(`Health check available at: http://localhost:${PORT}${BASE_PATH}/api/health`);
   if (isProduction) {
     console.log(`Running in production mode. Base path: ${BASE_PATH}`);
-    console.log(`Production URL: https://medisync.entrsolutions.com${BASE_PATH}/api/health`);
+    console.log(`Production API URL: https://medisync.entrsolutions.com${BASE_PATH}/api/health`);
   }
 });
 
