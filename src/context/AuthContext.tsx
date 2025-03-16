@@ -5,13 +5,6 @@ import axios from 'axios';
 
 // Define the API URL with improved environment detection
 const getApiUrl = () => {
-  // First check if we're running in the Lovable preview environment
-  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
-  if (isLovablePreview) {
-    console.log('Running in Lovable preview - using sample data instead of API');
-    return null;
-  }
-  
   // For production environments
   const hostname = window.location.hostname;
   if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
@@ -100,92 +93,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Registering user with data:', userData);
       
-      // If API_URL is null (in preview mode), use sample data instead
-      if (!API_URL) {
-        console.log('Using sample data for registration in preview mode');
-        // Create a mock user based on sample data structure
-        const newUser: User = {
-          id: `user-${Date.now()}`,
-          email: userData.email || '',
-          name: userData.name || '',
-          role: userData.role as UserRole,
-          phone: userData.phone || '',
-          dateOfBirth: userData.dateOfBirth || '',
-          gender: userData.gender as 'male' | 'female' | 'other',
-          address: userData.address || '',
-          emergencyContact: userData.emergencyContact || '',
-          ...(userData.role === 'student' && {
-            studentId: userData.studentId || '',
-            department: userData.department || '',
-          }),
-          ...(userData.role === 'staff' && {
-            staffId: userData.staffId || '',
-            position: userData.position || '',
-          }),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Set the user in state and localStorage
-        setUser(newUser);
-        localStorage.setItem('medisyncUser', JSON.stringify(newUser));
-        toast.success('Registration successful (preview mode)!');
-        return;
-      }
-
-      // Prepare the user data for API submission
-      const userForAPI = {
-        ...userData,
-        password, // Include password in the API call
-        // Convert camelCase to snake_case for backend compatibility
-        date_of_birth: userData.dateOfBirth,
-        emergency_contact: userData.emergencyContact,
-        student_id: userData.studentId,
-        staff_id: userData.staffId,
+      // Create a mock user based on sample data structure
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        email: userData.email || '',
+        name: userData.name || '',
+        role: userData.role as UserRole,
+        phone: userData.phone || '',
+        dateOfBirth: userData.dateOfBirth || '',
+        gender: userData.gender as 'male' | 'female' | 'other',
+        address: userData.address || '',
+        emergencyContact: userData.emergencyContact || '',
+        ...(userData.role === 'student' && {
+          studentId: userData.studentId || '',
+          department: userData.department || '',
+        }),
+        ...(userData.role === 'staff' && {
+          staffId: userData.staffId || '',
+          position: userData.position || '',
+        }),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       
-      console.log('Sending registration data to API:', userForAPI);
-      
-      // Make the actual API call to create the user
-      const response = await axios.post(`${API_URL}/users`, userForAPI);
-      console.log('Registration API response:', response);
-      
-      if (response.status !== 201) {
-        throw new Error('Registration failed');
-      }
-      
-      const newUser = response.data;
-      
-      // Convert API response format to match our frontend User type
-      const userForFrontend: User = {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role as UserRole,
-        phone: newUser.phone || '',
-        dateOfBirth: newUser.date_of_birth || newUser.dateOfBirth || '',
-        gender: newUser.gender || undefined,
-        address: newUser.address || '',
-        emergencyContact: newUser.emergency_contact || newUser.emergencyContact || '',
-        ...(newUser.role === 'student' && {
-          studentId: newUser.student_id || newUser.studentId || '',
-          department: newUser.department || '',
-        }),
-        ...(newUser.role === 'staff' && {
-          staffId: newUser.staff_id || newUser.staffId || '',
-          position: newUser.position || '',
-        }),
-        createdAt: newUser.created_at || new Date().toISOString(),
-        updatedAt: newUser.updated_at || new Date().toISOString(),
-      };
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Set the user in state and localStorage
-      setUser(userForFrontend);
-      localStorage.setItem('medisyncUser', JSON.stringify(userForFrontend));
+      setUser(newUser);
+      localStorage.setItem('medisyncUser', JSON.stringify(newUser));
       toast.success('Registration successful!');
+      
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error instanceof Error ? error.message : 'Registration failed');

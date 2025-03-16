@@ -1,22 +1,17 @@
-# Welcome to your Lovable project
+
+# MediSync Hub
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/c069f96b-e170-4441-a5b7-b4226cd2251f
+A medical synchronization hub application for managing student and staff medical records and appointments.
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/c069f96b-e170-4441-a5b7-b4226cd2251f) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -52,7 +47,7 @@ npm run dev
 
 ## What technologies are used for this project?
 
-This project is built with .
+This project is built with:
 
 - Vite
 - TypeScript
@@ -62,8 +57,18 @@ This project is built with .
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/c069f96b-e170-4441-a5b7-b4226cd2251f) and click on Share -> Publish.
+You can deploy this project using services like:
+- Netlify
+- Vercel
+- GitHub Pages
+- AWS Amplify
+- Firebase Hosting
 
-## I want to use a custom domain - is that possible?
+## Custom domains
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+To use a custom domain, you'll need to:
+
+1. Purchase a domain from a provider (Namecheap, GoDaddy, etc.)
+2. Configure DNS settings to point to your hosting provider
+3. Set up SSL certificates for secure connections
+

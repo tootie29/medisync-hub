@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '@/components/layout/AuthLayout';
 import { 
@@ -8,22 +8,14 @@ import {
   TabsList, 
   TabsTrigger 
 } from '@/components/ui/tabs';
-import { GraduationCap, Users, ArrowLeft, InfoIcon } from 'lucide-react';
+import { GraduationCap, Users, ArrowLeft } from 'lucide-react';
 import RegistrationForm from '@/components/forms/RegistrationForm';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Register: React.FC = () => {
   const [activeTab, setActiveTab] = useState('student');
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const navigate = useNavigate();
-  
-  useEffect(() => {
-    // Check if we're running in the Lovable preview environment
-    const isLovable = window.location.hostname.includes('lovableproject.com');
-    setIsPreviewMode(isLovable);
-  }, []);
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -52,16 +44,6 @@ const Register: React.FC = () => {
           Back
         </Button>
       </div>
-      
-      {isPreviewMode && (
-        <Alert variant="info" className="mb-4">
-          <InfoIcon className="h-4 w-4" />
-          <AlertTitle>Preview Mode</AlertTitle>
-          <AlertDescription>
-            Running in preview mode. Registration will save to local storage only (no database connection).
-          </AlertDescription>
-        </Alert>
-      )}
       
       <Tabs defaultValue="student" value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">

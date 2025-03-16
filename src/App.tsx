@@ -27,12 +27,6 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 
 const getApiBaseUrl = () => {
-  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
-  if (isLovablePreview) {
-    console.log('Running in Lovable preview - using sample data instead of API');
-    return null;
-  }
-  
   const hostname = window.location.hostname;
   if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
     return 'https://api.climasys.entrsolutions.com';
