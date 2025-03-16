@@ -138,7 +138,6 @@ const ServerChecker = () => {
   const [skipCheck, setSkipCheck] = useState(false);
   const maxRetries = 3;
   const isProduction = window.location.hostname === "climasys.entrsolutions.com";
-  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
 
   const handleManualCheck = () => {
     setIsChecking(true);
@@ -153,13 +152,6 @@ const ServerChecker = () => {
   };
 
   useEffect(() => {
-    if (isLovablePreview) {
-      setSkipCheck(true);
-      setIsChecking(false);
-      console.log('Running in Lovable preview - skipping server check');
-      return;
-    }
-    
     const shouldSkipCheck = localStorage.getItem('skipServerCheck') === 'true';
     if (shouldSkipCheck) {
       setSkipCheck(true);
@@ -270,7 +262,7 @@ const ServerChecker = () => {
     if (isChecking) {
       checkServer();
     }
-  }, [retryCount, isChecking, isLovablePreview, API_BASE_URL]);
+  }, [retryCount, isChecking, API_BASE_URL]);
 
   if (isChecking && !skipCheck) {
     return (
