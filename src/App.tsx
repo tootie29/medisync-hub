@@ -13,23 +13,24 @@ import { format, addDays, parseISO, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle, Server, ExternalLink, RefreshCw, Database } from "lucide-react";
 import axios from "axios";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Appointments from "./pages/Appointments";
-import BMICalculator from "./pages/BMICalculator";
-import MedicalRecords from "./pages/MedicalRecords";
-import Inventory from "./pages/Inventory";
-import Profile from "./pages/Profile";
-import Dashboard from "./pages/Dashboard";
-import HealthMonitoring from "./pages/HealthMonitoring";
-import Settings from "./pages/Settings";
 
-// Define API_URL based on domain - updated for production with correct path structure
-const API_BASE_URL = window.location.hostname === "climasys.entrsolutions.com" 
-  ? 'https://climasys.entrsolutions.com/server'  // Updated domain with /server prefix
-  : 'http://localhost:3001';
+// Define API_URL based on domain - updated to support multiple possible server domains
+const API_BASE_URL = (() => {
+  const hostname = window.location.hostname;
+  
+  // Production environment with separate API domain
+  if (hostname === "climasys.entrsolutions.com") {
+    return 'https://api.climasys.entrsolutions.com'; // Separate API domain
+  }
+  // Alternative production domain
+  else if (hostname === "app.climasys.entrsolutions.com") {
+    return 'https://api.climasys.entrsolutions.com'; // Same API domain
+  }
+  // Development environment
+  else {
+    return 'http://localhost:8080'; // Local development server
+  }
+})();
 
 console.log('Current hostname:', window.location.hostname);
 console.log('API base URL:', API_BASE_URL);
@@ -106,21 +107,20 @@ const CPanelSetupInstructions = () => (
   </div>
 );
 
-// Add new component to check server configurations that might be incorrect
+// Update ServerConfigurationChecker component to show correct API domain info
 const ServerConfigurationChecker = ({ isProduction }) => {
   if (!isProduction) return null;
 
   return (
     <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md text-sm">
       <h5 className="font-medium mb-2 text-blue-800 dark:text-blue-300 flex items-center">
-        <Server className="h-4 w-4 mr-1" /> Common cPanel Configuration Issues:
+        <Server className="h-4 w-4 mr-1" /> API Server Configuration:
       </h5>
       <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-400 text-xs">
-        <li>Application URL should be set to <strong>/</strong> (just a single slash)</li>
-        <li>Node.js application must be started with "Run JS Script" button</li>
-        <li>The <strong>.env</strong> file must exist with correct database credentials</li>
-        <li>The MySQL database specified in .env must exist in cPanel</li>
-        <li>The database user must have correct permissions</li>
+        <li>Your frontend is hosted at: <strong>{window.location.origin}</strong></li>
+        <li>Your API server is configured at: <strong>{API_BASE_URL}</strong></li>
+        <li>Ensure CORS is configured on your API server to allow requests from this domain</li>
+        <li>DNS records must be properly configured for both domains</li>
       </ul>
     </div>
   );

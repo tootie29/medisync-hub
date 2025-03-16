@@ -30,7 +30,7 @@ DB_HOST=localhost
 DB_USER=root     # Default user for MAMP/XAMPP
 DB_PASSWORD=     # Default is empty for XAMPP, "root" for MAMP
 DB_NAME=medi_hub
-PORT=3001
+PORT=8080
 ```
 
 3. Install dependencies
@@ -43,22 +43,33 @@ npm install
 node server.js
 ```
 
-Your server should now be running at http://localhost:3001
+Your server should now be running at http://localhost:8080
 
-## cPanel Production Deployment
+## Production Deployment Options
 
-### cPanel Configuration
+### Option 1: Separate Domain for API Server
+
+#### Domain Setup
+
+1. Configure two domains in your hosting:
+   - Frontend: `app.climasys.entrsolutions.com` or `climasys.entrsolutions.com`
+   - API Server: `api.climasys.entrsolutions.com`
+
+2. Set up DNS records for both domains pointing to your hosting server
+
+#### cPanel Configuration for API Server
 
 1. Log in to your cPanel account
 2. Go to the Node.js section
 3. Create a new Node.js application with the following settings:
+   - Domain: Select your API domain (e.g., `api.climasys.entrsolutions.com`)
    - Node.js version: 14.x or higher
    - Application mode: Production
-   - Application root: The directory where your server.js is located (e.g., `/home/username/server`)
-   - Application URL: `/server` (no trailing slash)
+   - Application root: The directory where your server.js is located
+   - Application URL: `/` (root of the domain)
    - Application startup file: `server.js`
 
-### Environment Setup
+#### Environment Setup
 
 1. Create a `.env` file in the server directory with production settings:
 ```
@@ -67,22 +78,61 @@ DB_USER=your_cpanel_username_databaseuser
 DB_PASSWORD=your_database_password
 DB_NAME=your_cpanel_username_databasename
 NODE_ENV=production
+APPLICATION_URL=
 ```
 
-> **Note:** cPanel often prefixes database names and users with your cPanel username. 
-> Example: If your cPanel username is "medisync" and you created a database named "medi_hub" 
-> with a user "admin", your configuration might be:
-> ```
-> DB_USER=medisync_admin
-> DB_NAME=medisync_medi_hub
-> ```
+Note: Leave `APPLICATION_URL` empty because the API is served from the root of its own domain.
+
+2. Click "Run NPM Install" to install all dependencies
+3. Click "Run JS Script" to start the server
+
+#### Frontend Configuration
+
+1. Update the API_BASE_URL in your frontend code:
+```javascript
+const API_BASE_URL = 'https://api.climasys.entrsolutions.com';
+```
+
+2. Build your frontend and upload to the frontend domain
+
+### Option 2: Subdirectory for API Server
+
+#### Domain Setup
+
+1. Configure your main domain in your hosting (e.g., `climasys.entrsolutions.com`)
+
+#### cPanel Configuration for API Server
+
+1. Log in to your cPanel account
+2. Go to the Node.js section
+3. Create a new Node.js application with the following settings:
+   - Domain: Select your main domain (e.g., `climasys.entrsolutions.com`)
+   - Node.js version: 14.x or higher
+   - Application mode: Production
+   - Application root: The directory where your server.js is located
+   - Application URL: `/server` (no trailing slash)
+   - Application startup file: `server.js`
+
+#### Environment Setup
+
+1. Create a `.env` file in the server directory with production settings:
+```
+DB_HOST=localhost
+DB_USER=your_cpanel_username_databaseuser
+DB_PASSWORD=your_database_password
+DB_NAME=your_cpanel_username_databasename
+NODE_ENV=production
+APPLICATION_URL=/server
+```
 
 2. Click "Run NPM Install" to install all dependencies
 3. Click "Run JS Script" to start the server
 
 ### Verify Deployment
 
-Visit `https://yourdomain.com/server/api/health` to check if the server is running correctly.
+Visit your API health endpoint to check if the server is running correctly:
+- Option 1: `https://api.climasys.entrsolutions.com/api/health`
+- Option 2: `https://climasys.entrsolutions.com/server/api/health`
 
 You should see a JSON response with server health information.
 
@@ -90,19 +140,22 @@ You should see a JSON response with server health information.
 
 If you encounter any issues:
 
-1. **503 Service Unavailable**
+1. **CORS Errors**
+   - Ensure your server's CORS configuration includes your frontend domain
+   - Check for any proxy or SSL configuration issues
+
+2. **503 Service Unavailable**
    - Ensure the Node.js application is running (check if "Run JS Script" has been clicked)
-   - Verify your Application URL is set to `/server` (without a trailing slash)
+   - Verify your Application URL is correct
    - Check cPanel error logs for Node.js errors
 
-2. **Database Connection Issues**
+3. **Database Connection Issues**
    - Verify database credentials in the `.env` file
    - Check if the database exists and the user has proper permissions
-   - Try running a manual MySQL connection test
 
-3. **Path Issues**
-   - Ensure the Application URL is set to `/server`
-   - Make sure all API requests use the correct path: `/server/api/...`
+4. **Path Issues**
+   - Ensure the Application URL is correctly set
+   - Make sure API requests use the correct path
 
 ## API Endpoints
 

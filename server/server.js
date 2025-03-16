@@ -15,7 +15,7 @@ dotenv.config();
 const app = express();
 
 // In cPanel, use the PORT that cPanel provides via environment variables
-// If running locally, use the port from .env file or default to 8080 (changed from 3001)
+// If running locally, use the port from .env file or default to 8080
 const PORT = process.env.PORT || 8080;
 
 // Production check
@@ -32,26 +32,33 @@ console.log('=====================');
 
 // Get base path for production in cPanel
 const getBasePath = () => {
-  // If the server is running in a subdirectory like /server
-  if (isProduction && process.env.APPLICATION_URL) {
+  // If APPLICATION_URL is set in .env, use it
+  if (process.env.APPLICATION_URL) {
     return process.env.APPLICATION_URL;
   }
-  // For direct domain access or development
+  // For API-only server, use empty base path
   return '';
 };
 
 const BASE_PATH = getBasePath();
 console.log(`Using base path: "${BASE_PATH}"`);
 
-// Enhanced CORS configuration for production and development
+// Enhanced CORS configuration for production and development with support for separate domains
 app.use(cors({
   origin: [
+    // Local development
     'http://localhost:5173',
     'http://localhost:8080',
     'http://localhost:3000',
+    
+    // Production domains
     'https://climasys.entrsolutions.com',
-    /\.lovableproject\.com$/, // Allow all Lovable preview domains
-    /\.entrsolutions\.com$/ // Allow all entrsolutions subdomains
+    'https://app.climasys.entrsolutions.com',
+    'https://www.climasys.entrsolutions.com',
+    
+    // Allow all Lovable preview domains and entrsolutions subdomains
+    /\.lovableproject\.com$/,
+    /\.entrsolutions\.com$/
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
