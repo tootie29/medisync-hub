@@ -27,8 +27,9 @@ console.log('=====================');
 // Get base path for production in cPanel
 const getBasePath = () => {
   if (isProduction) {
-    // For cPanel, the application might be accessed via /server path
-    return '/server';
+    // For direct domain access (https://medisync.entrsolutions.com/)
+    // you would use an empty string '' here
+    return '';
   }
   return '';
 };

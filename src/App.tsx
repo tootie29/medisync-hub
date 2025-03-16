@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,9 +26,9 @@ import Dashboard from "./pages/Dashboard";
 import HealthMonitoring from "./pages/HealthMonitoring";
 import Settings from "./pages/Settings";
 
-// Define API_URL based on domain - updated for production server path
+// Define API_URL based on domain - updated for production with empty base path
 const API_BASE_URL = window.location.hostname === "medisync.entrsolutions.com" 
-  ? 'https://medisync.entrsolutions.com/server'
+  ? 'https://medisync.entrsolutions.com'  // Updated to use root path
   : 'http://localhost:3001';
 
 console.log('Current hostname:', window.location.hostname);
@@ -76,16 +75,16 @@ const CPanelSetupInstructions = () => (
       <ul className="list-disc pl-6 mt-1 mb-2">
         <li>Node.js version: 14 or higher</li>
         <li>Application root: The directory where your server.js is located</li>
-        <li>Application URL: /server (without trailing slash)</li>
+        <li>Application URL: / (just a single slash for root domain access)</li>
         <li>Application startup file: server.js</li>
       </ul>
       <li>Create a .env file in your server directory with these settings:</li>
       <div className="bg-gray-100 dark:bg-gray-800 p-2 my-2 rounded overflow-auto">
         <pre className="text-xs text-gray-800 dark:text-gray-200">
           DB_HOST=localhost<br/>
-          DB_USER=your_cpanel_username_dbuser<br/>
+          DB_USER=entrsolu_medisyncuser<br/>
           DB_PASSWORD=your_database_password<br/>
-          DB_NAME=your_cpanel_username_dbname<br/>
+          DB_NAME=entrsolu_medisync<br/>
           NODE_ENV=production
         </pre>
       </div>
@@ -93,7 +92,7 @@ const CPanelSetupInstructions = () => (
       <li>Click "Run JS script" to start your server</li>
       <li>Test your server by visiting:<br/>
         <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">
-          https://medisync.entrsolutions.com/server/api/health
+          https://medisync.entrsolutions.com/api/health
         </code>
       </li>
     </ol>
@@ -117,7 +116,7 @@ const ServerConfigurationChecker = ({ isProduction }) => {
         <Server className="h-4 w-4 mr-1" /> Common cPanel Configuration Issues:
       </h5>
       <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-400 text-xs">
-        <li>Application URL must be set to <strong>/server</strong> (without a trailing slash)</li>
+        <li>Application URL should be set to <strong>/</strong> (just a single slash)</li>
         <li>Node.js application must be started with "Run JS Script" button</li>
         <li>The <strong>.env</strong> file must exist with correct database credentials</li>
         <li>The MySQL database specified in .env must exist in cPanel</li>
