@@ -13,11 +13,7 @@ const fs = require('fs');
 // Load environment variables from .env file
 dotenv.config();
 
-// Create server PID file to help with management
-const PID_FILE = path.join(__dirname, 'server.pid');
-fs.writeFileSync(PID_FILE, process.pid.toString());
-console.log(`Process ID ${process.pid} written to ${PID_FILE}`);
-
+// Create Express application
 const app = express();
 
 // In cPanel, use the PORT that cPanel provides via environment variables
@@ -78,28 +74,6 @@ app.use((req, res, next) => {
 
 // Database connection status
 let dbConnected = false;
-
-// Test database connection
-async function initializeDB() {
-  try {
-    console.log('Testing database connection...');
-    dbConnected = await testConnection();
-    console.log('Database connection status:', dbConnected ? 'Connected' : 'Disconnected');
-    
-    // If connection fails, retry every 30 seconds
-    if (!dbConnected) {
-      console.log('Will retry database connection in 30 seconds...');
-      setTimeout(initializeDB, 30000);
-    } else {
-      // Only start listening for requests if DB is connected
-      startServer();
-    }
-  } catch (error) {
-    console.error('Database initialization error:', error);
-    console.log('Will retry database connection in 30 seconds...');
-    setTimeout(initializeDB, 30000);
-  }
-}
 
 // API Routes - keep them at root level for the API subdomain
 app.use(`/api/users`, userRoutes);
@@ -205,11 +179,43 @@ app.use((err, req, res, next) => {
 // Create a server reference at the top level scope
 let serverInstance = null;
 
-// Function to start the server after successful DB connection
+// Test database connection
+async function initializeDB() {
+  try {
+    console.log('Testing database connection...');
+    dbConnected = await testConnection();
+    console.log('Database connection status:', dbConnected ? 'Connected' : 'Disconnected');
+    
+    if (!dbConnected) {
+      console.log('Failed to connect to database. Server will continue running but API calls may fail.');
+      console.log('Will retry database connection every 30 seconds...');
+      setTimeout(initializeDB, 30000);
+    }
+    
+    if (!serverInstance) {
+      startServer();
+    }
+  } catch (error) {
+    console.error('Database initialization error:', error);
+    console.log('Will retry database connection in 30 seconds...');
+    setTimeout(initializeDB, 30000);
+    
+    if (!serverInstance) {
+      startServer();
+    }
+  }
+}
+
+// Function to start the server 
 function startServer() {
   console.log(`Attempting to start server on port ${PORT}`);
   
   try {
+    // Create server PID file to help with management
+    const PID_FILE = path.join(__dirname, 'server.pid');
+    fs.writeFileSync(PID_FILE, process.pid.toString());
+    console.log(`Process ID ${process.pid} written to ${PID_FILE}`);
+    
     serverInstance = app.listen(PORT, () => {
       console.log(`Server successfully running on port ${PORT}`);
       console.log(`Health check available at: http://localhost:${PORT}/api/health`);
@@ -235,75 +241,6 @@ function startServer() {
     process.exit(1);
   }
 }
-
-// Improved graceful shutdown
-function shutDown() {
-  console.log('Received kill signal, shutting down gracefully');
-  
-  // Remove PID file
-  if (fs.existsSync(PID_FILE)) {
-    try {
-      fs.unlinkSync(PID_FILE);
-      console.log(`Removed PID file: ${PID_FILE}`);
-    } catch (error) {
-      console.error(`Failed to remove PID file: ${error.message}`);
-    }
-  }
-  
-  if (serverInstance) {
-    serverInstance.close(() => {
-      console.log('Closed out remaining connections');
-      process.exit(0);
-    });
-    
-    // Force close after 10 seconds
-    setTimeout(() => {
-      console.error('Could not close connections in time, forcefully shutting down');
-      process.exit(1);
-    }, 10000);
-  } else {
-    process.exit(0);
-  }
-}
-
-// Graceful shutdown
-process.on('SIGTERM', shutDown);
-process.on('SIGINT', shutDown);
-process.on('SIGUSR2', shutDown); // For Nodemon restart
-
-// Check if there's already a running server and try to stop it
-const checkExistingServer = () => {
-  if (fs.existsSync(PID_FILE)) {
-    try {
-      const pid = fs.readFileSync(PID_FILE, 'utf8').trim();
-      console.log(`Found existing server with PID ${pid}, attempting to stop it first...`);
-      
-      try {
-        // Send SIGTERM to the process
-        process.kill(parseInt(pid, 10), 'SIGTERM');
-        console.log(`Signal sent to existing process ${pid}, waiting 2 seconds before starting new server...`);
-        
-        // Wait 2 seconds before continuing
-        return new Promise(resolve => setTimeout(resolve, 2000))
-          .then(() => initializeDB());
-      } catch (error) {
-        // If the process doesn't exist or we can't kill it, just remove the PID file
-        if (error.code === 'ESRCH') {
-          console.log(`No process found with PID ${pid}, removing stale PID file`);
-          fs.unlinkSync(PID_FILE);
-        } else {
-          console.error(`Error stopping existing server: ${error.message}`);
-        }
-        initializeDB();
-      }
-    } catch (error) {
-      console.error(`Error reading PID file: ${error.message}`);
-      initializeDB();
-    }
-  } else {
-    initializeDB();
-  }
-};
 
 // Create a stopServer script to help with cPanel management
 const STOP_SCRIPT = path.join(__dirname, 'stop.js');
@@ -338,5 +275,42 @@ if (fs.existsSync(PID_FILE)) {
 
 console.log(`Created stop script at ${STOP_SCRIPT}`);
 
-// First check for existing server, then start the initialization process
-checkExistingServer();
+// Improved graceful shutdown
+function shutDown() {
+  console.log('Received kill signal, shutting down gracefully');
+  
+  // Remove PID file
+  const PID_FILE = path.join(__dirname, 'server.pid');
+  if (fs.existsSync(PID_FILE)) {
+    try {
+      fs.unlinkSync(PID_FILE);
+      console.log(`Removed PID file: ${PID_FILE}`);
+    } catch (error) {
+      console.error(`Failed to remove PID file: ${error.message}`);
+    }
+  }
+  
+  if (serverInstance) {
+    serverInstance.close(() => {
+      console.log('Closed out remaining connections');
+      process.exit(0);
+    });
+    
+    // Force close after 10 seconds
+    setTimeout(() => {
+      console.error('Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 10000);
+  } else {
+    process.exit(0);
+  }
+}
+
+// Graceful shutdown
+process.on('SIGTERM', shutDown);
+process.on('SIGINT', shutDown);
+process.on('SIGUSR2', shutDown); // For Nodemon restart
+
+// Start the server immediately without checking for existing server
+// This avoids the issue where the server immediately stops after starting
+initializeDB();
