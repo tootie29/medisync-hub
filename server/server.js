@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -9,6 +10,9 @@ const medicineRoutes = require('./routes/medicineRoutes');
 const path = require('path');
 
 const app = express();
+
+// In cPanel, use the PORT that cPanel provides via environment variables
+// If running locally, use the port from .env file or default to 3001
 const PORT = process.env.PORT || 3001;
 
 // Production check
@@ -222,15 +226,34 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health check available at: http://localhost:${PORT}${BASE_PATH}/api/health`);
-  if (isProduction) {
-    console.log(`Running in production mode. Base path: ${BASE_PATH}`);
-    console.log(`Production API URL: https://climasys.entrsolutions.com${BASE_PATH}/api/health`);
-  }
-});
+// Start server with error handling for EADDRINUSE
+let server;
+try {
+  // Add error handling for port in use
+  server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Health check available at: http://localhost:${PORT}${BASE_PATH}/api/health`);
+    if (isProduction) {
+      console.log(`Running in production mode. Base path: ${BASE_PATH}`);
+      console.log(`Production API URL: https://climasys.entrsolutions.com${BASE_PATH}/api/health`);
+    }
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use.`);
+      console.log('This may be due to cPanel port assignment or another process is using this port.');
+      console.log('Try one of these solutions:');
+      console.log('1. Stop any other Node.js applications in cPanel that might be using this port');
+      console.log('2. Ask your hosting provider to free up port 3001 or assign a different port');
+      console.log('3. Update your .env file to use a different PORT value');
+      process.exit(1);
+    } else {
+      throw err;
+    }
+  });
+} catch (err) {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+}
 
 // Graceful shutdown
 process.on('SIGTERM', shutDown);
@@ -238,14 +261,18 @@ process.on('SIGINT', shutDown);
 
 function shutDown() {
   console.log('Received kill signal, shutting down gracefully');
-  server.close(() => {
-    console.log('Closed out remaining connections');
+  if (server) {
+    server.close(() => {
+      console.log('Closed out remaining connections');
+      process.exit(0);
+    });
+    
+    // Force close after 10 seconds
+    setTimeout(() => {
+      console.error('Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 10000);
+  } else {
     process.exit(0);
-  });
-  
-  // Force close after 10 seconds
-  setTimeout(() => {
-    console.error('Could not close connections in time, forcefully shutting down');
-    process.exit(1);
-  }, 10000);
+  }
 }
