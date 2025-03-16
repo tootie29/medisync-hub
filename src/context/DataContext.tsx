@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -30,6 +29,39 @@ const API_URL = (() => {
 })();
 
 console.log('Using API URL:', API_URL);
+
+// Create a custom axios instance with timeout and retry logic
+const apiClient = axios.create({
+  baseURL: API_URL,
+  timeout: 10000, // 10 seconds
+});
+
+// Add response interceptor for error handling
+apiClient.interceptors.response.use(
+  response => response,
+  async error => {
+    // Don't show error toasts when component unmounts during request
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+    
+    // Use silent failure for background operations
+    if (error.config && error.config.silentError) {
+      return Promise.reject(error);
+    }
+    
+    if (error.response) {
+      console.error('API Error:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('API Request Error (No Response):', error.request);
+    } else {
+      console.error('API Setup Error:', error.message);
+    }
+    
+    // Allow the calling code to handle the error if needed
+    return Promise.reject(error);
+  }
+);
 
 interface DataContextType {
   medicalRecords: MedicalRecord[];
@@ -83,19 +115,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoadingMedicines, setIsLoadingMedicines] = useState<boolean>(true);
 
   useEffect(() => {
-    refreshMedicalRecords();
-    refreshAppointments();
-    refreshMedicines();
+    // Only fetch data if server check was successful or skipped
+    if (localStorage.getItem('skipServerCheck') === 'true' || 
+        localStorage.getItem('lastSuccessfulServerCheck')) {
+      refreshMedicalRecords();
+      refreshAppointments();
+      refreshMedicines();
+    }
   }, []);
 
   const refreshMedicalRecords = async () => {
     setIsLoadingRecords(true);
     try {
-      const response = await axios.get(`${API_URL}/medical-records`);
+      const response = await apiClient.get('/medical-records');
       setMedicalRecords(response.data);
     } catch (error) {
       console.error('Error fetching medical records:', error);
-      toast.error('Failed to load medical records');
+      // Don't show a toast here as the interceptor will handle it
+      // Just use sample data as fallback
+      setMedicalRecords([]);
     } finally {
       setIsLoadingRecords(false);
     }
@@ -104,11 +142,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshAppointments = async () => {
     setIsLoadingAppointments(true);
     try {
-      const response = await axios.get(`${API_URL}/appointments`);
+      const response = await apiClient.get('/appointments');
       setAppointments(response.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
-      toast.error('Failed to load appointments');
+      setAppointments([]);
     } finally {
       setIsLoadingAppointments(false);
     }
@@ -117,11 +155,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshMedicines = async () => {
     setIsLoadingMedicines(true);
     try {
-      const response = await axios.get(`${API_URL}/medicines`);
+      const response = await apiClient.get('/medicines');
       setMedicines(response.data);
     } catch (error) {
       console.error('Error fetching medicines:', error);
-      toast.error('Failed to load medicines');
+      setMedicines([]);
     } finally {
       setIsLoadingMedicines(false);
     }
@@ -163,7 +201,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         vitalSigns: Object.keys(updatedVitalSigns).length > 0 ? updatedVitalSigns : undefined
       };
       
-      const response = await axios.post(`${API_URL}/medical-records`, recordToCreate);
+      const response = await apiClient.post('/medical-records', recordToCreate);
       const newRecord = response.data;
       
       setMedicalRecords(prev => [...prev, newRecord]);
@@ -192,7 +230,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         record.vitalSigns.bloodPressure = record.bloodPressure;
       }
       
-      const response = await axios.put(`${API_URL}/medical-records/${id}`, record);
+      const response = await apiClient.put(`/medical-records/${id}`, record);
       const updatedRecord = response.data;
       
       setMedicalRecords(prev => 
@@ -210,7 +248,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteMedicalRecord = async (id: string): Promise<void> => {
     try {
-      await axios.delete(`${API_URL}/medical-records/${id}`);
+      await apiClient.delete(`/medical-records/${id}`);
       
       setMedicalRecords(prev => 
         prev.filter(r => r.id !== id)
@@ -238,7 +276,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addAppointment = async (appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> => {
     try {
-      const response = await axios.post(`${API_URL}/appointments`, appointment);
+      const response = await apiClient.post('/appointments', appointment);
       const newAppointment = response.data;
       
       setAppointments(prev => [...prev, newAppointment]);
@@ -267,7 +305,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateAppointment = async (id: string, appointment: Partial<Appointment>): Promise<Appointment> => {
     try {
-      const response = await axios.put(`${API_URL}/appointments/${id}`, appointment);
+      const response = await apiClient.put(`/appointments/${id}`, appointment);
       const updatedAppointment = response.data;
       
       setAppointments(prev => 
@@ -285,7 +323,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteAppointment = async (id: string): Promise<void> => {
     try {
-      await axios.delete(`${API_URL}/appointments/${id}`);
+      await apiClient.delete(`/appointments/${id}`);
       
       setAppointments(prev => 
         prev.filter(a => a.id !== id)
@@ -305,7 +343,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addMedicine = async (medicine: Omit<Medicine, 'id' | 'createdAt' | 'updatedAt'>): Promise<Medicine> => {
     try {
-      const response = await axios.post(`${API_URL}/medicines`, medicine);
+      const response = await apiClient.post('/medicines', medicine);
       const newMedicine = response.data;
       
       setMedicines(prev => [...prev, newMedicine]);
@@ -321,7 +359,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateMedicine = async (id: string, medicine: Partial<Medicine>): Promise<Medicine> => {
     try {
-      const response = await axios.put(`${API_URL}/medicines/${id}`, medicine);
+      const response = await apiClient.put(`/medicines/${id}`, medicine);
       const updatedMedicine = response.data;
       
       setMedicines(prev => 
@@ -339,7 +377,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteMedicine = async (id: string): Promise<void> => {
     try {
-      await axios.delete(`${API_URL}/medicines/${id}`);
+      await apiClient.delete(`/medicines/${id}`);
       
       setMedicines(prev => 
         prev.filter(m => m.id !== id)

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -145,6 +146,7 @@ const ServerChecker = () => {
   const [serverUrl, setServerUrl] = useState('');
   const [serverDetails, setServerDetails] = useState<any>(null);
   const [lastChecked, setLastChecked] = useState(new Date());
+  const [skipCheck, setSkipCheck] = useState(false);
   const maxRetries = 3;
   const isProduction = window.location.hostname === "climasys.entrsolutions.com";
 
@@ -153,8 +155,22 @@ const ServerChecker = () => {
     setRetryCount(0);
     setLastChecked(new Date());
   };
+  
+  const handleSkipCheck = () => {
+    setSkipCheck(true);
+    setIsChecking(false);
+    localStorage.setItem('skipServerCheck', 'true');
+  };
 
   useEffect(() => {
+    // Check if we should skip the server check
+    const shouldSkipCheck = localStorage.getItem('skipServerCheck') === 'true';
+    if (shouldSkipCheck) {
+      setSkipCheck(true);
+      setIsChecking(false);
+      return;
+    }
+    
     // Show the actual server URL we're trying to connect to
     const healthCheckUrl = `${API_BASE_URL}/api/health`;
     setServerUrl(healthCheckUrl);
@@ -182,6 +198,10 @@ const ServerChecker = () => {
             }
           );
         }
+        
+        // Remember that we successfully connected
+        localStorage.setItem('lastSuccessfulServerCheck', new Date().toISOString());
+        setIsChecking(false);
       } catch (error) {
         console.error('Health endpoint error:', error);
         
@@ -196,6 +216,10 @@ const ServerChecker = () => {
             note: 'Connected to server root, but health check failed',
             rootData: rootResponse.data
           });
+          setIsChecking(false);
+          
+          // Remember that we successfully connected
+          localStorage.setItem('lastSuccessfulServerCheck', new Date().toISOString());
         } catch (rootError) {
           console.error('Backend server connection issue:', rootError);
           
@@ -247,10 +271,6 @@ const ServerChecker = () => {
             );
           }
         }
-      } finally {
-        if (isServerRunning || retryCount >= maxRetries) {
-          setIsChecking(false);
-        }
       }
     };
 
@@ -259,7 +279,7 @@ const ServerChecker = () => {
     }
   }, [retryCount, isChecking]);
 
-  if (isChecking) {
+  if (isChecking && !skipCheck) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 bg-opacity-80 dark:bg-opacity-80 z-50">
         <div className="text-center p-6 rounded-lg bg-white dark:bg-gray-800 shadow-lg max-w-md">
@@ -271,12 +291,18 @@ const ServerChecker = () => {
               Retry attempt {retryCount}/{maxRetries}
             </p>
           )}
+          <button 
+            onClick={handleSkipCheck}
+            className="mt-4 px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:underline"
+          >
+            Skip check and continue to app
+          </button>
         </div>
       </div>
     );
   }
 
-  if (!isServerRunning && !isChecking) {
+  if (!isServerRunning && !isChecking && !skipCheck) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 bg-opacity-80 dark:bg-opacity-80 z-50">
         <div className="text-center p-6 rounded-lg bg-white dark:bg-gray-800 shadow-lg max-w-md">
@@ -326,6 +352,12 @@ const ServerChecker = () => {
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Check Again
+              </button>
+              <button 
+                onClick={handleSkipCheck}
+                className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
+              >
+                Skip & Continue
               </button>
               {isProduction && (
                 <a
