@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -8,12 +7,16 @@ const medicalRecordRoutes = require('./routes/medicalRecordRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
 const path = require('path');
+const dotenv = require('dotenv');
+
+// Load environment variables from .env file
+dotenv.config();
 
 const app = express();
 
 // In cPanel, use the PORT that cPanel provides via environment variables
-// If running locally, use the port from .env file or default to 3001
-const PORT = process.env.PORT || 3001;
+// If running locally, use the port from .env file or default to 8080 (changed from 3001)
+const PORT = process.env.PORT || 8080;
 
 // Production check
 const isProduction = process.env.NODE_ENV === 'production' || process.env.PRODUCTION === 'true';
@@ -226,34 +229,55 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server with error handling for EADDRINUSE
-let server;
-try {
-  // Add error handling for port in use
-  server = app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Health check available at: http://localhost:${PORT}${BASE_PATH}/api/health`);
-    if (isProduction) {
-      console.log(`Running in production mode. Base path: ${BASE_PATH}`);
-      console.log(`Production API URL: https://climasys.entrsolutions.com${BASE_PATH}/api/health`);
-    }
-  }).on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error(`Port ${PORT} is already in use.`);
-      console.log('This may be due to cPanel port assignment or another process is using this port.');
-      console.log('Try one of these solutions:');
-      console.log('1. Stop any other Node.js applications in cPanel that might be using this port');
-      console.log('2. Ask your hosting provider to free up port 3001 or assign a different port');
-      console.log('3. Update your .env file to use a different PORT value');
+// Try multiple ports if the initial one fails
+// This helps in cPanel environments where the exact port might vary
+const tryPort = (port, maxAttempts = 3) => {
+  let currentAttempt = 1;
+  
+  const attemptListen = (port) => {
+    console.log(`Attempting to start server on port ${port} (attempt ${currentAttempt}/${maxAttempts})`);
+    
+    try {
+      return app.listen(port, () => {
+        console.log(`Server successfully running on port ${port}`);
+        console.log(`Health check available at: http://localhost:${port}${BASE_PATH}/api/health`);
+        if (isProduction) {
+          console.log(`Running in production mode. Base path: ${BASE_PATH}`);
+          console.log(`Production API URL: https://climasys.entrsolutions.com${BASE_PATH}/api/health`);
+        }
+      }).on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.error(`Port ${port} is already in use.`);
+          
+          if (currentAttempt < maxAttempts) {
+            currentAttempt++;
+            const nextPort = port + 1;
+            console.log(`Trying next port: ${nextPort}`);
+            return attemptListen(nextPort);
+          } else {
+            console.error('This may be due to cPanel port assignment or another process is using this port.');
+            console.log('Try one of these solutions:');
+            console.log('1. Stop any other Node.js applications in cPanel that might be using these ports');
+            console.log(`2. Ask your hosting provider to free up ports ${PORT}-${PORT + maxAttempts - 1} or assign a different port`);
+            console.log('3. Update your .env file with the PORT value shown in cPanel');
+            process.exit(1);
+          }
+        } else {
+          console.error('Server error:', err);
+          process.exit(1);
+        }
+      });
+    } catch (err) {
+      console.error('Failed to start server:', err);
       process.exit(1);
-    } else {
-      throw err;
     }
-  });
-} catch (err) {
-  console.error('Failed to start server:', err);
-  process.exit(1);
-}
+  };
+  
+  return attemptListen(port);
+};
+
+// Start server with automatic port adjustment
+let server = tryPort(PORT);
 
 // Graceful shutdown
 process.on('SIGTERM', shutDown);
