@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -22,7 +23,7 @@ const app = express();
 
 // In cPanel, use the PORT that cPanel provides via environment variables
 // If running locally, use the port from .env file or default to 8080
-const PORT = process.env.PORT || 8080;
+const PORT = parseInt(process.env.PORT || 8080, 10);
 
 // Production check
 const isProduction = process.env.NODE_ENV === 'production' || process.env.PRODUCTION === 'true';
@@ -256,15 +257,16 @@ const tryPort = (port, maxAttempts = 3) => {
           
           if (currentAttempt < maxAttempts) {
             currentAttempt++;
-            const nextPort = port + 1;
+            // Make sure we increment the port as a number, not a string concatenation
+            const nextPort = parseInt(port, 10) + 1;
             console.log(`Trying next port: ${nextPort}`);
             return attemptListen(nextPort);
           } else {
-            console.error('This may be due to cPanel port assignment or another process is using this port.');
+            console.error('Failed to find an available port after multiple attempts.');
             console.log('Try one of these solutions:');
             console.log('1. Stop any other Node.js applications in cPanel that might be using these ports');
-            console.log(`2. Ask your hosting provider to free up ports ${PORT}-${PORT + maxAttempts - 1} or assign a different port`);
-            console.log('3. Update your .env file with the PORT value shown in cPanel');
+            console.log(`2. Use the stop.js script to stop any existing server instances: node stop.js`);
+            console.log('3. Update your .env file with a different PORT value');
             process.exit(1);
           }
         } else {
@@ -280,9 +282,6 @@ const tryPort = (port, maxAttempts = 3) => {
   
   return attemptListen(port);
 };
-
-// Start server with automatic port adjustment
-let server = tryPort(PORT);
 
 // Improved graceful shutdown
 function shutDown() {
@@ -319,6 +318,39 @@ process.on('SIGTERM', shutDown);
 process.on('SIGINT', shutDown);
 process.on('SIGUSR2', shutDown); // For Nodemon restart
 
+// Check if there's already a running server and try to stop it
+const checkExistingServer = () => {
+  if (fs.existsSync(PID_FILE)) {
+    try {
+      const pid = fs.readFileSync(PID_FILE, 'utf8').trim();
+      console.log(`Found existing server with PID ${pid}, attempting to stop it first...`);
+      
+      try {
+        // Send SIGTERM to the process
+        process.kill(parseInt(pid, 10), 'SIGTERM');
+        console.log(`Signal sent to existing process ${pid}, waiting 2 seconds before starting new server...`);
+        
+        // Wait 2 seconds before continuing
+        return new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error) {
+        // If the process doesn't exist or we can't kill it, just remove the PID file
+        if (error.code === 'ESRCH') {
+          console.log(`No process found with PID ${pid}, removing stale PID file`);
+          fs.unlinkSync(PID_FILE);
+        } else {
+          console.error(`Error stopping existing server: ${error.message}`);
+        }
+        return Promise.resolve();
+      }
+    } catch (error) {
+      console.error(`Error reading PID file: ${error.message}`);
+      return Promise.resolve();
+    }
+  } else {
+    return Promise.resolve();
+  }
+};
+
 // Create a stopServer script to help with cPanel management
 const STOP_SCRIPT = path.join(__dirname, 'stop.js');
 fs.writeFileSync(STOP_SCRIPT, `
@@ -351,3 +383,9 @@ if (fs.existsSync(PID_FILE)) {
 `);
 
 console.log(`Created stop script at ${STOP_SCRIPT}`);
+
+// First check for existing server, then start a new one
+checkExistingServer().then(() => {
+  // Start server with automatic port adjustment
+  let server = tryPort(PORT);
+});
