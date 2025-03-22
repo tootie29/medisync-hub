@@ -416,9 +416,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/Login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/Register" element={<Register />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/appointments" element={<Appointments />} />
                 <Route path="/bmi" element={<BMICalculator />} />
