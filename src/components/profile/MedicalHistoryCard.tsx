@@ -13,6 +13,14 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
   userMedicalRecords, 
   getBMICategoryColor 
 }) => {
+  // Safe toFixed function to handle non-number BMI values
+  const safeToFixed = (value: any, digits: number = 1): string => {
+    if (typeof value === 'number' && !isNaN(value)) {
+      return value.toFixed(digits);
+    }
+    return '0.0'; // Default value when bmi is not a valid number
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 mt-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">
@@ -26,6 +34,11 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
             .slice(0, 5)
             .map(record => {
               const doctor = SAMPLE_USERS.find(u => u.id === record.doctorId);
+              // Make sure bmi is treated as a number
+              const bmi = typeof record.bmi === 'number' ? 
+                record.bmi : 
+                parseFloat(record.bmi) || 0;
+                
               return (
                 <div key={record.id} className="border rounded-lg p-4">
                   <div className="flex justify-between">
@@ -50,8 +63,8 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
                         <span className="text-gray-500">Weight:</span> {record.weight} kg
                       </p>
                       <p className="text-sm">
-                        <span className={getBMICategoryColor(record.bmi)}>
-                          BMI: {record.bmi.toFixed(1)}
+                        <span className={getBMICategoryColor(bmi)}>
+                          BMI: {safeToFixed(bmi)}
                         </span>
                       </p>
                     </div>

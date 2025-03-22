@@ -18,6 +18,19 @@ const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
 }) => {
   if (!latestMedicalRecord) return null;
 
+  // Safe toFixed function to handle non-number BMI values
+  const safeToFixed = (value: any, digits: number = 1): string => {
+    if (typeof value === 'number' && !isNaN(value)) {
+      return value.toFixed(digits);
+    }
+    return '0.0'; // Default value when bmi is not a valid number
+  };
+
+  // Make sure bmi is treated as a number
+  const bmi = typeof latestMedicalRecord.bmi === 'number' ? 
+    latestMedicalRecord.bmi : 
+    parseFloat(latestMedicalRecord.bmi) || 0;
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2">
@@ -31,15 +44,15 @@ const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
           <div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500">BMI</span>
-              <span className={`font-medium ${getBMICategoryColor(latestMedicalRecord.bmi)}`}>
-                {latestMedicalRecord.bmi.toFixed(1)} - {getBMICategory(latestMedicalRecord.bmi)}
+              <span className={`font-medium ${getBMICategoryColor(bmi)}`}>
+                {safeToFixed(bmi)} - {getBMICategory(bmi)}
               </span>
             </div>
             <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
               <div 
                 className="h-full rounded-full transition-all duration-500"
                 style={{ 
-                  width: `${Math.min(latestMedicalRecord.bmi * 2, 100)}%`,
+                  width: `${Math.min(bmi * 2, 100)}%`,
                   background: `linear-gradient(to right, 
                     #3b82f6 0%, #3b82f6 18.5%, 
                     #22c55e 18.5%, #22c55e 25%, 

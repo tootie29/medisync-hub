@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,6 +92,13 @@ const MedicalRecords: React.FC = () => {
 
   console.log("Sorted medical records:", medicalRecords);
 
+  const safeToFixed = (value: any, digits: number = 1): string => {
+    if (typeof value === 'number' && !isNaN(value)) {
+      return value.toFixed(digits);
+    }
+    return '0.0'; // Default value when bmi is not a valid number
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -174,8 +180,8 @@ const MedicalRecords: React.FC = () => {
           medications: formData.medications,
           followUpDate: formData.followUpDate,
           vitalSigns: {
-            heartRate: formData.vitalSigns.heartRate,
-            bloodGlucose: formData.vitalSigns.bloodGlucose
+            heartRate: formData.vitalSigns?.heartRate || 0,
+            bloodGlucose: formData.vitalSigns?.bloodGlucose || 0
           }
         });
       }
@@ -480,7 +486,7 @@ const MedicalRecords: React.FC = () => {
                             </div>
                             <div>
                               <p className="text-sm text-gray-500">BMI</p>
-                              <p className="font-medium">{record.bmi.toFixed(1)}</p>
+                              <p className="font-medium">{safeToFixed(record.bmi)}</p>
                             </div>
                             
                             {(record.bloodPressure || record.vitalSigns?.bloodPressure) && (
@@ -563,7 +569,7 @@ const MedicalRecords: React.FC = () => {
                         <TableRow key={record.id}>
                           <TableCell>{format(new Date(record.date), 'PPP')}</TableCell>
                           <TableCell>{getDoctorName(record.doctorId)}</TableCell>
-                          <TableCell>{record.bmi.toFixed(1)}</TableCell>
+                          <TableCell>{safeToFixed(record.bmi)}</TableCell>
                           <TableCell>{record.diagnosis || 'N/A'}</TableCell>
                           <TableCell>
                             {record.followUpDate 
