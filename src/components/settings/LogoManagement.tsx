@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Upload, RefreshCw } from 'lucide-react';
+import { Upload, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface Logo {
   id: string;
@@ -20,6 +20,7 @@ const LogoManagement = () => {
   const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Fetch the current logos from the database
@@ -28,22 +29,34 @@ const LogoManagement = () => {
 
   const fetchLogos = async () => {
     setIsLoadingLogos(true);
+    setError(null);
     try {
+      console.log('Fetching logos...');
       const response = await axios.get('/api/logos');
+      console.log('Logos response:', response.data);
       const logos: Logo[] = response.data;
       
       const primary = logos.find(logo => logo.position === 'primary');
       const secondary = logos.find(logo => logo.position === 'secondary');
       
       if (primary) {
+        console.log('Primary logo URL:', primary.url);
         setPrimaryLogoUrl(primary.url);
+      } else {
+        // Fallback to default logo
+        setPrimaryLogoUrl('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
       }
       
       if (secondary) {
+        console.log('Secondary logo URL:', secondary.url);
         setSecondaryLogoUrl(secondary.url);
+      } else {
+        // Fallback to default logo
+        setSecondaryLogoUrl('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
       }
     } catch (error) {
       console.error('Error fetching logos:', error);
+      setError('Failed to load logos. Please try again.');
       toast.error('Failed to load logos');
       
       // Fallback to default logo if API fails
@@ -69,6 +82,7 @@ const LogoManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     
     try {
       const formData = new FormData();
@@ -83,11 +97,13 @@ const LogoManagement = () => {
       
       // Only proceed if at least one file is selected
       if (primaryLogo || secondaryLogo) {
-        await axios.post('/api/logos', formData, {
+        console.log('Uploading logos...');
+        const response = await axios.post('/api/logos', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
+        console.log('Upload response:', response.data);
         
         toast.success('Logos updated successfully');
         // Reset file input
@@ -101,6 +117,7 @@ const LogoManagement = () => {
       }
     } catch (error) {
       console.error('Error updating logos:', error);
+      setError('Failed to upload logos. Please try again.');
       toast.error('Failed to update logos');
     } finally {
       setIsLoading(false);
@@ -109,6 +126,27 @@ const LogoManagement = () => {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-destructive/15 p-4 rounded-md mb-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+          <div>
+            <p className="text-destructive font-medium">{error}</p>
+            <p className="text-destructive/80 text-sm mt-1">
+              Try refreshing the page or contact support if the issue persists.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchLogos}
+              className="mt-2"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="font-medium">Primary Logo</div>
@@ -123,6 +161,10 @@ const LogoManagement = () => {
                   src={primaryLogoUrl} 
                   alt="Primary Logo" 
                   className="max-h-full object-contain"
+                  onError={(e) => {
+                    console.error('Failed to load primary logo:', primaryLogoUrl);
+                    e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                  }}
                 />
               </div>
             ) : (
@@ -156,6 +198,10 @@ const LogoManagement = () => {
                   src={secondaryLogoUrl} 
                   alt="Secondary Logo" 
                   className="max-h-full object-contain"
+                  onError={(e) => {
+                    console.error('Failed to load secondary logo:', secondaryLogoUrl);
+                    e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                  }}
                 />
               </div>
             ) : (

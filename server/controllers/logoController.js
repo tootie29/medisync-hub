@@ -14,10 +14,39 @@ if (!fs.existsSync(uploadsDir)) {
 exports.getAllLogos = async (req, res) => {
   try {
     const logos = await logoModel.getAllLogos();
-    res.status(200).json(logos);
+    
+    // Add absolute URLs to the logos
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const logosWithUrls = logos.map(logo => ({
+      ...logo,
+      url: logo.url.startsWith('http') ? logo.url : `${baseUrl}${logo.url}`
+    }));
+    
+    res.status(200).json(logosWithUrls);
   } catch (error) {
     console.error('Error fetching logos:', error);
     res.status(500).json({ error: 'Failed to fetch logos' });
+  }
+};
+
+// Get logo by position
+exports.getLogoByPosition = async (req, res) => {
+  try {
+    const position = req.params.position;
+    const logo = await logoModel.getLogoByPosition(position);
+    
+    if (!logo) {
+      return res.status(404).json({ error: 'Logo not found' });
+    }
+    
+    // Add absolute URL to the logo
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    logo.url = logo.url.startsWith('http') ? logo.url : `${baseUrl}${logo.url}`;
+    
+    res.status(200).json(logo);
+  } catch (error) {
+    console.error('Error fetching logo:', error);
+    res.status(500).json({ error: 'Failed to fetch logo' });
   }
 };
 
@@ -26,6 +55,9 @@ exports.uploadLogos = async (req, res) => {
   try {
     const files = req.files;
     const results = [];
+    
+    // Get server base URL
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
 
     // Process primary logo if uploaded
     if (files.primaryLogo && files.primaryLogo[0]) {
@@ -43,7 +75,7 @@ exports.uploadLogos = async (req, res) => {
       results.push({
         position: 'primary',
         filename: primaryLogo.filename,
-        path: relativePath
+        path: `${baseUrl}${relativePath}`
       });
     }
 
@@ -63,7 +95,7 @@ exports.uploadLogos = async (req, res) => {
       results.push({
         position: 'secondary',
         filename: secondaryLogo.filename,
-        path: relativePath
+        path: `${baseUrl}${relativePath}`
       });
     }
 

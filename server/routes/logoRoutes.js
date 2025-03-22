@@ -40,4 +40,7 @@ router.post('/', upload.fields([
   { name: 'secondaryLogo', maxCount: 1 }
 ]), logoController.uploadLogos);
 
+// Added route to get a single logo by position
+router.get('/:position', logoController.getLogoByPosition);
+
 module.exports = router;

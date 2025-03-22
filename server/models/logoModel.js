@@ -13,6 +13,21 @@ exports.getAllLogos = async () => {
   }
 };
 
+// Get logo by position
+exports.getLogoByPosition = async (position) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM logos WHERE position = ?',
+      [position]
+    );
+    
+    return rows.length > 0 ? rows[0] : null;
+  } catch (error) {
+    console.error('Database error:', error);
+    throw new Error('Failed to fetch logo from database');
+  }
+};
+
 // Update a logo (replaces existing logo for that position)
 exports.updateLogo = async (logo) => {
   try {

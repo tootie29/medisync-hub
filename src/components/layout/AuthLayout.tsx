@@ -33,21 +33,25 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
 
   const fetchLogos = async () => {
     try {
+      console.log('AuthLayout: Fetching logos...');
       const response = await axios.get('/api/logos');
+      console.log('AuthLayout: Logos response:', response.data);
       const logos: Logo[] = response.data;
       
       const primary = logos.find(logo => logo.position === 'primary');
       const secondary = logos.find(logo => logo.position === 'secondary');
       
       if (primary) {
+        console.log('AuthLayout: Primary logo URL:', primary.url);
         setPrimaryLogoUrl(primary.url);
       }
       
       if (secondary) {
+        console.log('AuthLayout: Secondary logo URL:', secondary.url);
         setSecondaryLogoUrl(secondary.url);
       }
     } catch (error) {
-      console.error('Error fetching logos:', error);
+      console.error('AuthLayout: Error fetching logos:', error);
       // Keep default logos on error
     } finally {
       setIsLoadingLogos(false);
@@ -93,6 +97,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                 src={primaryLogoUrl} 
                 alt="Olivarez Clinic Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
+                onError={(e) => {
+                  console.error('Failed to load primary logo in AuthLayout:', primaryLogoUrl);
+                  e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                }}
               />
             </div>
             <div className="flex flex-col justify-center items-center">
@@ -100,6 +108,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                 src={secondaryLogoUrl} 
                 alt="Olivarez Clinic Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
+                onError={(e) => {
+                  console.error('Failed to load secondary logo in AuthLayout:', secondaryLogoUrl);
+                  e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                }}
               />
             </div>
           </div>
@@ -123,6 +135,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       src={primaryLogoUrl} 
                       alt="Olivarez Clinic Logo" 
                       className="h-16 w-auto object-contain"
+                      onError={(e) => {
+                        console.error('Failed to load primary logo in AuthLayout (mobile):', primaryLogoUrl);
+                        e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                      }}
                     />
                   </div>
                   <div className="flex flex-col justify-center">
@@ -130,6 +146,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       src={secondaryLogoUrl} 
                       alt="Olivarez Clinic Logo" 
                       className="h-16 w-auto object-contain"
+                      onError={(e) => {
+                        console.error('Failed to load secondary logo in AuthLayout (mobile):', secondaryLogoUrl);
+                        e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                      }}
                     />
                   </div>
                 </div>
@@ -141,6 +161,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       src={primaryLogoUrl} 
                       alt="Olivarez Clinic Logo" 
                       className="h-14 w-auto object-contain"
+                      onError={(e) => {
+                        console.error('Failed to load primary logo in AuthLayout (tablet):', primaryLogoUrl);
+                        e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                      }}
                     />
                   </div>
                   <div className="flex justify-center">
@@ -148,6 +172,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       src={secondaryLogoUrl} 
                       alt="Olivarez Clinic Logo" 
                       className="h-14 w-auto object-contain"
+                      onError={(e) => {
+                        console.error('Failed to load secondary logo in AuthLayout (tablet):', secondaryLogoUrl);
+                        e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                      }}
                     />
                   </div>
                 </div>
