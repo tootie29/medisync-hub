@@ -91,6 +91,7 @@ const Login: React.FC = () => {
               required
               autoComplete="email"
               className="auth-input"
+              style={{ border: "1px solid #00a651", borderRadius: "0" }}
             />
           </div>
 
@@ -104,14 +105,16 @@ const Login: React.FC = () => {
               required
               autoComplete="current-password"
               className="auth-input"
+              style={{ border: "1px solid #00a651", borderRadius: "0" }}
             />
           </div>
 
-          <div className="pt-4 flex justify-end">
+          <div className="pt-4 flex justify-center">
             <button
               type="submit"
-              className="login-button"
+              className="bg-[#3c8a3f] text-white py-2 px-8 rounded-none font-bold text-xl"
               disabled={isLoading}
+              style={{ backgroundColor: "#3c8a3f" }}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
