@@ -96,6 +96,15 @@ CREATE TABLE IF NOT EXISTS medicines (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Settings table for application configuration
+CREATE TABLE IF NOT EXISTS settings (
+  id VARCHAR(36) PRIMARY KEY,
+  type VARCHAR(50) NOT NULL,
+  settings JSON NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- Insert sample data for users
 INSERT INTO users (id, email, name, role, phone, date_of_birth, gender, address, emergency_contact)
 VALUES
@@ -133,3 +142,8 @@ VALUES
 ('1', 'Paracetamol', 'Painkillers', 100, 20, 'tablets', 'Pain reliever and fever reducer', '500mg', '2024-06-30', 'PharmaCorp'),
 ('2', 'Ibuprofen', 'Anti-inflammatory', 50, 15, 'tablets', 'Non-steroidal anti-inflammatory drug', '400mg', '2024-08-15', 'MediSupply'),
 ('3', 'Amoxicillin', 'Antibiotics', 30, 10, 'capsules', 'Antibiotic medication', '250mg', '2023-12-31', 'PharmaCorp');
+
+-- Insert default branding settings
+INSERT INTO settings (id, type, settings)
+VALUES
+(UUID(), 'branding', '{"primaryLogo":"/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png","secondaryLogo":"/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png","clinicName":"OLIVAREZ CLINIC","tagline":"Health at Your Fingertips"}');

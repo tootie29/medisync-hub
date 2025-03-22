@@ -1,113 +1,126 @@
 
-import { NavLink } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/context/AuthContext";
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardCheck,
-  HeartPulse,
-  Home,
-  Package,
-  Settings,
+  Heart,
+  BookPlus,
+  Clipboard,
   UserCircle,
+  Settings,
+  Calculator,
   Activity,
-} from "lucide-react";
+  Package2,
+  PanelLeft,
+  Palette,
+  LogOut
+} from 'lucide-react';
 
-export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
-  const { user } = useAuth();
+import {
+  Sidebar as UISidebar,
+  SidebarSection,
+  SidebarItem,
+  SidebarMenu,
+  SidebarDivider,
+} from "@/components/ui/sidebar";
+
+export default function Sidebar() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
   
-  // Determine if user can access inventory (admin or doctor only)
-  const canAccessInventory = user && (user.role === "admin" || user.role === "doctor");
-  
-  const routes = [
-    {
-      path: "/",
-      name: "Home",
-      icon: Home,
-    },
-    {
-      path: "/appointments",
-      name: "Appointments",
-      icon: Calendar,
-    },
-    {
-      path: "/bmi",
-      name: "BMI Calculator",
-      icon: HeartPulse,
-    },
-    {
-      path: "/records",
-      name: "Medical Records",
-      icon: ClipboardCheck,
-    },
-    {
-      path: "/health-monitoring",
-      name: "Health Monitoring",
-      icon: Activity,
-    },
-    // Only show inventory to admin and doctor roles
-    ...(canAccessInventory ? [{
-      path: "/inventory",
-      name: "Inventory",
-      icon: Package,
-    }] : []),
-  ];
+  const isAdmin = user?.role === 'admin';
+  const isDoctor = user?.role === 'doctor' || user?.role === 'admin';
 
   return (
-    <div
-      className={cn(
-        "bg-medical-primary fixed left-0 top-0 z-50 flex h-full shrink-0 flex-col overflow-y-auto border-r border-medical-secondary py-4 transition-all duration-300",
-        isSidebarOpen ? "w-64" : "w-16"
-      )}
-    >
-      <div className="flex items-center justify-between px-4 mb-4">
-        <div className={cn("font-bold text-white text-xl", !isSidebarOpen && "hidden")}>
-          MedCenter
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className="rounded-full p-1.5 text-white hover:bg-medical-secondary/50"
-        >
-          {isSidebarOpen ? (
-            <ChevronLeft className="h-6 w-6" />
-          ) : (
-            <ChevronRight className="h-6 w-6" />
+    <UISidebar className="pl-2 pr-2">
+      <SidebarMenu>
+        <SidebarSection>
+          <SidebarItem 
+            icon={<Heart size={20} />} 
+            text="Dashboard" 
+            isActive={isActive('/dashboard')}
+            onClick={() => handleNavigation('/dashboard')}
+          />
+          <SidebarItem 
+            icon={<BookPlus size={20} />} 
+            text="Appointments" 
+            isActive={isActive('/appointments')}
+            onClick={() => handleNavigation('/appointments')}
+          />
+          {isDoctor && (
+            <SidebarItem 
+              icon={<Clipboard size={20} />} 
+              text="Medical Records" 
+              isActive={isActive('/medical-records')}
+              onClick={() => handleNavigation('/medical-records')}
+            />
           )}
-          <span className="sr-only">Toggle sidebar</span>
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-2 py-2 px-3">
-        {routes.map((route) => (
-          <NavLink
-            key={route.path}
-            to={route.path}
-            className={({ isActive }) =>
-              cn(
-                "group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all",
-                "text-white hover:bg-medical-secondary/70",
-                isActive
-                  ? "bg-medical-secondary text-white"
-                  : "text-white/90",
-                !isSidebarOpen && "justify-center px-2"
-              )
-            }
-          >
-            <route.icon className="h-5 w-5" />
-            {isSidebarOpen && <span className="whitespace-nowrap">{route.name}</span>}
-            {!isSidebarOpen && (
-              <span className="absolute left-full top-1/2 ml-2 -translate-y-1/2 rounded-md bg-medical-primary px-2 py-1 text-xs font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg border border-medical-secondary z-50">
-                {route.name}
-              </span>
-            )}
-          </NavLink>
-        ))}
-      </div>
-    </div>
+          <SidebarItem 
+            icon={<UserCircle size={20} />} 
+            text="Profile" 
+            isActive={isActive('/profile')}
+            onClick={() => handleNavigation('/profile')}
+          />
+        </SidebarSection>
+        
+        <SidebarDivider />
+        
+        <SidebarSection title="Tools">
+          <SidebarItem 
+            icon={<Calculator size={20} />} 
+            text="BMI Calculator" 
+            isActive={isActive('/bmi-calculator')}
+            onClick={() => handleNavigation('/bmi-calculator')}
+          />
+          <SidebarItem 
+            icon={<Activity size={20} />} 
+            text="Health Monitoring" 
+            isActive={isActive('/health-monitoring')}
+            onClick={() => handleNavigation('/health-monitoring')}
+          />
+          {isAdmin && (
+            <SidebarItem 
+              icon={<Package2 size={20} />} 
+              text="Inventory" 
+              isActive={isActive('/inventory')}
+              onClick={() => handleNavigation('/inventory')}
+            />
+          )}
+        </SidebarSection>
+        
+        <SidebarDivider />
+        
+        <SidebarSection title="System">
+          <SidebarItem 
+            icon={<Settings size={20} />} 
+            text="Settings" 
+            isActive={isActive('/settings')}
+            onClick={() => handleNavigation('/settings')}
+          />
+          {isAdmin && (
+            <SidebarItem 
+              icon={<Palette size={20} />} 
+              text="Branding Settings" 
+              isActive={isActive('/branding-settings')}
+              onClick={() => handleNavigation('/branding-settings')}
+            />
+          )}
+          <SidebarItem 
+            icon={<LogOut size={20} />} 
+            text="Logout" 
+            onClick={logout}
+          />
+        </SidebarSection>
+      </SidebarMenu>
+    </UISidebar>
   );
 }
