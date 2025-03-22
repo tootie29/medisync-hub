@@ -78,6 +78,7 @@
   padding: 10px;
   font-size: 16px;
   margin-top: 5px;
+  margin-bottom: 15px;
 }
 
 .sign-in-button {
@@ -88,8 +89,9 @@
   border-radius: 5px;
   font-weight: bold;
   cursor: pointer;
-  margin-left: auto;
+  margin: 20px auto 0;
   display: block;
+  width: auto;
 }
 
 .sign-in-button:hover {
@@ -97,11 +99,12 @@
 }
 
 .auth-card {
-  border: 2px solid #00a651;
-  border-radius: 8px;
-  padding: 24px;
+  border: 3px solid #00a651;
+  border-radius: 0;
+  padding: 30px;
   background-color: white;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
