@@ -28,12 +28,22 @@ const Dashboard: React.FC = () => {
     getUserById
   } = useData();
 
-  // Check user roles more explicitly
-  const isPatient = user?.role === 'student' || user?.role === 'staff';
+  // Check user roles more explicitly - make sure staff can see proper data
+  const isStudent = user?.role === 'student';
+  const isStaff = user?.role === 'staff';
   const isDoctor = user?.role === 'doctor';
   const isAdmin = user?.role === 'admin';
-  const isStaff = user?.role === 'staff';
+  
+  // Consider staff and students as patients for medical records purposes
+  const isPatient = isStudent || isStaff;
+  
+  // Medical staff includes doctors and admins
   const isMedicalStaff = isDoctor || isAdmin;
+
+  console.log("User role:", user?.role);
+  console.log("isPatient:", isPatient);
+  console.log("isMedicalStaff:", isMedicalStaff);
+  console.log("isStaff:", isStaff);
 
   // Get appointments based on user role
   const userAppointments = isPatient
@@ -60,7 +70,7 @@ const Dashboard: React.FC = () => {
     })
     .slice(0, 5);
 
-  // Get medical records for patients only
+  // Get medical records for patients only (students and staff)
   const userMedicalRecords = isPatient
     ? getMedicalRecordsByPatientId(user?.id || '')
     : [];
@@ -147,7 +157,7 @@ const Dashboard: React.FC = () => {
             </Card>
           )}
 
-          {/* Medical Records card - visible to patients and medical staff */}
+          {/* Medical Records card - visible to patients (students and staff) and medical staff */}
           <Card className="stats-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -272,7 +282,7 @@ const Dashboard: React.FC = () => {
           </Card>
 
           <div className="space-y-6">
-            {/* Health Status card - only visible to patients */}
+            {/* Health Status card - only visible to patients (students and staff) */}
             {isPatient && latestRecord && (
               <Card>
                 <CardHeader>

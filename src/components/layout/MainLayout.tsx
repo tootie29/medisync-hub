@@ -22,6 +22,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     }
   }, [user, isLoading, navigate]);
 
+  // Add some debug logs
+  console.log("MainLayout rendering", { user, isLoading });
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -31,6 +34,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }
 
   if (!user) {
+    console.log("No user detected, will redirect to login");
     return null; // Will redirect in the useEffect
   }
 
