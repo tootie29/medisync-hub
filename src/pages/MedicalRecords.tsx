@@ -92,11 +92,12 @@ const MedicalRecords: React.FC = () => {
 
   console.log("Sorted medical records:", medicalRecords);
 
+  // Safe toFixed function to handle non-number BMI values
   const safeToFixed = (value: any, digits: number = 1): string => {
     if (typeof value === 'number' && !isNaN(value)) {
       return value.toFixed(digits);
     }
-    return '0.0'; // Default value when bmi is not a valid number
+    return '0.0'; // Default value when value is not a valid number
   };
 
   const handleChange = (
