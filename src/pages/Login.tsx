@@ -55,7 +55,7 @@ const Login: React.FC = () => {
 
   return (
     <AuthLayout>
-      <div className="auth-form-container">
+      <div className="auth-form-container" style={{ border: "3px solid #00a651", borderRadius: "0" }}>
         <div className="mb-6 text-center">
           <h2 className="text-3xl font-bold">ADMISSION LOG IN</h2>
         </div>
