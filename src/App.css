@@ -42,8 +42,8 @@
   color: #888;
 }
 
-/* Green gradient background for auth pages matching the image */
-.green-gradient-bg {
+/* Green gradient background for auth pages */
+.auth-gradient-bg {
   background: linear-gradient(to right, #00a651, #73c35c, #d8ef8b);
 }
 
