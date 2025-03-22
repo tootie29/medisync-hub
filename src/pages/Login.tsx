@@ -3,10 +3,8 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import AuthLayout from '@/components/layout/AuthLayout';
-import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
 import { AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
