@@ -51,6 +51,9 @@ const PatientRecordsTable: React.FC = () => {
       )
     : patientData;
 
+  console.log("Available patients:", filteredPatients);
+  console.log("Routing to medical records with patient ID");
+
   return (
     <Card>
       <CardHeader>
@@ -93,7 +96,7 @@ const PatientRecordsTable: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button asChild size="sm" variant="ghost">
-                        <Link to={`/records?patient=${patient?.id}`}>
+                        <Link to={`/medical-records?patient=${patient?.id}`}>
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Records
                         </Link>
