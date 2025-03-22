@@ -1,4 +1,3 @@
-
 -- Create the database
 CREATE DATABASE IF NOT EXISTS medi_hub;
 USE medi_hub;
@@ -95,6 +94,20 @@ CREATE TABLE IF NOT EXISTS medicines (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Logos table for storing clinic logos
+CREATE TABLE IF NOT EXISTS logos (
+  id VARCHAR(36) PRIMARY KEY,
+  url VARCHAR(255) NOT NULL,
+  position ENUM('primary', 'secondary') NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default logos
+INSERT INTO logos (id, url, position)
+VALUES
+('1', '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png', 'primary'),
+('2', '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png', 'secondary');
 
 -- Insert sample data for users
 INSERT INTO users (id, email, name, role, phone, date_of_birth, gender, address, emergency_contact)

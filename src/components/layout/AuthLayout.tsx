@@ -1,20 +1,58 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMediaQuery } from '@/hooks/use-mobile';
+import axios from 'axios';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
+  title?: string;
 }
 
-const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
+interface Logo {
+  id: string;
+  url: string;
+  position: 'primary' | 'secondary';
+}
+
+const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const isSmallScreen = useMediaQuery("(max-width: 1023px)");
   const isTablet = useMediaQuery("(min-width: 640px) and (max-width: 1023px)");
   const isMobile = useMediaQuery("(max-width: 639px)");
   const isSmallDesktop = useMediaQuery("(min-width: 1024px) and (max-width: 1279px)");
+  
+  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
+  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
+  const [isLoadingLogos, setIsLoadingLogos] = useState(true);
+
+  useEffect(() => {
+    fetchLogos();
+  }, []);
+
+  const fetchLogos = async () => {
+    try {
+      const response = await axios.get('/api/logos');
+      const logos: Logo[] = response.data;
+      
+      const primary = logos.find(logo => logo.position === 'primary');
+      const secondary = logos.find(logo => logo.position === 'secondary');
+      
+      if (primary) {
+        setPrimaryLogoUrl(primary.url);
+      }
+      
+      if (secondary) {
+        setSecondaryLogoUrl(secondary.url);
+      }
+    } catch (error) {
+      console.error('Error fetching logos:', error);
+      // Keep default logos on error
+    } finally {
+      setIsLoadingLogos(false);
+    }
+  };
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
@@ -52,14 +90,14 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           <div className="flex justify-center items-center space-x-6 mb-6">
             <div className="flex flex-col justify-center items-center">
               <img 
-                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                src={primaryLogoUrl} 
                 alt="Olivarez Clinic Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
               />
             </div>
             <div className="flex flex-col justify-center items-center">
               <img 
-                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                src={secondaryLogoUrl} 
                 alt="Olivarez Clinic Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
               />
@@ -82,14 +120,14 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
                 <div className="flex justify-center items-center gap-6">
                   <div className="flex flex-col justify-center">
                     <img 
-                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      src={primaryLogoUrl} 
                       alt="Olivarez Clinic Logo" 
                       className="h-16 w-auto object-contain"
                     />
                   </div>
                   <div className="flex flex-col justify-center">
                     <img 
-                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      src={secondaryLogoUrl} 
                       alt="Olivarez Clinic Logo" 
                       className="h-16 w-auto object-contain"
                     />
@@ -100,14 +138,14 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
                 <div className="flex flex-col space-y-3 justify-center items-center">
                   <div className="flex justify-center">
                     <img 
-                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      src={primaryLogoUrl} 
                       alt="Olivarez Clinic Logo" 
                       className="h-14 w-auto object-contain"
                     />
                   </div>
                   <div className="flex justify-center">
                     <img 
-                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      src={secondaryLogoUrl} 
                       alt="Olivarez Clinic Logo" 
                       className="h-14 w-auto object-contain"
                     />
@@ -120,6 +158,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           </div>
           
           <div className="border-2 border-medical-primary rounded-md p-6">
+            {title && <h2 className="text-2xl font-bold text-medical-primary mb-6 text-center">{title}</h2>}
             {children}
           </div>
         </div>

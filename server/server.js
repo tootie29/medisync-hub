@@ -6,6 +6,7 @@ const userRoutes = require('./routes/userRoutes');
 const medicalRecordRoutes = require('./routes/medicalRecordRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
+const logoRoutes = require('./routes/logoRoutes');
 const path = require('path');
 const dotenv = require('dotenv');
 const fs = require('fs');
@@ -80,6 +81,10 @@ app.use(`/api/users`, userRoutes);
 app.use(`/api/medical-records`, medicalRecordRoutes);
 app.use(`/api/appointments`, appointmentRoutes);
 app.use(`/api/medicines`, medicineRoutes);
+app.use(`/api/logos`, logoRoutes);
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check endpoint with detailed information
 app.get(`/api/health`, (req, res) => {
@@ -128,7 +133,8 @@ app.get('/', (req, res) => {
       '/api/users',
       '/api/medical-records',
       '/api/appointments',
-      '/api/medicines'
+      '/api/medicines',
+      '/api/logos'
     ],
     timestamp: new Date().toISOString()
   });
@@ -139,7 +145,7 @@ app.use(`/api/*`, (req, res) => {
   res.status(404).json({
     error: 'Not Found',
     message: `The requested API endpoint ${req.originalUrl} was not found.`,
-    availableEndpoints: [`/api/health`, `/api/users`, `/api/medical-records`, `/api/appointments`, `/api/medicines`],
+    availableEndpoints: [`/api/health`, `/api/users`, `/api/medical-records`, `/api/appointments`, `/api/medicines`, `/api/logos`],
     timestamp: new Date().toISOString()
   });
 });
@@ -150,7 +156,7 @@ app.get('*', (req, res) => {
     message: 'ClimaSys API Server',
     note: 'This server only handles API endpoints. The React frontend is served from the root domain.',
     apiRoot: `/api`,
-    availableEndpoints: [`/api/health`, `/api/users`, `/api/medical-records`, `/api/appointments`, `/api/medicines`],
+    availableEndpoints: [`/api/health`, `/api/users`, `/api/medical-records`, `/api/appointments`, `/api/medicines`, `/api/logos`],
     timestamp: new Date().toISOString()
   });
 });

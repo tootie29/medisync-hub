@@ -1,0 +1,201 @@
+
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import axios from 'axios';
+import { Upload, RefreshCw } from 'lucide-react';
+
+interface Logo {
+  id: string;
+  url: string;
+  position: 'primary' | 'secondary';
+}
+
+const LogoManagement = () => {
+  const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
+  const [secondaryLogo, setSecondaryLogo] = useState<File | null>(null);
+  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>('');
+  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingLogos, setIsLoadingLogos] = useState(true);
+
+  useEffect(() => {
+    // Fetch the current logos from the database
+    fetchLogos();
+  }, []);
+
+  const fetchLogos = async () => {
+    setIsLoadingLogos(true);
+    try {
+      const response = await axios.get('/api/logos');
+      const logos: Logo[] = response.data;
+      
+      const primary = logos.find(logo => logo.position === 'primary');
+      const secondary = logos.find(logo => logo.position === 'secondary');
+      
+      if (primary) {
+        setPrimaryLogoUrl(primary.url);
+      }
+      
+      if (secondary) {
+        setSecondaryLogoUrl(secondary.url);
+      }
+    } catch (error) {
+      console.error('Error fetching logos:', error);
+      toast.error('Failed to load logos');
+      
+      // Fallback to default logo if API fails
+      setPrimaryLogoUrl('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
+      setSecondaryLogoUrl('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
+    } finally {
+      setIsLoadingLogos(false);
+    }
+  };
+
+  const handlePrimaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setPrimaryLogo(e.target.files[0]);
+    }
+  };
+
+  const handleSecondaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSecondaryLogo(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const formData = new FormData();
+      
+      if (primaryLogo) {
+        formData.append('primaryLogo', primaryLogo);
+      }
+      
+      if (secondaryLogo) {
+        formData.append('secondaryLogo', secondaryLogo);
+      }
+      
+      // Only proceed if at least one file is selected
+      if (primaryLogo || secondaryLogo) {
+        await axios.post('/api/logos', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        toast.success('Logos updated successfully');
+        // Reset file input
+        setPrimaryLogo(null);
+        setSecondaryLogo(null);
+        
+        // Refresh the logos from server
+        fetchLogos();
+      } else {
+        toast.error('Please select at least one logo to update');
+      }
+    } catch (error) {
+      console.error('Error updating logos:', error);
+      toast.error('Failed to update logos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div className="font-medium">Primary Logo</div>
+          {isLoadingLogos ? (
+            <div className="h-40 bg-gray-100 rounded-md flex items-center justify-center">
+              <RefreshCw className="h-8 w-8 text-gray-400 animate-spin" />
+            </div>
+          ) : (
+            primaryLogoUrl ? (
+              <div className="h-40 flex items-center justify-center border rounded-md p-4">
+                <img 
+                  src={primaryLogoUrl} 
+                  alt="Primary Logo" 
+                  className="max-h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="h-40 bg-gray-100 rounded-md flex items-center justify-center">
+                <p className="text-gray-500">No logo uploaded</p>
+              </div>
+            )
+          )}
+          <div className="pt-2">
+            <Label htmlFor="primaryLogo" className="block mb-2">Upload new primary logo</Label>
+            <Input 
+              id="primaryLogo" 
+              type="file" 
+              accept="image/*"
+              onChange={handlePrimaryLogoChange}
+              className="cursor-pointer"
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="font-medium">Secondary Logo</div>
+          {isLoadingLogos ? (
+            <div className="h-40 bg-gray-100 rounded-md flex items-center justify-center">
+              <RefreshCw className="h-8 w-8 text-gray-400 animate-spin" />
+            </div>
+          ) : (
+            secondaryLogoUrl ? (
+              <div className="h-40 flex items-center justify-center border rounded-md p-4">
+                <img 
+                  src={secondaryLogoUrl} 
+                  alt="Secondary Logo" 
+                  className="max-h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="h-40 bg-gray-100 rounded-md flex items-center justify-center">
+                <p className="text-gray-500">No logo uploaded</p>
+              </div>
+            )
+          )}
+          <div className="pt-2">
+            <Label htmlFor="secondaryLogo" className="block mb-2">Upload new secondary logo</Label>
+            <Input 
+              id="secondaryLogo" 
+              type="file" 
+              accept="image/*"
+              onChange={handleSecondaryLogoChange}
+              className="cursor-pointer"
+            />
+          </div>
+        </div>
+      </div>
+      
+      <Button
+        onClick={handleSubmit}
+        disabled={isLoading || (!primaryLogo && !secondaryLogo)}
+        className="bg-medical-primary hover:bg-medical-secondary text-white"
+      >
+        {isLoading ? (
+          <>
+            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+            Updating Logos...
+          </>
+        ) : (
+          <>
+            <Upload className="mr-2 h-4 w-4" />
+            Update Logos
+          </>
+        )}
+      </Button>
+    </div>
+  );
+};
+
+export default LogoManagement;

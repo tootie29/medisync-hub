@@ -1,16 +1,20 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Bell, Volume2 } from 'lucide-react';
+import { Bell, Volume2, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
+import LogoManagement from '@/components/settings/LogoManagement';
 
 const Settings = () => {
   const [notifications, setNotifications] = React.useState(true);
   const [sound, setSound] = React.useState(true);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   
   const handleSaveSettings = () => {
     // In a real app, we would save these to the user's profile
@@ -67,6 +71,18 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
+
+          {isAdmin && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Logo Management</CardTitle>
+                <CardDescription>Update the clinic logos shown on the login and registration pages</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LogoManagement />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </MainLayout>
