@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '@/components/layout/AuthLayout';
@@ -33,7 +32,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <AuthLayout title="REGISTER ACCOUNT">
+    <AuthLayout>
       <div className="mb-4">
         <Button 
           variant="ghost" 

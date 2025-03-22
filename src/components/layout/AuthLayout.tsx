@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
-  title: string;
+  title?: string;
   subtitle?: string;
   showRegisterLink?: boolean;
   showLoginLink?: boolean;
@@ -44,9 +44,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
               </div>
             </div>
           )}
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
-            {title}
-          </h2>
+          {title && (
+            <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
+              {title}
+            </h2>
+          )}
           {subtitle && (
             <p className="mt-2 text-sm text-gray-600">
               {subtitle}
