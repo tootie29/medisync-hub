@@ -20,8 +20,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center green-gradient-bg">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-medical-primary"></div>
       </div>
     );
   }
@@ -31,7 +31,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen green-gradient-bg flex">
+    <div className="min-h-screen bg-white flex">
       {/* Left side with logo and tagline */}
       <div className="hidden lg:flex lg:flex-col lg:w-2/3 justify-center items-center p-8">
         <div className="text-center">
