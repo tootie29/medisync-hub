@@ -12,6 +12,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const isSmallScreen = useMediaQuery("(max-width: 1023px)");
+  const isTablet = useMediaQuery("(min-width: 640px) and (max-width: 1023px)");
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
@@ -35,7 +36,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   const columnWidth = 300; // Width of the three green columns combined
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row">
       {/* Left side with logo, tagline and green columns */}
       <div className="hidden lg:flex lg:flex-col lg:w-2/3 justify-center items-center p-8 relative">
         {/* Three vertical color columns */}
@@ -68,22 +69,42 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
       {/* Right side with auth form */}
       <div className="w-full lg:w-1/3 flex items-center justify-center p-4">
         <div className="olivarez-card w-full max-w-md">
+          {/* Mobile and Tablet view */}
           <div className="lg:hidden mb-6 text-center">
-            {/* Mobile view: ensure content doesn't overlap with any background elements */}
-            <div className="flex justify-center items-center space-x-6 mb-4 px-4">
-              <img 
-                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-                alt="Olivarez Clinic Logo" 
-                className="h-16 object-contain"
-              />
-              <img 
-                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-                alt="Olivarez Clinic Logo" 
-                className="h-16 object-contain"
-              />
+            {/* Responsive logos for different screen sizes */}
+            <div className="flex justify-center items-center mb-4 px-4">
+              {isTablet ? (
+                // Tablet view - adjust spacing and size for better fit
+                <div className="flex justify-center items-center space-x-4">
+                  <img 
+                    src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                    alt="Olivarez Clinic Logo" 
+                    className="h-24 w-auto object-contain"
+                  />
+                  <img 
+                    src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                    alt="Olivarez Clinic Logo" 
+                    className="h-24 w-auto object-contain"
+                  />
+                </div>
+              ) : (
+                // Mobile view - smaller logos with less spacing
+                <div className="flex justify-center items-center space-x-4">
+                  <img 
+                    src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                    alt="Olivarez Clinic Logo" 
+                    className="h-16 w-auto object-contain"
+                  />
+                  <img 
+                    src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                    alt="Olivarez Clinic Logo" 
+                    className="h-16 w-auto object-contain"
+                  />
+                </div>
+              )}
             </div>
-            <h1 className="text-3xl font-bold text-medical-primary">OLIVAREZ CLINIC</h1>
-            <p className="text-lg text-gray-700">Health at Your Fingertips</p>
+            <h1 className={`font-bold text-medical-primary ${isTablet ? 'text-4xl' : 'text-3xl'}`}>OLIVAREZ CLINIC</h1>
+            <p className={`text-gray-700 ${isTablet ? 'text-xl' : 'text-lg'}`}>Health at Your Fingertips</p>
           </div>
           
           <div className="border-2 border-medical-primary rounded-md p-6">
