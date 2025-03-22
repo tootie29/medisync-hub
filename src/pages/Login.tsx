@@ -55,7 +55,7 @@ const Login: React.FC = () => {
 
   return (
     <AuthLayout>
-      <div className="auth-form-container" style={{ border: "3px solid #00a651", borderRadius: "0" }}>
+      <div className="login-form-container">
         <div className="mb-6 text-center">
           <h2 className="text-3xl font-bold">ADMISSION LOG IN</h2>
         </div>
@@ -83,38 +83,35 @@ const Login: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6 text-left">
           <div>
             <label htmlFor="email" className="block text-xl font-bold mb-2">USERNAME</label>
-            <Input
+            <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="auth-input"
-              style={{ border: "1px solid #00a651", borderRadius: "0" }}
+              className="login-input"
             />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-xl font-bold mb-2">PASSWORD</label>
-            <Input
+            <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="auth-input"
-              style={{ border: "1px solid #00a651", borderRadius: "0" }}
+              className="login-input"
             />
           </div>
 
           <div className="pt-4 flex justify-center">
             <button
               type="submit"
-              className="bg-[#3c8a3f] text-white py-2 px-8 rounded-none font-bold text-xl"
+              className="sign-in-button"
               disabled={isLoading}
-              style={{ backgroundColor: "#3c8a3f" }}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
