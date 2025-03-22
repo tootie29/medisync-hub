@@ -81,6 +81,14 @@ const Dashboard: React.FC = () => {
       )[0]
     : null;
 
+  // Safe toFixed function to handle non-number BMI values
+  const safeToFixed = (value: any, digits: number = 1): string => {
+    if (typeof value === 'number' && !isNaN(value)) {
+      return value.toFixed(digits);
+    }
+    return '0.0'; // Default value when value is not a valid number
+  };
+
   // Get medicines with low stock for medical staff
   const lowStockMedicines = medicines.filter(med => med.quantity < 10);
 
@@ -292,7 +300,11 @@ const Dashboard: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">BMI</span>
-                      <span className="font-medium">{latestRecord.bmi.toFixed(1)}</span>
+                      <span className="font-medium">
+                        {typeof latestRecord.bmi === 'number' 
+                          ? safeToFixed(latestRecord.bmi) 
+                          : safeToFixed(parseFloat(latestRecord.bmi) || 0)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">Height</span>
