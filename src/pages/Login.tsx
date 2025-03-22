@@ -6,6 +6,7 @@ import AuthLayout from '@/components/layout/AuthLayout';
 import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
 import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -54,7 +55,7 @@ const Login: React.FC = () => {
 
   return (
     <AuthLayout>
-      <div className="auth-card">
+      <div className="auth-form-container">
         <div className="mb-6 text-center">
           <h2 className="text-3xl font-bold">ADMISSION LOG IN</h2>
         </div>
@@ -79,9 +80,9 @@ const Login: React.FC = () => {
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-4 text-left">
+        <form onSubmit={handleSubmit} className="space-y-6 text-left">
           <div>
-            <label htmlFor="email" className="block text-xl font-bold mb-1">USERNAME</label>
+            <label htmlFor="email" className="block text-xl font-bold mb-2">USERNAME</label>
             <Input
               id="email"
               type="email"
@@ -94,7 +95,7 @@ const Login: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-xl font-bold mb-1">PASSWORD</label>
+            <label htmlFor="password" className="block text-xl font-bold mb-2">PASSWORD</label>
             <Input
               id="password"
               type="password"
@@ -106,10 +107,10 @@ const Login: React.FC = () => {
             />
           </div>
 
-          <div className="pt-2 flex justify-center">
+          <div className="pt-4 flex justify-end">
             <button
               type="submit"
-              className="sign-in-button"
+              className="login-button"
               disabled={isLoading}
             >
               {isLoading ? (

@@ -32,13 +32,13 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Three columns with different shades of green */}
-      <div className="w-[10%] bg-[#00a651]"></div> {/* Dark green */}
-      <div className="w-[10%] bg-[#73c35c]"></div> {/* Medium green */}
-      <div className="w-[15%] bg-[#d8ef8b]"></div> {/* Light green */}
+      {/* Three columns with different shades of green - each 100px wide */}
+      <div className="w-[100px] bg-[#00a651]"></div> {/* Dark green */}
+      <div className="w-[100px] bg-[#73c35c]"></div> {/* Medium green */}
+      <div className="w-[100px] bg-[#d8ef8b]"></div> {/* Light green */}
       
       {/* Middle white section with logos and clinic name */}
-      <div className="w-[40%] bg-white flex flex-col justify-center items-center p-8">
+      <div className="flex-1 bg-white flex flex-col justify-center items-center p-8">
         <div className="text-center">
           <div className="flex justify-center gap-8 mb-8">
             <img 
@@ -58,7 +58,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
       </div>
       
       {/* Right side with auth form */}
-      <div className="w-[25%] bg-white flex items-center justify-center p-8">
+      <div className="w-[400px] bg-white flex items-center justify-center p-8">
         {children}
       </div>
     </div>
