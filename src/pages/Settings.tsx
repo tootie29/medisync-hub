@@ -4,23 +4,18 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Bell, Volume2, Image } from 'lucide-react';
+import { Bell, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
-import { Link } from 'react-router-dom';
 
 const Settings = () => {
   const [notifications, setNotifications] = React.useState(true);
   const [sound, setSound] = React.useState(true);
-  const { user } = useAuth();
   
   const handleSaveSettings = () => {
     // In a real app, we would save these to the user's profile
     toast.success('Settings saved successfully');
   };
-
-  const isAdmin = user?.role === 'admin';
 
   return (
     <MainLayout>
@@ -28,31 +23,6 @@ const Settings = () => {
         <h1 className="text-2xl font-bold mb-6">Settings</h1>
         
         <div className="grid gap-6">
-          {isAdmin && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Controls</CardTitle>
-                <CardDescription>Special settings available to administrators</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-4">
-                    <Image className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <p className="font-medium">Logo Management</p>
-                      <p className="text-sm text-gray-500">Upload and manage clinic logos</p>
-                    </div>
-                  </div>
-                  <Link to="/logo-management">
-                    <Button className="bg-medical-primary hover:bg-medical-secondary text-white">
-                      Manage Logos
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
           <Card>
             <CardHeader>
               <CardTitle>Preferences</CardTitle>
