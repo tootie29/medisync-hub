@@ -99,7 +99,8 @@
   }
   
   .dark .bg-white {
-    @apply bg-gray-800;
+    /* Override to keep bg-white as white even in dark mode */
+    @apply bg-white;
   }
   
   .dark .border-gray-200 {

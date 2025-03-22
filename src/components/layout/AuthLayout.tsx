@@ -14,6 +14,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   const isSmallScreen = useMediaQuery("(max-width: 1023px)");
   const isTablet = useMediaQuery("(min-width: 640px) and (max-width: 1023px)");
   const isMobile = useMediaQuery("(max-width: 639px)");
+  const isSmallDesktop = useMediaQuery("(min-width: 1024px) and (max-width: 1279px)");
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
@@ -34,8 +35,6 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
     return null; // Will redirect in the useEffect
   }
 
-  const columnWidth = 300; // Width of the three green columns combined
-
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row">
       {/* Left side with logo, tagline and green columns */}
@@ -49,21 +48,21 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         
         {/* Content positioned to the right of the green columns with appropriate spacing */}
         <div className="text-center z-10 ml-[300px]">
-          {/* Two logos side by side with spacing */}
+          {/* Two logos side by side with spacing - responsiveness for small desktop */}
           <div className="flex justify-center items-center space-x-10 mb-4">
             <img 
               src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
               alt="Olivarez Clinic Logo" 
-              className="h-64 object-contain"
+              className={`${isSmallDesktop ? 'h-40' : 'h-64'} object-contain`}
             />
             <img 
               src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
               alt="Olivarez Clinic Logo" 
-              className="h-64 object-contain"
+              className={`${isSmallDesktop ? 'h-40' : 'h-64'} object-contain`}
             />
           </div>
-          <h1 className="text-5xl font-bold text-black mb-2">OLIVAREZ CLINIC</h1>
-          <p className="text-2xl text-gray-800">Health at Your Fingertips</p>
+          <h1 className={`${isSmallDesktop ? 'text-4xl' : 'text-5xl'} font-bold text-black mb-2`}>OLIVAREZ CLINIC</h1>
+          <p className={`${isSmallDesktop ? 'text-xl' : 'text-2xl'} text-gray-800`}>Health at Your Fingertips</p>
         </div>
       </div>
       
