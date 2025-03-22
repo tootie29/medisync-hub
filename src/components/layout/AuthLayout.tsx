@@ -2,7 +2,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useSettings } from '@/context/SettingsContext';
 import { useMediaQuery } from '@/hooks/use-mobile';
 
 interface AuthLayoutProps {
@@ -11,7 +10,6 @@ interface AuthLayoutProps {
 
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
-  const { branding, isLoading: isLoadingSettings } = useSettings();
   const navigate = useNavigate();
   const isSmallScreen = useMediaQuery("(max-width: 1023px)");
   const isTablet = useMediaQuery("(min-width: 640px) and (max-width: 1023px)");
@@ -25,7 +23,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
     }
   }, [user, isLoading, navigate]);
 
-  if (isLoading || isLoadingSettings) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-medical-primary"></div>
@@ -51,24 +49,24 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         {/* Content positioned to the right of the green columns with appropriate spacing */}
         <div className="text-center z-10 ml-[300px]">
           {/* Two logos side by side with spacing - responsiveness for small desktop */}
-          <div className="flex flex-wrap justify-center items-center space-x-6 mb-6">
+          <div className="flex justify-center items-center space-x-6 mb-6">
             <div className="flex flex-col justify-center items-center">
               <img 
-                src={branding.primaryLogo} 
-                alt="Primary Logo" 
+                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                alt="Olivarez Clinic Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
               />
             </div>
             <div className="flex flex-col justify-center items-center">
               <img 
-                src={branding.secondaryLogo} 
-                alt="Secondary Logo" 
+                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                alt="Olivarez Clinic Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
               />
             </div>
           </div>
-          <h1 className={`${isSmallDesktop ? 'text-3xl' : 'text-5xl'} font-bold text-black mb-2`}>{branding.clinicName}</h1>
-          <p className={`${isSmallDesktop ? 'text-lg' : 'text-2xl'} text-gray-800`}>{branding.tagline}</p>
+          <h1 className={`${isSmallDesktop ? 'text-3xl' : 'text-5xl'} font-bold text-black mb-2`}>OLIVAREZ CLINIC</h1>
+          <p className={`${isSmallDesktop ? 'text-lg' : 'text-2xl'} text-gray-800`}>Health at Your Fingertips</p>
         </div>
       </div>
       
@@ -82,17 +80,17 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
               {isTablet ? (
                 // Tablet view - with better spacing and size control
                 <div className="flex justify-center items-center gap-6">
-                  <div className="flex flex-col justify-center items-center">
+                  <div className="flex flex-col justify-center">
                     <img 
-                      src={branding.primaryLogo} 
-                      alt="Primary Logo" 
+                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      alt="Olivarez Clinic Logo" 
                       className="h-16 w-auto object-contain"
                     />
                   </div>
-                  <div className="flex flex-col justify-center items-center">
+                  <div className="flex flex-col justify-center">
                     <img 
-                      src={branding.secondaryLogo} 
-                      alt="Secondary Logo" 
+                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      alt="Olivarez Clinic Logo" 
                       className="h-16 w-auto object-contain"
                     />
                   </div>
@@ -100,25 +98,25 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
               ) : (
                 // Mobile view - vertically aligned logos
                 <div className="flex flex-col space-y-3 justify-center items-center">
-                  <div className="flex justify-center items-center">
+                  <div className="flex justify-center">
                     <img 
-                      src={branding.primaryLogo} 
-                      alt="Primary Logo" 
+                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      alt="Olivarez Clinic Logo" 
                       className="h-14 w-auto object-contain"
                     />
                   </div>
-                  <div className="flex justify-center items-center">
+                  <div className="flex justify-center">
                     <img 
-                      src={branding.secondaryLogo} 
-                      alt="Secondary Logo" 
+                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      alt="Olivarez Clinic Logo" 
                       className="h-14 w-auto object-contain"
                     />
                   </div>
                 </div>
               )}
             </div>
-            <h1 className={`font-bold text-medical-primary ${isTablet ? 'text-3xl' : 'text-2xl'}`}>{branding.clinicName}</h1>
-            <p className={`text-gray-700 ${isTablet ? 'text-lg' : 'text-base'}`}>{branding.tagline}</p>
+            <h1 className={`font-bold text-medical-primary ${isTablet ? 'text-3xl' : 'text-2xl'}`}>OLIVAREZ CLINIC</h1>
+            <p className={`text-gray-700 ${isTablet ? 'text-lg' : 'text-base'}`}>Health at Your Fingertips</p>
           </div>
           
           <div className="border-2 border-medical-primary rounded-md p-6">
