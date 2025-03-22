@@ -49,20 +49,20 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         {/* Content positioned to the right of the green columns with appropriate spacing */}
         <div className="text-center z-10 ml-[300px]">
           {/* Two logos side by side with spacing - responsiveness for small desktop */}
-          <div className="flex justify-center items-center space-x-10 mb-4">
+          <div className="flex justify-center items-center space-x-6 flex-wrap mb-4">
             <img 
               src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
               alt="Olivarez Clinic Logo" 
-              className={`${isSmallDesktop ? 'h-40' : 'h-64'} object-contain`}
+              className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain mb-2`}
             />
             <img 
               src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
               alt="Olivarez Clinic Logo" 
-              className={`${isSmallDesktop ? 'h-40' : 'h-64'} object-contain`}
+              className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain mb-2`}
             />
           </div>
-          <h1 className={`${isSmallDesktop ? 'text-4xl' : 'text-5xl'} font-bold text-black mb-2`}>OLIVAREZ CLINIC</h1>
-          <p className={`${isSmallDesktop ? 'text-xl' : 'text-2xl'} text-gray-800`}>Health at Your Fingertips</p>
+          <h1 className={`${isSmallDesktop ? 'text-3xl' : 'text-5xl'} font-bold text-black mb-2`}>OLIVAREZ CLINIC</h1>
+          <p className={`${isSmallDesktop ? 'text-lg' : 'text-2xl'} text-gray-800`}>Health at Your Fingertips</p>
         </div>
       </div>
       
@@ -74,37 +74,37 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
             {/* Responsive logos for different screen sizes */}
             <div className="flex justify-center items-center mb-4 px-4">
               {isTablet ? (
-                // Tablet view - adjust spacing for better fit
-                <div className="flex justify-center items-center space-x-6">
+                // Tablet view - with better spacing and size control
+                <div className="flex flex-wrap justify-center items-center gap-4">
                   <img 
                     src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
                     alt="Olivarez Clinic Logo" 
-                    className="h-20 w-auto object-contain"
+                    className="h-16 w-auto object-contain"
                   />
                   <img 
                     src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
                     alt="Olivarez Clinic Logo" 
-                    className="h-20 w-auto object-contain"
+                    className="h-16 w-auto object-contain"
                   />
                 </div>
               ) : (
-                // Mobile view - vertical stacking to prevent overlap
-                <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} justify-center items-center ${isMobile ? 'space-y-4' : 'space-x-3'}`}>
+                // Mobile view - smaller, vertically stacked logos
+                <div className="flex flex-col space-y-2 justify-center items-center">
                   <img 
                     src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
                     alt="Olivarez Clinic Logo" 
-                    className={`${isMobile ? 'h-14' : 'h-16'} w-auto object-contain`}
+                    className="h-14 w-auto object-contain"
                   />
                   <img 
                     src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
                     alt="Olivarez Clinic Logo" 
-                    className={`${isMobile ? 'h-14' : 'h-16'} w-auto object-contain`}
+                    className="h-14 w-auto object-contain"
                   />
                 </div>
               )}
             </div>
-            <h1 className={`font-bold text-medical-primary ${isTablet ? 'text-4xl' : 'text-3xl'}`}>OLIVAREZ CLINIC</h1>
-            <p className={`text-gray-700 ${isTablet ? 'text-xl' : 'text-lg'}`}>Health at Your Fingertips</p>
+            <h1 className={`font-bold text-medical-primary ${isTablet ? 'text-3xl' : 'text-2xl'}`}>OLIVAREZ CLINIC</h1>
+            <p className={`text-gray-700 ${isTablet ? 'text-lg' : 'text-base'}`}>Health at Your Fingertips</p>
           </div>
           
           <div className="border-2 border-medical-primary rounded-md p-6">
