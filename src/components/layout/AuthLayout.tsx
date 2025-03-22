@@ -13,6 +13,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const isSmallScreen = useMediaQuery("(max-width: 1023px)");
   const isTablet = useMediaQuery("(min-width: 640px) and (max-width: 1023px)");
+  const isMobile = useMediaQuery("(max-width: 639px)");
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
@@ -74,31 +75,31 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
             {/* Responsive logos for different screen sizes */}
             <div className="flex justify-center items-center mb-4 px-4">
               {isTablet ? (
-                // Tablet view - adjust spacing and size for better fit
-                <div className="flex justify-center items-center space-x-4">
+                // Tablet view - adjust spacing for better fit
+                <div className="flex justify-center items-center space-x-6">
                   <img 
                     src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
                     alt="Olivarez Clinic Logo" 
-                    className="h-24 w-auto object-contain"
+                    className="h-20 w-auto object-contain"
                   />
                   <img 
                     src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
                     alt="Olivarez Clinic Logo" 
-                    className="h-24 w-auto object-contain"
+                    className="h-20 w-auto object-contain"
                   />
                 </div>
               ) : (
-                // Mobile view - smaller logos with less spacing
-                <div className="flex justify-center items-center space-x-4">
+                // Mobile view - vertical stacking to prevent overlap
+                <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} justify-center items-center ${isMobile ? 'space-y-4' : 'space-x-3'}`}>
                   <img 
                     src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
                     alt="Olivarez Clinic Logo" 
-                    className="h-16 w-auto object-contain"
+                    className={`${isMobile ? 'h-14' : 'h-16'} w-auto object-contain`}
                   />
                   <img 
                     src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
                     alt="Olivarez Clinic Logo" 
-                    className="h-16 w-auto object-contain"
+                    className={`${isMobile ? 'h-14' : 'h-16'} w-auto object-contain`}
                   />
                 </div>
               )}
