@@ -12,6 +12,7 @@ import { format, addDays, parseISO, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle, Server, ExternalLink, RefreshCw, Database } from "lucide-react";
 import axios from "axios";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
@@ -25,6 +26,7 @@ import Profile from "@/pages/Profile";
 import HealthMonitoring from "@/pages/HealthMonitoring";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
+import LogoManagement from "@/pages/LogoManagement";
 
 const getApiBaseUrl = () => {
   const hostname = window.location.hostname;
@@ -417,14 +419,18 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/appointments" element={<Appointments />} />
-                <Route path="/bmi" element={<BMICalculator />} />
-                <Route path="/records" element={<MedicalRecords />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/health-monitoring" element={<HealthMonitoring />} />
-                <Route path="/settings" element={<Settings />} />
+                
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/appointments" element={<Appointments />} />
+                  <Route path="/bmi" element={<BMICalculator />} />
+                  <Route path="/records" element={<MedicalRecords />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/health-monitoring" element={<HealthMonitoring />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/logo-management" element={<LogoManagement />} />
+                </Route>
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
