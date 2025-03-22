@@ -32,9 +32,16 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-white flex">
-      {/* Left side with logo and tagline */}
-      <div className="hidden lg:flex lg:flex-col lg:w-2/3 justify-center items-center p-8">
-        <div className="text-center">
+      {/* Left side with logo, tagline and green columns */}
+      <div className="hidden lg:flex lg:flex-col lg:w-2/3 justify-center items-center p-8 relative">
+        {/* Three vertical color columns */}
+        <div className="absolute top-0 left-0 h-full flex">
+          <div className="w-[100px] h-full bg-medical-primary"></div>
+          <div className="w-[100px] h-full bg-medical-secondary"></div>
+          <div className="w-[100px] h-full bg-medical-accent"></div>
+        </div>
+        
+        <div className="text-center z-10">
           <div className="flex justify-center mb-4">
             <img 
               src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
