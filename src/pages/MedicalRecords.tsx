@@ -70,6 +70,7 @@ const MedicalRecords: React.FC = () => {
     }
   }, [patientIdFromUrl, isPatient, user]);
   
+  // Define selectedPatient only once here
   const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
   console.log("Selected patient:", selectedPatient);
   
