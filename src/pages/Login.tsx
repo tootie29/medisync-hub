@@ -59,7 +59,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout title="ADMISSION LOG IN">
       <div className="mb-6 text-center">
         <h2 className="text-2xl font-bold text-medical-primary">ADMISSION LOG IN</h2>
       </div>

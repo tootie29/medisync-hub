@@ -33,7 +33,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout title="REGISTER ACCOUNT">
       <div className="mb-4">
         <Button 
           variant="ghost" 
