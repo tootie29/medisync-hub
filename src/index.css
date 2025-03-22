@@ -14,35 +14,35 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 210 64% 24%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 142 84% 30%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 204 61% 36%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 120 46% 52%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
+    --muted: 142 30% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 181 40% 45%;
+    --accent: 84 70% 55%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --input: 142 54% 30%;
+    --ring: 142 54% 30%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 210 64% 24%;
+    --sidebar-background: 142 84% 30%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 181 40% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 206 100% 73%;
-    --sidebar-accent-foreground: 210 64% 24%;
-    --sidebar-border: 206 64% 45%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-primary: 84 70% 55%;
+    --sidebar-primary-foreground: 142 54% 30%;
+    --sidebar-accent: 120 46% 82%;
+    --sidebar-accent-foreground: 142 54% 30%;
+    --sidebar-border: 142 46% 45%;
+    --sidebar-ring: 120 91.2% 59.8%;
   }
 
   .dark {
@@ -55,33 +55,33 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 142 60% 30%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 120 40% 40%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 84 50% 40%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 142 50% 40%;
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 142 60% 20%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 84 50% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 120 30% 25%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 142 30% 30%;
+    --sidebar-ring: 120 50% 50%;
   }
 }
 
@@ -125,11 +125,11 @@
   }
   
   .page-title {
-    @apply text-3xl font-bold text-medical-primary dark:text-blue-300 mb-6;
+    @apply text-3xl font-bold text-medical-primary dark:text-green-300 mb-6;
   }
   
   .section-title {
-    @apply text-xl font-semibold text-medical-secondary dark:text-blue-200 mb-4;
+    @apply text-xl font-semibold text-medical-secondary dark:text-green-200 mb-4;
   }
 
   .form-group {
@@ -141,10 +141,27 @@
   }
   
   .dark .bg-medical-primary {
-    @apply bg-blue-700;
+    @apply bg-green-700;
   }
   
   .dark .hover\:bg-medical-secondary:hover {
-    @apply hover:bg-blue-600;
+    @apply hover:bg-green-600;
+  }
+  
+  /* New classes for the branding */
+  .green-gradient-bg {
+    @apply bg-gradient-to-r from-medical-gradient-start via-medical-gradient-middle to-medical-gradient-end;
+  }
+  
+  .auth-input {
+    @apply w-full border-2 border-medical-primary rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-medical-secondary;
+  }
+  
+  .auth-button {
+    @apply bg-medical-secondary hover:bg-medical-primary text-white font-bold py-2 px-4 rounded-md transition-colors duration-200;
+  }
+  
+  .olivarez-card {
+    @apply bg-white border-2 border-medical-primary rounded-lg shadow-lg p-6;
   }
 }

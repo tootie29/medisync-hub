@@ -64,11 +64,16 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				medical: {
-					primary: '#1A365D',
-					secondary: '#2A628F',
-					accent: '#44A1A0',
-					highlight: '#78C3FB',
-					light: '#E6F7FF'
+					primary: '#0e8a3f', // Darker green from the logo
+					secondary: '#4ebb4e', // Medium green
+					accent: '#8edc3b',   // Light green
+					highlight: '#e2ffb3', // Very light green/yellow
+					light: '#f2fce2',    // Almost white green tint
+					gradient: {
+						start: '#00a651', // Dark green (left side)
+						middle: '#73c35c', // Middle green
+						end: '#d8ef8b'     // Light green/yellow (right side)
+					}
 				}
 			},
 			borderRadius: {

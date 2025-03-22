@@ -20,8 +20,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-medical-primary"></div>
+      <div className="min-h-screen flex items-center justify-center green-gradient-bg">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
       </div>
     );
   }
@@ -31,32 +31,38 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <div className="h-12 w-12 rounded-full bg-medical-primary flex items-center justify-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-white w-6 h-6"
-            >
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
+    <div className="min-h-screen green-gradient-bg flex">
+      {/* Left side with logo and tagline */}
+      <div className="hidden lg:flex lg:flex-col lg:w-2/3 justify-center items-center p-8">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+              alt="Olivarez Clinic Logos" 
+              className="h-64 object-contain"
+            />
           </div>
+          <h1 className="text-5xl font-bold text-black mb-2">OLIVAREZ CLINIC</h1>
+          <p className="text-2xl text-gray-800">Health at Your Fingertips</p>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          MediSync Hub
-        </h2>
       </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {children}
+      
+      {/* Right side with auth form */}
+      <div className="w-full lg:w-1/3 flex items-center justify-center p-4">
+        <div className="olivarez-card w-full max-w-md">
+          <div className="lg:hidden mb-6 text-center">
+            <img 
+              src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+              alt="Olivarez Clinic Logos" 
+              className="h-32 mx-auto object-contain"
+            />
+            <h1 className="text-3xl font-bold text-medical-primary">OLIVAREZ CLINIC</h1>
+            <p className="text-lg text-gray-700">Health at Your Fingertips</p>
+          </div>
+          
+          <div className="border-2 border-medical-primary rounded-md p-6">
+            {children}
+          </div>
         </div>
       </div>
     </div>

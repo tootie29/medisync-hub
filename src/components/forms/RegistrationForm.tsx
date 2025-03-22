@@ -126,7 +126,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <h3 className="text-lg font-medium flex items-center gap-2">
+        <h3 className="text-lg font-medium flex items-center gap-2 text-medical-primary">
           <User className="h-5 w-5" />
           Account Information
         </h3>
@@ -141,7 +141,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               onChange={handleChange}
               required
               autoComplete="name"
-              className="mt-1"
+              className="auth-input mt-1"
             />
           </div>
 
@@ -155,7 +155,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               onChange={handleChange}
               required
               autoComplete="email"
-              className="mt-1"
+              className="auth-input mt-1"
             />
           </div>
 
@@ -169,7 +169,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               onChange={handleChange}
               required
               autoComplete="new-password"
-              className="mt-1"
+              className="auth-input mt-1"
             />
           </div>
 
@@ -183,14 +183,14 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               onChange={handleChange}
               required
               autoComplete="new-password"
-              className="mt-1"
+              className="auth-input mt-1"
             />
           </div>
         </div>
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Personal Information</h3>
+        <h3 className="text-lg font-medium text-medical-primary">Personal Information</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="phone">Phone Number *</Label>
@@ -201,7 +201,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               value={formData.phone}
               onChange={handleChange}
               required
-              className="mt-1"
+              className="auth-input mt-1"
             />
           </div>
 
@@ -214,7 +214,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               value={formData.dateOfBirth}
               onChange={handleChange}
               required
-              className="mt-1"
+              className="auth-input mt-1"
             />
           </div>
 
@@ -224,7 +224,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               value={formData.gender} 
               onValueChange={(value) => handleSelectChange('gender', value)}
             >
-              <SelectTrigger id="gender" className="mt-1">
+              <SelectTrigger id="gender" className="mt-1 border-2 border-medical-primary">
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
               <SelectContent>
@@ -243,7 +243,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               type="text"
               value={formData.address}
               onChange={handleChange}
-              className="mt-1"
+              className="auth-input mt-1"
             />
           </div>
 
@@ -256,7 +256,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               value={formData.emergencyContact}
               onChange={handleChange}
               placeholder="Name: Phone Number"
-              className="mt-1"
+              className="auth-input mt-1"
             />
           </div>
         </div>
@@ -264,7 +264,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
 
       {role === 'student' && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Student Information</h3>
+          <h3 className="text-lg font-medium text-medical-primary">Student Information</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="studentId">Student ID *</Label>
@@ -275,7 +275,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
                 value={formData.studentId}
                 onChange={handleChange}
                 required
-                className="mt-1"
+                className="auth-input mt-1"
               />
             </div>
 
@@ -287,7 +287,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
                 type="text"
                 value={formData.department}
                 onChange={handleChange}
-                className="mt-1"
+                className="auth-input mt-1"
               />
             </div>
           </div>
@@ -296,7 +296,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
 
       {role === 'staff' && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Staff Information</h3>
+          <h3 className="text-lg font-medium text-medical-primary">Staff Information</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="staffId">Staff ID *</Label>
@@ -307,7 +307,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
                 value={formData.staffId}
                 onChange={handleChange}
                 required
-                className="mt-1"
+                className="auth-input mt-1"
               />
             </div>
 
@@ -319,7 +319,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
                 type="text"
                 value={formData.position}
                 onChange={handleChange}
-                className="mt-1"
+                className="auth-input mt-1"
               />
             </div>
           </div>
@@ -329,7 +329,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
       <div>
         <Button
           type="submit"
-          className="w-full bg-medical-primary hover:bg-medical-secondary"
+          className="w-full bg-medical-secondary hover:bg-medical-primary text-white font-bold py-3 px-4 rounded-md"
           disabled={isRegistering}
         >
           {isRegistering ? (

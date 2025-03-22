@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle, ArrowLeft, User, Lock } from 'lucide-react';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -60,15 +60,8 @@ const Login: React.FC = () => {
 
   return (
     <AuthLayout>
-      <div className="mb-4">
-        <Button 
-          variant="ghost" 
-          className="p-0 h-auto flex items-center text-gray-500 hover:text-gray-700"
-          onClick={handleBack}
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back
-        </Button>
+      <div className="mb-6 text-center">
+        <h2 className="text-2xl font-bold text-medical-primary">ADMISSION LOG IN</h2>
       </div>
 
       {connectivityError && (
@@ -95,50 +88,45 @@ const Login: React.FC = () => {
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            className="mt-1"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            className="mt-1"
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="text-sm">
-            <Link
-              to="/register"
-              className="font-medium text-medical-secondary hover:text-medical-primary"
-            >
-              Don't have an account? Register
-            </Link>
+          <Label htmlFor="email" className="text-xl font-bold block mb-2">USERNAME</Label>
+          <div className="relative">
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="auth-input pl-10"
+            />
+            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-medical-primary h-5 w-5" />
           </div>
         </div>
 
         <div>
-          <Button
+          <Label htmlFor="password" className="text-xl font-bold block mb-2">PASSWORD</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="auth-input pl-10"
+            />
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-medical-primary h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <button
             type="submit"
-            className="w-full bg-medical-primary hover:bg-medical-secondary"
+            className="w-full bg-medical-secondary hover:bg-medical-primary text-white font-bold py-3 px-4 rounded-md transition-colors duration-200"
             disabled={isLoading}
           >
             {isLoading ? (
-              <div className="flex items-center">
+              <div className="flex items-center justify-center">
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -146,9 +134,20 @@ const Login: React.FC = () => {
                 Signing in...
               </div>
             ) : (
-              'Sign In'
+              'SIGN IN'
             )}
-          </Button>
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="text-sm">
+            <Link
+              to="/register"
+              className="font-medium text-medical-primary hover:text-medical-secondary"
+            >
+              Don't have an account? Register
+            </Link>
+          </div>
         </div>
 
         <div className="mt-4 border-t border-gray-200 pt-4">
@@ -161,7 +160,7 @@ const Login: React.FC = () => {
                 setEmail('admin@example.com');
                 setPassword('password');
               }}
-              className="text-xs"
+              className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
             >
               Admin
             </Button>
@@ -172,7 +171,7 @@ const Login: React.FC = () => {
                 setEmail('doctor@example.com');
                 setPassword('password');
               }}
-              className="text-xs"
+              className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
             >
               Doctor
             </Button>
@@ -183,7 +182,7 @@ const Login: React.FC = () => {
                 setEmail('student@example.com');
                 setPassword('password');
               }}
-              className="text-xs"
+              className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
             >
               Student
             </Button>
@@ -194,7 +193,7 @@ const Login: React.FC = () => {
                 setEmail('staff@example.com');
                 setPassword('password');
               }}
-              className="text-xs"
+              className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
             >
               Staff
             </Button>
