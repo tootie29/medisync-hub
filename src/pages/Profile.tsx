@@ -8,7 +8,7 @@ import ProfileForm from '@/components/profile/ProfileForm';
 import MedicalHistoryCard from '@/components/profile/MedicalHistoryCard';
 import HealthStatusCard from '@/components/profile/HealthStatusCard';
 import AppointmentsCard from '@/components/profile/AppointmentsCard';
-import { getBMICategory, getBMICategoryColor } from '@/components/profile/ProfileUtils';
+import { getBMICategory, getBMICategoryColor } from '@/utils/helpers';
 
 const Profile: React.FC = () => {
   const { user } = useAuth();

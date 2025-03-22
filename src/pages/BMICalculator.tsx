@@ -9,19 +9,14 @@ import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import { toast } from "sonner";
+import { getBMICategory, getBMICategoryColor } from '@/utils/helpers';
 
-const getBMICategory = (bmi: number): string => {
-  if (bmi < 18.5) return 'Underweight';
-  if (bmi < 25) return 'Healthy Weight';
-  if (bmi < 30) return 'Overweight';
-  return 'Obese';
-};
-
-const getBMICategoryColor = (bmi: number): string => {
-  if (bmi < 18.5) return 'text-blue-500';
-  if (bmi < 25) return 'text-green-500';
-  if (bmi < 30) return 'text-yellow-500';
-  return 'text-red-500';
+// Safe toFixed function to handle non-number BMI values
+const safeToFixed = (value: any, digits: number = 1): string => {
+  if (typeof value === 'number' && !isNaN(value)) {
+    return value.toFixed(digits);
+  }
+  return '0.0'; // Default value when value is not a valid number
 };
 
 const BMICalculator: React.FC = () => {
@@ -53,7 +48,15 @@ const BMICalculator: React.FC = () => {
         setLastRecord(latest);
         setHeight(latest.height);
         setWeight(latest.weight);
-        setBmi(latest.bmi);
+        
+        // Safely handle the BMI value
+        if (typeof latest.bmi === 'number') {
+          setBmi(latest.bmi);
+        } else if (typeof latest.bmi === 'string' && !isNaN(parseFloat(latest.bmi))) {
+          setBmi(parseFloat(latest.bmi));
+        } else {
+          setBmi(0);
+        }
       }
     }
   }, [isPatient, user?.id, getMedicalRecordsByPatientId]);
@@ -93,6 +96,7 @@ const BMICalculator: React.FC = () => {
           updateMedicalRecord(lastRecord.id, {
             height,
             weight,
+            bmi, // Explicitly include the calculated BMI
             date: new Date().toISOString().split('T')[0],
           });
           toast.success('Medical record updated successfully');
@@ -104,6 +108,7 @@ const BMICalculator: React.FC = () => {
             date: new Date().toISOString().split('T')[0],
             height,
             weight,
+            bmi, // Explicitly include the calculated BMI
           });
           toast.success('Medical record created successfully');
         }
@@ -195,7 +200,7 @@ const BMICalculator: React.FC = () => {
             <CardContent>
               {bmi ? (
                 <div className="text-center py-4">
-                  <h3 className="text-3xl font-bold mb-2">{bmi.toFixed(1)}</h3>
+                  <h3 className="text-3xl font-bold mb-2">{safeToFixed(bmi)}</h3>
                   <p className={`text-xl font-medium ${getBMICategoryColor(bmi)}`}>
                     {getBMICategory(bmi)}
                   </p>
