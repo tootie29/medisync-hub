@@ -42,10 +42,16 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         </div>
         
         <div className="text-center z-10">
-          <div className="flex justify-center mb-4">
+          {/* Two logos side by side with spacing */}
+          <div className="flex justify-center items-center space-x-10 mb-4">
             <img 
               src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-              alt="Olivarez Clinic Logos" 
+              alt="Olivarez Clinic Logo" 
+              className="h-64 object-contain"
+            />
+            <img 
+              src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+              alt="Olivarez Clinic Logo" 
               className="h-64 object-contain"
             />
           </div>
@@ -58,11 +64,19 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
       <div className="w-full lg:w-1/3 flex items-center justify-center p-4">
         <div className="olivarez-card w-full max-w-md">
           <div className="lg:hidden mb-6 text-center">
-            <img 
-              src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-              alt="Olivarez Clinic Logos" 
-              className="h-32 mx-auto object-contain"
-            />
+            {/* Two logos side by side with spacing for mobile view */}
+            <div className="flex justify-center items-center space-x-6 mb-4">
+              <img 
+                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                alt="Olivarez Clinic Logo" 
+                className="h-16 object-contain"
+              />
+              <img 
+                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                alt="Olivarez Clinic Logo" 
+                className="h-16 object-contain"
+              />
+            </div>
             <h1 className="text-3xl font-bold text-medical-primary">OLIVAREZ CLINIC</h1>
             <p className="text-lg text-gray-700">Health at Your Fingertips</p>
           </div>
