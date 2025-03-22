@@ -49,17 +49,21 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         {/* Content positioned to the right of the green columns with appropriate spacing */}
         <div className="text-center z-10 ml-[300px]">
           {/* Two logos side by side with spacing - responsiveness for small desktop */}
-          <div className="flex justify-center items-center space-x-6 flex-wrap mb-4">
-            <img 
-              src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-              alt="Olivarez Clinic Logo" 
-              className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain mb-2`}
-            />
-            <img 
-              src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-              alt="Olivarez Clinic Logo" 
-              className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain mb-2`}
-            />
+          <div className="flex justify-center items-center space-x-6 mb-6">
+            <div className="flex flex-col justify-center items-center">
+              <img 
+                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                alt="Olivarez Clinic Logo" 
+                className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
+              />
+            </div>
+            <div className="flex flex-col justify-center items-center">
+              <img 
+                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                alt="Olivarez Clinic Logo" 
+                className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
+              />
+            </div>
           </div>
           <h1 className={`${isSmallDesktop ? 'text-3xl' : 'text-5xl'} font-bold text-black mb-2`}>OLIVAREZ CLINIC</h1>
           <p className={`${isSmallDesktop ? 'text-lg' : 'text-2xl'} text-gray-800`}>Health at Your Fingertips</p>
@@ -75,31 +79,39 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
             <div className="flex justify-center items-center mb-4 px-4">
               {isTablet ? (
                 // Tablet view - with better spacing and size control
-                <div className="flex flex-wrap justify-center items-center gap-4">
-                  <img 
-                    src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-                    alt="Olivarez Clinic Logo" 
-                    className="h-16 w-auto object-contain"
-                  />
-                  <img 
-                    src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-                    alt="Olivarez Clinic Logo" 
-                    className="h-16 w-auto object-contain"
-                  />
+                <div className="flex justify-center items-center gap-6">
+                  <div className="flex flex-col justify-center">
+                    <img 
+                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      alt="Olivarez Clinic Logo" 
+                      className="h-16 w-auto object-contain"
+                    />
+                  </div>
+                  <div className="flex flex-col justify-center">
+                    <img 
+                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      alt="Olivarez Clinic Logo" 
+                      className="h-16 w-auto object-contain"
+                    />
+                  </div>
                 </div>
               ) : (
-                // Mobile view - smaller, vertically stacked logos
-                <div className="flex flex-col space-y-2 justify-center items-center">
-                  <img 
-                    src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-                    alt="Olivarez Clinic Logo" 
-                    className="h-14 w-auto object-contain"
-                  />
-                  <img 
-                    src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-                    alt="Olivarez Clinic Logo" 
-                    className="h-14 w-auto object-contain"
-                  />
+                // Mobile view - vertically aligned logos
+                <div className="flex flex-col space-y-3 justify-center items-center">
+                  <div className="flex justify-center">
+                    <img 
+                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      alt="Olivarez Clinic Logo" 
+                      className="h-14 w-auto object-contain"
+                    />
+                  </div>
+                  <div className="flex justify-center">
+                    <img 
+                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      alt="Olivarez Clinic Logo" 
+                      className="h-14 w-auto object-contain"
+                    />
+                  </div>
                 </div>
               )}
             </div>
