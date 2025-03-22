@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useMediaQuery } from '@/hooks/use-mobile';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface AuthLayoutProps {
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const isSmallScreen = useMediaQuery("(max-width: 1023px)");
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
@@ -30,6 +32,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
     return null; // Will redirect in the useEffect
   }
 
+  const columnWidth = 300; // Width of the three green columns combined
+
   return (
     <div className="min-h-screen bg-white flex">
       {/* Left side with logo, tagline and green columns */}
@@ -41,7 +45,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           <div className="w-[100px] h-full bg-medical-accent"></div>
         </div>
         
-        {/* Content positioned to the right of the green columns */}
+        {/* Content positioned to the right of the green columns with appropriate spacing */}
         <div className="text-center z-10 ml-[300px]">
           {/* Two logos side by side with spacing */}
           <div className="flex justify-center items-center space-x-10 mb-4">
@@ -65,8 +69,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
       <div className="w-full lg:w-1/3 flex items-center justify-center p-4">
         <div className="olivarez-card w-full max-w-md">
           <div className="lg:hidden mb-6 text-center">
-            {/* Two logos side by side with spacing for mobile view */}
-            <div className="flex justify-center items-center space-x-6 mb-4">
+            {/* Mobile view: ensure content doesn't overlap with any background elements */}
+            <div className="flex justify-center items-center space-x-6 mb-4 px-4">
               <img 
                 src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
                 alt="Olivarez Clinic Logo" 
