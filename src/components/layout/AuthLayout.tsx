@@ -41,7 +41,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           <div className="w-[100px] h-full bg-medical-accent"></div>
         </div>
         
-        <div className="text-center z-10">
+        {/* Content positioned to the right of the green columns */}
+        <div className="text-center z-10 ml-[300px]">
           {/* Two logos side by side with spacing */}
           <div className="flex justify-center items-center space-x-10 mb-4">
             <img 
