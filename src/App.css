@@ -43,7 +43,7 @@
 }
 
 /* Green gradient background for auth pages */
-.auth-gradient-bg {
+.green-gradient-bg {
   background: linear-gradient(to right, #00a651, #73c35c, #d8ef8b);
 }
 
@@ -68,4 +68,39 @@
   100% {
     background-position: 0% 50%;
   }
+}
+
+/* Login form styling */
+.auth-input {
+  width: 100%;
+  border: 2px solid #00a651;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 16px;
+  margin-top: 5px;
+}
+
+.sign-in-button {
+  background-color: #3c8a3f;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: auto;
+  display: block;
+}
+
+.sign-in-button:hover {
+  background-color: #2e6b2f;
+}
+
+.auth-card {
+  border: 2px solid #00a651;
+  border-radius: 5px;
+  padding: 20px;
+  background-color: white;
+  width: 100%;
+  max-width: 400px;
 }

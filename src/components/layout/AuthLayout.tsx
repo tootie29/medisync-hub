@@ -31,38 +31,29 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen green-gradient-bg flex">
-      {/* Left side with logo and tagline */}
-      <div className="hidden lg:flex lg:flex-col lg:w-2/3 justify-center items-center p-8">
+    <div className="min-h-screen flex">
+      {/* Left side with green gradient */}
+      <div className="w-1/5 green-gradient-bg"></div>
+      
+      {/* Middle section with logos and clinic name */}
+      <div className="w-3/5 bg-white flex flex-col justify-center items-center p-8">
         <div className="text-center">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center gap-8 mb-8">
             <img 
-              src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+              src="/lovable-uploads/8992c8e4-85b3-4819-b2b5-238b581a4f05.png" 
               alt="Olivarez Clinic Logos" 
               className="h-64 object-contain"
             />
           </div>
-          <h1 className="text-5xl font-bold text-black mb-2">OLIVAREZ CLINIC</h1>
+          <h1 className="text-6xl font-bold text-black mb-4">OLIVAREZ CLINIC</h1>
           <p className="text-2xl text-gray-800">Health at Your Fingertips</p>
         </div>
       </div>
       
       {/* Right side with auth form */}
-      <div className="w-full lg:w-1/3 flex items-center justify-center p-4">
-        <div className="olivarez-card w-full max-w-md">
-          <div className="lg:hidden mb-6 text-center">
-            <img 
-              src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
-              alt="Olivarez Clinic Logos" 
-              className="h-32 mx-auto object-contain"
-            />
-            <h1 className="text-3xl font-bold text-medical-primary">OLIVAREZ CLINIC</h1>
-            <p className="text-lg text-gray-700">Health at Your Fingertips</p>
-          </div>
-          
-          <div className="border-2 border-medical-primary rounded-md p-6">
-            {children}
-          </div>
+      <div className="w-1/5 bg-white flex items-center justify-center p-4">
+        <div className="auth-card">
+          {children}
         </div>
       </div>
     </div>

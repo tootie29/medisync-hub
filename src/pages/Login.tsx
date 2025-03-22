@@ -3,11 +3,9 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import AuthLayout from '@/components/layout/AuthLayout';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft, User, Lock } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
@@ -19,10 +17,6 @@ const Login: React.FC = () => {
 
   const handleRetry = () => {
     window.location.reload();
-  };
-
-  const handleBack = () => {
-    navigate(-1); // Go back to the previous page
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,26 +55,24 @@ const Login: React.FC = () => {
   return (
     <AuthLayout>
       <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold text-medical-primary">ADMISSION LOG IN</h2>
+        <h2 className="text-2xl font-bold">ADMISSION LOG IN</h2>
       </div>
 
       {connectivityError && (
-        <div className="bg-destructive/15 p-3 rounded-md mb-4">
+        <div className="bg-red-100 p-3 rounded-md mb-4">
           <div className="flex items-start gap-2">
-            <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
             <div>
-              <h3 className="font-medium text-destructive">Connection Error</h3>
-              <p className="text-sm text-destructive/90 mt-1">
+              <h3 className="font-medium text-red-500">Connection Error</h3>
+              <p className="text-sm text-red-500 mt-1">
                 Unable to connect to the server. Please check your internet connection and try again.
               </p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
+              <button 
+                className="mt-2 bg-red-500 text-white px-3 py-1 rounded text-sm"
                 onClick={handleRetry}
               >
                 Retry Connection
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -88,41 +80,35 @@ const Login: React.FC = () => {
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <Label htmlFor="email" className="text-xl font-bold block mb-2">USERNAME</Label>
-          <div className="relative">
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              className="auth-input pl-10"
-            />
-            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-medical-primary h-5 w-5" />
-          </div>
+          <label htmlFor="email" className="block text-xl font-bold mb-2">USERNAME</label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            className="auth-input"
+          />
         </div>
 
         <div>
-          <Label htmlFor="password" className="text-xl font-bold block mb-2">PASSWORD</Label>
-          <div className="relative">
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="auth-input pl-10"
-            />
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-medical-primary h-5 w-5" />
-          </div>
+          <label htmlFor="password" className="block text-xl font-bold mb-2">PASSWORD</label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            className="auth-input"
+          />
         </div>
 
-        <div className="pt-2">
+        <div className="pt-2 flex justify-end">
           <button
             type="submit"
-            className="w-full bg-medical-secondary hover:bg-medical-primary text-white font-bold py-3 px-4 rounded-md transition-colors duration-200"
+            className="sign-in-button"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -143,7 +129,7 @@ const Login: React.FC = () => {
           <div className="text-sm">
             <Link
               to="/register"
-              className="font-medium text-medical-primary hover:text-medical-secondary"
+              className="font-medium text-green-700 hover:text-green-600"
             >
               Don't have an account? Register
             </Link>
@@ -153,50 +139,46 @@ const Login: React.FC = () => {
         <div className="mt-4 border-t border-gray-200 pt-4">
           <p className="text-sm text-gray-500 text-center">Demo Accounts</p>
           <div className="grid grid-cols-2 gap-2 mt-2">
-            <Button
+            <button
               type="button"
-              variant="outline"
               onClick={() => {
                 setEmail('admin@example.com');
                 setPassword('password');
               }}
-              className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
+              className="text-xs border border-green-600 text-green-600 hover:bg-green-50 p-1 rounded"
             >
               Admin
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant="outline"
               onClick={() => {
                 setEmail('doctor@example.com');
                 setPassword('password');
               }}
-              className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
+              className="text-xs border border-green-600 text-green-600 hover:bg-green-50 p-1 rounded"
             >
               Doctor
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant="outline"
               onClick={() => {
                 setEmail('student@example.com');
                 setPassword('password');
               }}
-              className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
+              className="text-xs border border-green-600 text-green-600 hover:bg-green-50 p-1 rounded"
             >
               Student
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              variant="outline"
               onClick={() => {
                 setEmail('staff@example.com');
                 setPassword('password');
               }}
-              className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
+              className="text-xs border border-green-600 text-green-600 hover:bg-green-50 p-1 rounded"
             >
               Staff
-            </Button>
+            </button>
           </div>
         </div>
       </form>
