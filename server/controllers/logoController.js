@@ -15,6 +15,11 @@ exports.getAllLogos = async (req, res) => {
   try {
     const logos = await logoModel.getAllLogos();
     
+    if (!Array.isArray(logos)) {
+      console.error('Invalid logos data format:', logos);
+      return res.status(500).json({ error: 'Invalid data format from database' });
+    }
+    
     // Add absolute URLs to the logos
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const logosWithUrls = logos.map(logo => ({

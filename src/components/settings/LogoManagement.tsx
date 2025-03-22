@@ -34,10 +34,13 @@ const LogoManagement = () => {
       console.log('Fetching logos...');
       const response = await axios.get('/api/logos');
       console.log('Logos response:', response.data);
-      const logos: Logo[] = response.data;
       
-      const primary = logos.find(logo => logo.position === 'primary');
-      const secondary = logos.find(logo => logo.position === 'secondary');
+      // Make sure we have an array of logos
+      const logos = Array.isArray(response.data) ? response.data : [];
+      
+      // Find logos by position using direct array methods
+      const primary = logos.find((logo: Logo) => logo.position === 'primary');
+      const secondary = logos.find((logo: Logo) => logo.position === 'secondary');
       
       if (primary) {
         console.log('Primary logo URL:', primary.url);

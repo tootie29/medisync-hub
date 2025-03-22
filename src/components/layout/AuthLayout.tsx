@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -36,10 +37,13 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
       console.log('AuthLayout: Fetching logos...');
       const response = await axios.get('/api/logos');
       console.log('AuthLayout: Logos response:', response.data);
-      const logos: Logo[] = response.data;
       
-      const primary = logos.find(logo => logo.position === 'primary');
-      const secondary = logos.find(logo => logo.position === 'secondary');
+      // Make sure we have an array of logos
+      const logos = Array.isArray(response.data) ? response.data : [];
+      
+      // Find logos by position
+      const primary = logos.find((logo: Logo) => logo.position === 'primary');
+      const secondary = logos.find((logo: Logo) => logo.position === 'secondary');
       
       if (primary) {
         console.log('AuthLayout: Primary logo URL:', primary.url);
