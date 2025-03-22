@@ -61,7 +61,7 @@ const Login: React.FC = () => {
   return (
     <AuthLayout>
       <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold text-medical-primary">ADMISSION LOG IN</h2>
+        <h2 className="text-2xl font-bold text-black">ADMISSION LOG IN</h2>
       </div>
 
       {connectivityError && (
@@ -97,9 +97,8 @@ const Login: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="auth-input pl-10"
+              className="border-2 border-medical-primary rounded-md p-2"
             />
-            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-medical-primary h-5 w-5" />
           </div>
         </div>
 
@@ -113,16 +112,15 @@ const Login: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="auth-input pl-10"
+              className="border-2 border-medical-primary rounded-md p-2"
             />
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-medical-primary h-5 w-5" />
           </div>
         </div>
 
-        <div className="pt-2">
+        <div className="pt-2 flex justify-end">
           <button
             type="submit"
-            className="w-full bg-medical-secondary hover:bg-medical-primary text-white font-bold py-3 px-4 rounded-md transition-colors duration-200"
+            className="bg-medical-primary hover:bg-medical-secondary text-white font-bold py-3 px-8 rounded-md transition-colors duration-200"
             disabled={isLoading}
           >
             {isLoading ? (
