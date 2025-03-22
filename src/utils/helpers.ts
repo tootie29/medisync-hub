@@ -61,6 +61,14 @@ export const getBMIColor = (bmi: number): string => {
   return "text-red-500";
 };
 
+// Add the missing function required by imports
+export const getBMICategoryColor = (bmi: number): string => {
+  if (bmi < 18.5) return "text-blue-500";
+  if (bmi < 25) return "text-green-500";
+  if (bmi < 30) return "text-yellow-500";
+  return "text-red-500";
+};
+
 export const calculateBMITrend = (records: MedicalRecord[]): "increasing" | "decreasing" | "stable" | "unknown" => {
   if (records.length < 2) {
     return "unknown";

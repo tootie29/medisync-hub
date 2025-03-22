@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -92,23 +91,21 @@ const BMICalculator: React.FC = () => {
       } else {
         // For patients updating their own record
         if (lastRecord) {
-          // Update the existing record
+          // Update the existing record - without explicitly adding bmi as it's calculated server-side
           updateMedicalRecord(lastRecord.id, {
             height,
             weight,
-            bmi, // Explicitly include the calculated BMI
             date: new Date().toISOString().split('T')[0],
           });
           toast.success('Medical record updated successfully');
         } else {
-          // Create a new record
+          // Create a new record - without explicitly adding bmi as it's calculated server-side
           addMedicalRecord({
             patientId: user.id,
             doctorId: 'self-recorded', // Placeholder for self-recorded
             date: new Date().toISOString().split('T')[0],
             height,
             weight,
-            bmi, // Explicitly include the calculated BMI
           });
           toast.success('Medical record created successfully');
         }
@@ -312,3 +309,4 @@ const BMICalculator: React.FC = () => {
 };
 
 export default BMICalculator;
+
