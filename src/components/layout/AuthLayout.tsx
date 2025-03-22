@@ -24,8 +24,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const isMobile = useMediaQuery("(max-width: 639px)");
   const isSmallDesktop = useMediaQuery("(min-width: 1024px) and (max-width: 1279px)");
   
-  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
-  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
+  // Default logo path
+  const defaultLogoPath = '/lovable-uploads/e4352921-3b28-44c3-a2f8-02b0923e132f.png';
+  
+  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>(defaultLogoPath);
+  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>(defaultLogoPath);
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
 
   useEffect(() => {
@@ -103,7 +106,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
                 onError={(e) => {
                   console.error('Failed to load primary logo in AuthLayout:', primaryLogoUrl);
-                  e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                  e.currentTarget.src = defaultLogoPath;
                 }}
               />
             </div>
@@ -114,7 +117,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
                 onError={(e) => {
                   console.error('Failed to load secondary logo in AuthLayout:', secondaryLogoUrl);
-                  e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                  e.currentTarget.src = defaultLogoPath;
                 }}
               />
             </div>
@@ -141,7 +144,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-16 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load primary logo in AuthLayout (mobile):', primaryLogoUrl);
-                        e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                        e.currentTarget.src = defaultLogoPath;
                       }}
                     />
                   </div>
@@ -152,7 +155,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-16 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load secondary logo in AuthLayout (mobile):', secondaryLogoUrl);
-                        e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                        e.currentTarget.src = defaultLogoPath;
                       }}
                     />
                   </div>
@@ -167,7 +170,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-14 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load primary logo in AuthLayout (tablet):', primaryLogoUrl);
-                        e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                        e.currentTarget.src = defaultLogoPath;
                       }}
                     />
                   </div>
@@ -178,7 +181,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-14 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load secondary logo in AuthLayout (tablet):', secondaryLogoUrl);
-                        e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                        e.currentTarget.src = defaultLogoPath;
                       }}
                     />
                   </div>

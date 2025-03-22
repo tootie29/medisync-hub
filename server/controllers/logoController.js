@@ -10,6 +10,9 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Default logo path to use when no logo is found
+const defaultLogoPath = '/lovable-uploads/e4352921-3b28-44c3-a2f8-02b0923e132f.png';
+
 // Get all logos
 exports.getAllLogos = async (req, res) => {
   try {
@@ -41,7 +44,13 @@ exports.getLogoByPosition = async (req, res) => {
     const logo = await logoModel.getLogoByPosition(position);
     
     if (!logo) {
-      return res.status(404).json({ error: 'Logo not found' });
+      // Return default logo if not found
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      return res.status(200).json({
+        id: 'default',
+        url: `${baseUrl}${defaultLogoPath}`,
+        position: position
+      });
     }
     
     // Add absolute URL to the logo

@@ -21,6 +21,9 @@ const LogoManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Default logo path
+  const defaultLogoPath = '/lovable-uploads/e4352921-3b28-44c3-a2f8-02b0923e132f.png';
 
   useEffect(() => {
     // Fetch the current logos from the database
@@ -47,7 +50,7 @@ const LogoManagement = () => {
         setPrimaryLogoUrl(primary.url);
       } else {
         // Fallback to default logo
-        setPrimaryLogoUrl('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
+        setPrimaryLogoUrl(defaultLogoPath);
       }
       
       if (secondary) {
@@ -55,7 +58,7 @@ const LogoManagement = () => {
         setSecondaryLogoUrl(secondary.url);
       } else {
         // Fallback to default logo
-        setSecondaryLogoUrl('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
+        setSecondaryLogoUrl(defaultLogoPath);
       }
     } catch (error) {
       console.error('Error fetching logos:', error);
@@ -63,8 +66,8 @@ const LogoManagement = () => {
       toast.error('Failed to load logos');
       
       // Fallback to default logo if API fails
-      setPrimaryLogoUrl('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
-      setSecondaryLogoUrl('/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png');
+      setPrimaryLogoUrl(defaultLogoPath);
+      setSecondaryLogoUrl(defaultLogoPath);
     } finally {
       setIsLoadingLogos(false);
     }
@@ -166,7 +169,7 @@ const LogoManagement = () => {
                   className="max-h-full object-contain"
                   onError={(e) => {
                     console.error('Failed to load primary logo:', primaryLogoUrl);
-                    e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                    e.currentTarget.src = defaultLogoPath;
                   }}
                 />
               </div>
@@ -203,7 +206,7 @@ const LogoManagement = () => {
                   className="max-h-full object-contain"
                   onError={(e) => {
                     console.error('Failed to load secondary logo:', secondaryLogoUrl);
-                    e.currentTarget.src = '/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png';
+                    e.currentTarget.src = defaultLogoPath;
                   }}
                 />
               </div>
