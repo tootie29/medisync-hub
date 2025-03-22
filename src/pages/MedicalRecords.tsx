@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -203,8 +202,6 @@ const MedicalRecords: React.FC = () => {
     const doctor = getUserById(doctorId);
     return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
   };
-
-  const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
 
   useEffect(() => {
     if (isDoctor && !selectedPatientId && !patientIdFromUrl) {
