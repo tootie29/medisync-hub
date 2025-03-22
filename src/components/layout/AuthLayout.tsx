@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -24,7 +23,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const isMobile = useMediaQuery("(max-width: 639px)");
   const isSmallDesktop = useMediaQuery("(min-width: 1024px) and (max-width: 1279px)");
   
-  // Default logo path
+  // Default logo path - make sure this points to a valid image in your public folder
   const defaultLogoPath = '/lovable-uploads/e4352921-3b28-44c3-a2f8-02b0923e132f.png';
   
   const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>(defaultLogoPath);
@@ -48,18 +47,26 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
       const primary = logos.find((logo: Logo) => logo.position === 'primary');
       const secondary = logos.find((logo: Logo) => logo.position === 'secondary');
       
-      if (primary) {
+      if (primary && primary.url) {
         console.log('AuthLayout: Primary logo URL:', primary.url);
         setPrimaryLogoUrl(primary.url);
+      } else {
+        // Ensure defaultLogoPath is used if no logo found
+        setPrimaryLogoUrl(defaultLogoPath);
       }
       
-      if (secondary) {
+      if (secondary && secondary.url) {
         console.log('AuthLayout: Secondary logo URL:', secondary.url);
         setSecondaryLogoUrl(secondary.url);
+      } else {
+        // Ensure defaultLogoPath is used if no logo found
+        setSecondaryLogoUrl(defaultLogoPath);
       }
     } catch (error) {
       console.error('AuthLayout: Error fetching logos:', error);
       // Keep default logos on error
+      setPrimaryLogoUrl(defaultLogoPath);
+      setSecondaryLogoUrl(defaultLogoPath);
     } finally {
       setIsLoadingLogos(false);
     }

@@ -10,7 +10,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Default logo path to use when no logo is found
+// Default logo path to use when no logo is found - updated to use absolute path
 const defaultLogoPath = '/lovable-uploads/e4352921-3b28-44c3-a2f8-02b0923e132f.png';
 
 // Get all logos

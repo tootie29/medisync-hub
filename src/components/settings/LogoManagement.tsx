@@ -22,7 +22,7 @@ const LogoManagement = () => {
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Default logo path
+  // Default logo path - make sure this points to a valid image in your public folder
   const defaultLogoPath = '/lovable-uploads/e4352921-3b28-44c3-a2f8-02b0923e132f.png';
 
   useEffect(() => {
@@ -45,7 +45,7 @@ const LogoManagement = () => {
       const primary = logos.find((logo: Logo) => logo.position === 'primary');
       const secondary = logos.find((logo: Logo) => logo.position === 'secondary');
       
-      if (primary) {
+      if (primary && primary.url) {
         console.log('Primary logo URL:', primary.url);
         setPrimaryLogoUrl(primary.url);
       } else {
@@ -53,7 +53,7 @@ const LogoManagement = () => {
         setPrimaryLogoUrl(defaultLogoPath);
       }
       
-      if (secondary) {
+      if (secondary && secondary.url) {
         console.log('Secondary logo URL:', secondary.url);
         setSecondaryLogoUrl(secondary.url);
       } else {
