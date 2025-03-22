@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMediaQuery } from '@/hooks/use-mobile';
@@ -15,6 +15,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   const isTablet = useMediaQuery("(min-width: 640px) and (max-width: 1023px)");
   const isMobile = useMediaQuery("(max-width: 639px)");
   const isSmallDesktop = useMediaQuery("(min-width: 1024px) and (max-width: 1279px)");
+  const [customLogo, setCustomLogo] = useState<string | null>(null);
+
+  // Load custom logo if available
+  useEffect(() => {
+    const savedLogo = localStorage.getItem('currentLogo');
+    if (savedLogo) {
+      setCustomLogo(savedLogo);
+    }
+  }, []);
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
@@ -35,6 +44,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
     return null; // Will redirect in the useEffect
   }
 
+  // Default logo to use if no custom logo is set
+  const defaultLogo = "/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png";
+  const logoToUse = customLogo || defaultLogo;
+
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row">
       {/* Left side with logo, tagline and green columns */}
@@ -52,14 +65,14 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           <div className="flex justify-center items-center space-x-6 mb-6">
             <div className="flex flex-col justify-center items-center">
               <img 
-                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                src={logoToUse} 
                 alt="Olivarez Clinic Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
               />
             </div>
             <div className="flex flex-col justify-center items-center">
               <img 
-                src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                src={logoToUse} 
                 alt="Olivarez Clinic Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
               />
@@ -82,14 +95,14 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
                 <div className="flex justify-center items-center gap-6">
                   <div className="flex flex-col justify-center">
                     <img 
-                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      src={logoToUse} 
                       alt="Olivarez Clinic Logo" 
                       className="h-16 w-auto object-contain"
                     />
                   </div>
                   <div className="flex flex-col justify-center">
                     <img 
-                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      src={logoToUse} 
                       alt="Olivarez Clinic Logo" 
                       className="h-16 w-auto object-contain"
                     />
@@ -100,14 +113,14 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
                 <div className="flex flex-col space-y-3 justify-center items-center">
                   <div className="flex justify-center">
                     <img 
-                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      src={logoToUse} 
                       alt="Olivarez Clinic Logo" 
                       className="h-14 w-auto object-contain"
                     />
                   </div>
                   <div className="flex justify-center">
                     <img 
-                      src="/lovable-uploads/72c0d499-9e39-47a1-a868-677102ad3084.png" 
+                      src={logoToUse} 
                       alt="Olivarez Clinic Logo" 
                       className="h-14 w-auto object-contain"
                     />
