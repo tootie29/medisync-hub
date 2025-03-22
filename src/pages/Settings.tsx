@@ -4,15 +4,13 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Bell, Moon, Volume2 } from 'lucide-react';
+import { Bell, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useTheme } from '@/context/ThemeContext';
 
 const Settings = () => {
   const [notifications, setNotifications] = React.useState(true);
   const [sound, setSound] = React.useState(true);
-  const { theme, toggleTheme } = useTheme();
   
   const handleSaveSettings = () => {
     // In a real app, we would save these to the user's profile
@@ -33,10 +31,10 @@ const Settings = () => {
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <Bell className="h-5 w-5 text-gray-500 dark:text-gray-300" />
+                  <Bell className="h-5 w-5 text-gray-500" />
                   <div>
                     <p className="font-medium">Notifications</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-300">Receive notifications about your appointments and messages</p>
+                    <p className="text-sm text-gray-500">Receive notifications about your appointments and messages</p>
                   </div>
                 </div>
                 <Switch 
@@ -47,24 +45,10 @@ const Settings = () => {
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <Moon className="h-5 w-5 text-gray-500 dark:text-gray-300" />
-                  <div>
-                    <p className="font-medium">Dark Mode</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-300">Switch between light and dark themes</p>
-                  </div>
-                </div>
-                <Switch 
-                  checked={theme === 'dark'} 
-                  onCheckedChange={toggleTheme} 
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Volume2 className="h-5 w-5 text-gray-500 dark:text-gray-300" />
+                  <Volume2 className="h-5 w-5 text-gray-500" />
                   <div>
                     <p className="font-medium">Sound Effects</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-300">Play sounds for notifications and actions</p>
+                    <p className="text-sm text-gray-500">Play sounds for notifications and actions</p>
                   </div>
                 </div>
                 <Switch 
