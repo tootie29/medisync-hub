@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,17 +53,31 @@ const MedicalRecords: React.FC = () => {
   const isDoctor = user?.role === 'doctor' || user?.role === 'admin';
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   
+  // Debug logs to help identify issues
+  console.log("MedicalRecords component rendering");
+  console.log("User:", user);
+  console.log("Patient ID from URL:", patientIdFromUrl);
+  console.log("Is doctor:", isDoctor);
+  console.log("Is patient:", isPatient);
+  
   useEffect(() => {
     if (patientIdFromUrl) {
+      console.log("Setting selected patient ID from URL:", patientIdFromUrl);
       setSelectedPatientId(patientIdFromUrl);
     } else if (isPatient && user) {
+      console.log("Setting selected patient ID from user:", user.id);
       setSelectedPatientId(user.id);
     }
   }, [patientIdFromUrl, isPatient, user]);
   
+  const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
+  console.log("Selected patient:", selectedPatient);
+  
   const unsortedMedicalRecords = selectedPatientId 
     ? getMedicalRecordsByPatientId(selectedPatientId)
     : [];
+      
+  console.log("Unsorted medical records:", unsortedMedicalRecords);
       
   const medicalRecords = [...unsortedMedicalRecords].sort((a, b) => {
     switch (sortOption) {
@@ -74,6 +89,8 @@ const MedicalRecords: React.FC = () => {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
     }
   });
+
+  console.log("Sorted medical records:", medicalRecords);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -190,6 +207,7 @@ const MedicalRecords: React.FC = () => {
 
   useEffect(() => {
     if (isDoctor && !selectedPatientId && !patientIdFromUrl) {
+      console.log("No patient selected, navigating to dashboard");
       navigate('/dashboard');
     }
   }, [isDoctor, selectedPatientId, patientIdFromUrl, navigate]);
@@ -619,4 +637,3 @@ const MedicalRecords: React.FC = () => {
 };
 
 export default MedicalRecords;
-
