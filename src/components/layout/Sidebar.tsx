@@ -18,10 +18,14 @@ import {
 
 import {
   Sidebar as UISidebar,
-  SidebarSection,
-  SidebarItem,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
-  SidebarDivider,
+  SidebarMenuItem,
+  SidebarMenuButton
 } from "@/components/ui/sidebar";
 
 export default function Sidebar() {
@@ -42,85 +46,131 @@ export default function Sidebar() {
 
   return (
     <UISidebar className="pl-2 pr-2">
-      <SidebarMenu>
-        <SidebarSection>
-          <SidebarItem 
-            icon={<Heart size={20} />} 
-            text="Dashboard" 
-            isActive={isActive('/dashboard')}
-            onClick={() => handleNavigation('/dashboard')}
-          />
-          <SidebarItem 
-            icon={<BookPlus size={20} />} 
-            text="Appointments" 
-            isActive={isActive('/appointments')}
-            onClick={() => handleNavigation('/appointments')}
-          />
-          {isDoctor && (
-            <SidebarItem 
-              icon={<Clipboard size={20} />} 
-              text="Medical Records" 
-              isActive={isActive('/medical-records')}
-              onClick={() => handleNavigation('/medical-records')}
-            />
-          )}
-          <SidebarItem 
-            icon={<UserCircle size={20} />} 
-            text="Profile" 
-            isActive={isActive('/profile')}
-            onClick={() => handleNavigation('/profile')}
-          />
-        </SidebarSection>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={isActive('/dashboard')}
+                  onClick={() => handleNavigation('/dashboard')}
+                >
+                  <Heart size={20} />
+                  <span>Dashboard</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={isActive('/appointments')}
+                  onClick={() => handleNavigation('/appointments')}
+                >
+                  <BookPlus size={20} />
+                  <span>Appointments</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              {isDoctor && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={isActive('/medical-records')}
+                    onClick={() => handleNavigation('/medical-records')}
+                  >
+                    <Clipboard size={20} />
+                    <span>Medical Records</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={isActive('/profile')}
+                  onClick={() => handleNavigation('/profile')}
+                >
+                  <UserCircle size={20} />
+                  <span>Profile</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         
-        <SidebarDivider />
+        <SidebarGroup>
+          <SidebarGroupLabel>Tools</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={isActive('/bmi-calculator')}
+                  onClick={() => handleNavigation('/bmi-calculator')}
+                >
+                  <Calculator size={20} />
+                  <span>BMI Calculator</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={isActive('/health-monitoring')}
+                  onClick={() => handleNavigation('/health-monitoring')}
+                >
+                  <Activity size={20} />
+                  <span>Health Monitoring</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={isActive('/inventory')}
+                    onClick={() => handleNavigation('/inventory')}
+                  >
+                    <Package2 size={20} />
+                    <span>Inventory</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         
-        <SidebarSection title="Tools">
-          <SidebarItem 
-            icon={<Calculator size={20} />} 
-            text="BMI Calculator" 
-            isActive={isActive('/bmi-calculator')}
-            onClick={() => handleNavigation('/bmi-calculator')}
-          />
-          <SidebarItem 
-            icon={<Activity size={20} />} 
-            text="Health Monitoring" 
-            isActive={isActive('/health-monitoring')}
-            onClick={() => handleNavigation('/health-monitoring')}
-          />
-          {isAdmin && (
-            <SidebarItem 
-              icon={<Package2 size={20} />} 
-              text="Inventory" 
-              isActive={isActive('/inventory')}
-              onClick={() => handleNavigation('/inventory')}
-            />
-          )}
-        </SidebarSection>
-        
-        <SidebarDivider />
-        
-        <SidebarSection title="System">
-          <SidebarItem 
-            icon={<Settings size={20} />} 
-            text="Settings" 
-            isActive={isActive('/settings')}
-            onClick={() => handleNavigation('/settings')}
-          />
-          {isAdmin && (
-            <SidebarItem 
-              icon={<Palette size={20} />} 
-              text="Branding Settings" 
-              isActive={isActive('/branding-settings')}
-              onClick={() => handleNavigation('/branding-settings')}
-            />
-          )}
-          <SidebarItem 
-            icon={<LogOut size={20} />} 
-            text="Logout" 
-            onClick={logout}
-          />
-        </SidebarSection>
-      </SidebarMenu>
+        <SidebarGroup>
+          <SidebarGroupLabel>System</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={isActive('/settings')}
+                  onClick={() => handleNavigation('/settings')}
+                >
+                  <Settings size={20} />
+                  <span>Settings</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={isActive('/branding-settings')}
+                    onClick={() => handleNavigation('/branding-settings')}
+                  >
+                    <Palette size={20} />
+                    <span>Branding Settings</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={logout}>
+                  <LogOut size={20} />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
     </UISidebar>
   );
 }

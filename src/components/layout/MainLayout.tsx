@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -12,9 +13,6 @@ interface MainLayoutProps {
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   React.useEffect(() => {
     if (!isLoading && !user) {
@@ -42,14 +40,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     <div className="min-h-screen bg-medical-light/30">
       <Navbar />
       <div className="flex">
-        <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <main 
-          className={`flex-1 p-4 md:p-8 pt-24 transition-all duration-300 ${
-            isSidebarOpen ? 'md:ml-64' : 'md:ml-16'
-          }`}
-        >
-          {children}
-        </main>
+        <SidebarProvider defaultOpen={true}>
+          <Sidebar />
+          <main className="flex-1 p-4 md:p-8 pt-24 transition-all duration-300 md:ml-64">
+            {children}
+          </main>
+        </SidebarProvider>
       </div>
     </div>
   );
