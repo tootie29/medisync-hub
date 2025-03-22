@@ -11,7 +11,6 @@ import {
   Calculator,
   Activity,
   Package2,
-  PanelLeft,
   Palette,
   LogOut
 } from 'lucide-react';
