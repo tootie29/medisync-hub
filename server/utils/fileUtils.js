@@ -1,50 +1,55 @@
-
 const fs = require('fs');
 const path = require('path');
 const { promisify } = require('util');
 
-// Convert fs methods to Promise-based for better error handling
-const access = promisify(fs.access);
-const chmod = promisify(fs.chmod);
-
 /**
- * Ensures proper file permissions are set
- * @param {string} filePath - Path to the file
- * @returns {Promise<boolean>} - Success status
+ * Verify that a file exists
+ * @param {string} filePath Path to the file
+ * @returns {boolean} True if file exists, false otherwise
  */
-exports.ensureFilePermissions = async (filePath) => {
+exports.verifyFileExists = (filePath) => {
   try {
-    await chmod(filePath, 0o644); // rw-r--r--
-    console.log(`Set file permissions on: ${filePath}`);
-    return true;
-  } catch (permErr) {
-    console.error(`Could not set file permissions: ${permErr.message}`);
+    if (!filePath) return false;
+    return fs.existsSync(filePath);
+  } catch (error) {
+    console.error(`Error verifying file existence: ${error.message}`);
     return false;
   }
 };
 
 /**
- * Verify that a file exists on disk
- * @param {string} filePath - Path to the file
- * @returns {boolean} - Whether the file exists
+ * Ensure file has correct permissions
+ * @param {string} filePath Path to the file
+ * @returns {Promise<boolean>} True if permissions set, false otherwise
  */
-exports.verifyFileExists = (filePath) => {
-  const exists = fs.existsSync(filePath);
-  if (!exists) {
-    console.error(`File not found at ${filePath}`);
-  } else {
-    console.log(`File verified at ${filePath}`);
+exports.ensureFilePermissions = async (filePath) => {
+  try {
+    if (!filePath || !fs.existsSync(filePath)) return false;
+    
+    console.log(`Setting permissions on file: ${filePath}`);
+    // Try very permissive permissions - for troubleshooting only
+    // In production this should be 0o644 (rw-r--r--)
+    await promisify(fs.chmod)(filePath, 0o666);
+    
+    return true;
+  } catch (error) {
+    console.error(`Error setting file permissions: ${error.message}`);
+    return false;
   }
-  return exists;
 };
 
 /**
- * Get absolute URL for a resource
- * @param {Object} req - Express request object
- * @param {string} relativePath - Relative path to the resource
- * @returns {string} - Absolute URL
+ * Get absolute URL for a file
+ * @param {object} req Express request object
+ * @param {string} relativePath Relative path to the file
+ * @returns {string} Absolute URL
  */
 exports.getAbsoluteUrl = (req, relativePath) => {
+  if (!relativePath) return '';
+  
+  // Get base URL from request
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  return relativePath.startsWith('http') ? relativePath : `${baseUrl}${relativePath}`;
+  
+  // Join with relative path
+  return baseUrl + (relativePath.startsWith('/') ? relativePath : '/' + relativePath);
 };
