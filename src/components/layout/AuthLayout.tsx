@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMediaQuery } from '@/hooks/use-mobile';
 import axios from 'axios';
@@ -8,7 +8,7 @@ import { CLIENT_FALLBACK_LOGO_PATH } from '@/components/settings/SiteSettingsMod
 import { toast } from 'sonner';
 
 interface AuthLayoutProps {
-  children?: React.ReactNode;
+  children: React.ReactNode;
   title?: string;
 }
 
@@ -224,7 +224,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
           
           <div className="border-2 border-medical-primary rounded-md p-6">
             {title && <h2 className="text-2xl font-bold text-medical-primary mb-6 text-center">{title}</h2>}
-            {children || <Outlet />}
+            {children}
           </div>
         </div>
       </div>
