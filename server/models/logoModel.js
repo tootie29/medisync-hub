@@ -55,15 +55,15 @@ exports.updateLogo = async (logo) => {
     } else {
       // Insert new logo
       console.log(`Model: Creating new logo for position ${logo.position}`);
-      await db.query(
+      const result = await db.query(
         'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
         [logo.id, logo.url, logo.position]
       );
-      console.log(`Model: Created new logo with ID: ${logo.id}`);
+      console.log(`Model: Created new logo with ID: ${logo.id}, Result:`, result);
       return logo.id;
     }
   } catch (error) {
     console.error('Database error in updateLogo:', error);
-    throw new Error('Failed to update logo in database');
+    throw new Error(`Failed to update logo in database: ${error.message}`);
   }
 };

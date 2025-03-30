@@ -10,17 +10,21 @@ const fs = require('fs');
 const uploadDir = path.join(__dirname, '../uploads/assets/logos');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+  console.log(`Created upload directory: ${uploadDir}`);
 }
 
 // Configure multer for file uploads with professional path
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    console.log(`Storing file in: ${uploadDir}`);
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    cb(null, 'logo-' + uniqueSuffix + ext);
+    const filename = 'logo-' + uniqueSuffix + ext;
+    console.log(`Generated filename: ${filename}`);
+    cb(null, filename);
   }
 });
 
@@ -31,8 +35,10 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
+      console.log(`Accepting file: ${file.originalname}, mimetype: ${file.mimetype}`);
       cb(null, true);
     } else {
+      console.log(`Rejecting file: ${file.originalname}, mimetype: ${file.mimetype}`);
       cb(new Error('Only image files are allowed!'), false);
     }
   }
