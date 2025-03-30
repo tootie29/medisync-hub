@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -85,7 +84,6 @@ app.use(`/api/medicines`, medicineRoutes);
 app.use(`/api/logos`, logoRoutes);
 
 // Determine the uploads directory based on environment
-const isProduction = process.env.NODE_ENV === 'production';
 const baseUploadDir = process.env.UPLOAD_BASE_DIR || 
                       (isProduction ? '/home/entrsolu' : path.join(__dirname));
 
