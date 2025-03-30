@@ -15,13 +15,11 @@ const chmod = promisify(fs.chmod);
 // Determine if we're in production (cPanel) or development
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Create uploads directory with proper permissions - use absolute path that works with cPanel
-// In cPanel, HOME env var points to the user's home directory (typically /home/username)
-const baseDir = isProduction 
-  ? process.env.HOME || '/home' // Use HOME env var or fallback to /home
-  : path.join(__dirname, '../'); // In dev, use server directory as base
+// Get base directory from environment or use default
+const baseDir = process.env.UPLOAD_BASE_DIR || 
+                (isProduction ? '/home/entrsolu' : path.join(__dirname, '../'));
 
-// Ensure the uploads path exists and is writable
+// Define upload paths
 const uploadsDir = 'uploads';
 const assetsDir = 'assets';
 const logosDir = 'logos';
