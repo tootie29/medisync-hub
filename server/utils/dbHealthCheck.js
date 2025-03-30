@@ -1,8 +1,6 @@
 
 /**
- * Database Health Check Utility
- * This script can be run to test the database connection and diagnose issues
- * 
+ * Simplified Database Health Check Utility
  * Run with: node server/utils/dbHealthCheck.js
  */
 
@@ -17,29 +15,12 @@ async function checkDatabaseHealth() {
   console.log('=== DATABASE HEALTH CHECK ===');
   console.log(`Timestamp: ${new Date().toISOString()}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log('');
   
   console.log('Testing database connection...');
   const connected = await testConnection();
   
   if (connected) {
     console.log('\n✅ Database connection successful!');
-    
-    try {
-      console.log('\nChecking table record counts:');
-      const tables = ['users', 'medical_records', 'appointments', 'medicines', 'logos'];
-      
-      for (const table of tables) {
-        try {
-          const [rows] = await pool.query(`SELECT COUNT(*) as count FROM ${table}`);
-          console.log(`- ${table}: ${rows[0].count} records`);
-        } catch (err) {
-          console.log(`- ${table}: Error - ${err.message}`);
-        }
-      }
-    } catch (err) {
-      console.error('Error checking table records:', err.message);
-    }
   } else {
     console.log('\n❌ Database connection failed.');
     console.log('Please check your database configuration in the .env file.');
