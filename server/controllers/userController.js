@@ -1,4 +1,3 @@
-
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
 
@@ -114,14 +113,18 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
     
+    console.log('Login attempt:', email);
     const user = await userModel.getUserByEmail(email);
     
     if (!user) {
+      console.log('User not found with email:', email);
       return res.status(401).json({ message: 'Invalid email or password' });
     }
     
     // Check if password matches
-    // Note: In a production environment, you would hash passwords
+    console.log('Checking password match:', 
+      user.password === password ? 'Password matches' : 'Password does not match');
+    
     if (user.password !== password) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }

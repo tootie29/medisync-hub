@@ -1,3 +1,4 @@
+
 const { pool } = require('../db/config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -30,6 +31,9 @@ class UserModel {
         address, emergencyContact, studentId, department, 
         staffId, position, password 
       } = userData;
+
+      // Log the password to verify it's being passed correctly
+      console.log('Creating user with password:', password ? 'Password provided' : 'No password provided');
 
       const [result] = await pool.query(
         `INSERT INTO users (
@@ -110,6 +114,7 @@ class UserModel {
   async getUserByEmail(email) {
     try {
       const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+      console.log('User found by email:', email, rows.length > 0 ? 'User exists' : 'No user found');
       return rows[0];
     } catch (error) {
       console.error('Error fetching user by email:', error);
