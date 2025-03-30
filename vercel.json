@@ -13,5 +13,9 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     }
-  ]
+  ],
+  "healthCheck": {
+    "path": "/api/health",
+    "wait": 5
+  }
 }

@@ -11,7 +11,7 @@ console.log('- Debug:', process.env.DB_DEBUG === 'true' ? 'enabled' : 'disabled'
 console.log('- Connection limit:', process.env.DB_CONNECTION_LIMIT || '10');
 console.log('- Connection timeout:', process.env.DB_CONNECT_TIMEOUT || '60000');
 
-// Enhanced pool configuration with robust error handling
+// Enhanced pool configuration with robust error handling and connection management
 const createDbPool = () => {
   const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
@@ -19,22 +19,30 @@ const createDbPool = () => {
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'medi_hub',
     waitForConnections: process.env.DB_WAIT_FOR_CONNECTIONS === 'true',
-    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
-    queueLimit: 0,
+    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '5', 10), // Reduced from 10 to 5
+    queueLimit: parseInt(process.env.DB_QUEUE_LIMIT || '0', 10),
     connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT || '60000', 10),
     // Add retry strategy
     enableKeepAlive: process.env.DB_CONNECTION_KEEPALIVE === 'true',
     keepAliveInitialDelay: 10000,
     // In case of connection issues
-    maxIdle: 5, 
-    idleTimeout: 60000,
+    maxIdle: 3, // Reduced from 5 to 3
+    idleTimeout: 30000, // Reduced from 60000 to 30000
     // Debug connection issues - modified to use DB_DEBUG env var
-    debug: process.env.DB_DEBUG === 'true'
+    debug: process.env.DB_DEBUG === 'true',
+    // Adding connection acquisition timeout
+    acquireTimeout: parseInt(process.env.DB_ACQUIRE_TIMEOUT || '30000', 10),
+    // Adding timezone for consistent timestamps
+    timezone: process.env.DB_TIMEZONE || 'local'
   });
 
   // Add error event listener to the pool
   pool.on('error', (err) => {
     console.error('Unexpected database pool error:', err);
+    // Don't crash on connection errors
+    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+      console.error('Database connection was lost. Will attempt to reconnect on next query.');
+    }
   });
 
   return pool;
@@ -163,8 +171,20 @@ async function createTestConnection() {
   }
 }
 
+// Ping database to ensure it's still alive
+async function pingDatabase() {
+  try {
+    await pool.query('SELECT 1');
+    return true;
+  } catch (err) {
+    console.error('Database ping failed:', err.message);
+    return false;
+  }
+}
+
 module.exports = {
   pool,
   testConnection,
-  createTestConnection
+  createTestConnection,
+  pingDatabase
 };

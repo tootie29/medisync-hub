@@ -6,9 +6,10 @@
  * Run with: node server/utils/dbHealthCheck.js
  */
 
-const { pool, testConnection, createTestConnection } = require('../db/config');
+const { pool, testConnection, createTestConnection, pingDatabase } = require('../db/config');
 const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs');
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -39,10 +40,77 @@ async function checkDatabaseHealth() {
       console.log('- Database server is down or unreachable');
       console.log('- Network connectivity issues');
       console.log('- Firewall blocking connections');
+      
+      // Check server status
+      console.log('\nChecking MySQL server status...');
+      try {
+        const mysql = require('mysql2');
+        const mysqlTest = mysql.createConnection({
+          host: process.env.DB_HOST || 'localhost',
+          user: process.env.DB_USER || 'root',
+          password: process.env.DB_PASSWORD || ''
+        });
+        
+        mysqlTest.connect(function(err) {
+          if (err) {
+            console.log('MySQL server connection failed. Error:', err.code);
+            if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+              console.log('The server is running but credentials are invalid');
+            }
+          } else {
+            console.log('MySQL server is running and responsive');
+            console.log('Issue may be with the specific database');
+            mysqlTest.end();
+          }
+        });
+      } catch (e) {
+        console.log('Could not test MySQL server basic connectivity:', e.message);
+      }
+      
+      // Check if the database exists
+      console.log('\nChecking if database exists...');
+      try {
+        const mysql = require('mysql2');
+        const mysqlTest = mysql.createConnection({
+          host: process.env.DB_HOST || 'localhost',
+          user: process.env.DB_USER || 'root',
+          password: process.env.DB_PASSWORD || ''
+        });
+        
+        mysqlTest.connect(function(err) {
+          if (err) {
+            console.log('Could not check if database exists:', err.message);
+          } else {
+            mysqlTest.query(`SHOW DATABASES LIKE '${process.env.DB_NAME}'`, function(err, results) {
+              if (err) {
+                console.log('Error checking if database exists:', err.message);
+              } else if (results.length === 0) {
+                console.log(`Database '${process.env.DB_NAME}' does not exist.`);
+                console.log('You may need to create it first.');
+              } else {
+                console.log(`Database '${process.env.DB_NAME}' exists.`);
+                console.log('Issue may be with permissions or connection settings.');
+              }
+              mysqlTest.end();
+            });
+          }
+        });
+      } catch (e) {
+        console.log('Could not check if database exists:', e.message);
+      }
     }
   } else {
     console.log('\n✅ Pool connection successful!');
     console.log('The database appears to be functioning correctly.');
+    
+    // Ping test
+    console.log('\nPerforming database ping test...');
+    const pingSuccessful = await pingDatabase();
+    if (pingSuccessful) {
+      console.log('✅ Database ping successful.');
+    } else {
+      console.log('❌ Database ping failed.');
+    }
   }
   
   // Run query to check table counts
