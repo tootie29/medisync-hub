@@ -18,7 +18,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  connectTimeout: 30000, // Increased timeout for slower connections
+  connectTimeout: 60000, // Increased timeout for slower connections
   // Add retry strategy
   enableKeepAlive: true,
   keepAliveInitialDelay: 10000,
@@ -50,12 +50,18 @@ async function testConnection() {
         console.log('Database tables:', tables.map(t => Object.values(t)[0]).join(', '));
         
         // Check for specific tables
-        const expectedTables = ['users', 'medical_records', 'appointments', 'medicines'];
+        const expectedTables = ['users', 'medical_records', 'appointments', 'medicines', 'logos'];
         const foundTables = tables.map(t => Object.values(t)[0]);
         
         const missingTables = expectedTables.filter(table => !foundTables.includes(table));
         if (missingTables.length > 0) {
           console.warn('Warning: Some expected tables are missing:', missingTables.join(', '));
+          
+          // Check specifically for logos table
+          if (missingTables.includes('logos')) {
+            console.warn('The logos table is missing. This will affect logo upload functionality.');
+            console.warn('Consider running the database schema setup script from server/db/schema.sql');
+          }
         }
       } catch (tableError) {
         console.error('Failed to query tables:', tableError.message);
@@ -83,6 +89,7 @@ async function testConnection() {
         case 'ER_BAD_DB_ERROR':
           console.error('Database does not exist - check DB_NAME in your .env file');
           console.error('Attempted database name:', process.env.DB_NAME);
+          console.error('You may need to create this database in your cPanel MySQL Databases section');
           break;
         case 'ETIMEDOUT':
           console.error('Connection timeout - MySQL server may be too slow to respond');
@@ -99,8 +106,10 @@ async function testConnection() {
       if (process.env.NODE_ENV === 'production') {
         console.error('For cPanel hosting, ensure:');
         console.error('1. The database has been created in cPanel MySQL Databases');
-        console.error('2. DB_USER has appropriate privileges');
-        console.error('3. Remote MySQL connections are enabled if needed');
+        console.error('2. The user specified in DB_USER has been created and assigned to the database');
+        console.error('3. DB_USER has appropriate privileges (ALL PRIVILEGES) on the database');
+        console.error('4. Remote MySQL connections are enabled if not using localhost');
+        console.error('5. If using localhost, ensure PHP and Node.js applications are on the same server');
       }
     }
     return false;
