@@ -85,7 +85,7 @@ app.use(`/api/medicines`, medicineRoutes);
 app.use(`/api/logos`, logoRoutes);
 
 // Determine the uploads directory based on environment
-const isProduction = process.env.NODE_ENV === 'production';
+// NOTE: Use the existing isProduction variable declared above, not a new one
 const baseUploadDir = isProduction
   ? process.env.HOME || '/home'  // cPanel uses /home/{username}
   : path.join(__dirname);
