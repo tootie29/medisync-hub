@@ -8,31 +8,47 @@ console.log('- Host:', process.env.DB_HOST || 'localhost');
 console.log('- User:', process.env.DB_USER || 'root');
 console.log('- Database:', process.env.DB_NAME || 'medi_hub');
 console.log('- Debug:', process.env.DB_DEBUG === 'true' ? 'enabled' : 'disabled');
+console.log('- Connection limit:', process.env.DB_CONNECTION_LIMIT || '10');
+console.log('- Connection timeout:', process.env.DB_CONNECT_TIMEOUT || '60000');
 
-// Create connection pool with enhanced configuration for cPanel
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'medi_hub',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  connectTimeout: 60000, // Increased timeout for slower connections
-  // Add retry strategy
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 10000,
-  // In case of connection issues
-  maxIdle: 5, 
-  idleTimeout: 60000,
-  // Debug connection issues - modified to use DB_DEBUG env var
-  debug: process.env.DB_DEBUG === 'true'
-});
+// Enhanced pool configuration with robust error handling
+const createDbPool = () => {
+  const pool = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'medi_hub',
+    waitForConnections: process.env.DB_WAIT_FOR_CONNECTIONS === 'true',
+    connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
+    queueLimit: 0,
+    connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT || '60000', 10),
+    // Add retry strategy
+    enableKeepAlive: process.env.DB_CONNECTION_KEEPALIVE === 'true',
+    keepAliveInitialDelay: 10000,
+    // In case of connection issues
+    maxIdle: 5, 
+    idleTimeout: 60000,
+    // Debug connection issues - modified to use DB_DEBUG env var
+    debug: process.env.DB_DEBUG === 'true'
+  });
+
+  // Add error event listener to the pool
+  pool.on('error', (err) => {
+    console.error('Unexpected database pool error:', err);
+  });
+
+  return pool;
+};
+
+// Create and export the pool
+const pool = createDbPool();
 
 // Test database connection with retry mechanism and more detailed logging
-async function testConnection() {
+async function testConnection(retryCount = 0) {
+  const maxRetries = parseInt(process.env.DB_RETRY_COUNT || '3', 10);
+  
   try {
-    console.log('Attempting database connection...');
+    console.log(`Attempting database connection (attempt ${retryCount + 1} of ${maxRetries + 1})...`);
     console.log(`Connection details: ${process.env.DB_USER}@${process.env.DB_HOST}/${process.env.DB_NAME}`);
     
     const connection = await pool.getConnection();
@@ -73,7 +89,8 @@ async function testConnection() {
     connection.release();
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error.message);
+    console.error(`Database connection failed (attempt ${retryCount + 1}):`, error.message);
+    
     // More detailed error information
     if (error.code) {
       console.error('Error code:', error.code);
@@ -98,6 +115,12 @@ async function testConnection() {
           console.error('Host not found - check DB_HOST in your .env file');
           console.error('Attempted host:', process.env.DB_HOST);
           break;
+        case 'PROTOCOL_CONNECTION_LOST':
+          console.error('Database connection was closed unexpectedly');
+          break;
+        case 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR':
+          console.error('Connection encountered a fatal error');
+          break;
         default:
           console.error('Check your MySQL server configuration and .env file');
       }
@@ -112,11 +135,36 @@ async function testConnection() {
         console.error('5. If using localhost, ensure PHP and Node.js applications are on the same server');
       }
     }
+    
+    // Implement retry logic
+    if (retryCount < maxRetries) {
+      console.log(`Retrying in 3 seconds... (${retryCount + 1} of ${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      return testConnection(retryCount + 1);
+    }
+    
     return false;
+  }
+}
+
+// Add a method to create a fresh connection for testing
+async function createTestConnection() {
+  const testPool = createDbPool();
+  try {
+    const conn = await testPool.getConnection();
+    console.log('Test connection successful');
+    conn.release();
+    return true;
+  } catch (err) {
+    console.error('Test connection failed:', err.message);
+    return false;
+  } finally {
+    testPool.end().catch(console.error);
   }
 }
 
 module.exports = {
   pool,
-  testConnection
+  testConnection,
+  createTestConnection
 };
