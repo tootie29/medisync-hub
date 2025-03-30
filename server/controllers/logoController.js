@@ -10,8 +10,19 @@ const mkdir = promisify(fs.mkdir);
 const access = promisify(fs.access);
 const chmod = promisify(fs.chmod);
 
+// Determine if we're in production (cPanel) or development
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Ensure uploads directory exists with proper structure
-const uploadsDir = path.join(__dirname, '..', 'uploads', 'assets', 'logos');
+const baseDir = isProduction 
+  ? path.resolve(process.env.HOME || '/home') // cPanel uses /home/{username}
+  : path.join(__dirname, '..');
+
+// Define paths consistently with routes
+const uploadsRelativePath = 'uploads/assets/logos';
+const uploadsDir = path.join(baseDir, uploadsRelativePath);
+
+console.log(`Controller: Using upload directory: ${uploadsDir}`);
 
 // Helper function to create directory with proper permissions
 async function ensureDirectoryExists(directory) {
@@ -56,23 +67,32 @@ async function ensureDirectoryExists(directory) {
 
 // Ensure directory exists when controller is first loaded
 (async () => {
-  // Create each directory in the path separately to ensure proper permissions
-  const pathParts = uploadsDir.split(path.sep);
-  let currentPath = '';
+  console.log('Controller: Starting directory creation process for uploads...');
   
-  for (let i = 0; i < pathParts.length; i++) {
-    if (pathParts[i]) {
-      currentPath += (currentPath ? path.sep : '') + pathParts[i];
-      await ensureDirectoryExists(currentPath);
+  // Create each level of the directory structure separately
+  const pathSegments = uploadsRelativePath.split('/');
+  let currentPath = baseDir;
+  
+  for (const segment of pathSegments) {
+    currentPath = path.join(currentPath, segment);
+    console.log(`Creating directory segment: ${currentPath}`);
+    const success = await ensureDirectoryExists(currentPath);
+    
+    if (!success) {
+      console.error(`CRITICAL: Failed to create directory segment: ${currentPath}`);
+      console.error(`This will cause file uploads to fail!`);
+      break;
     }
   }
   
-  // Final check of the complete upload path
-  const success = await ensureDirectoryExists(uploadsDir);
-  if (success) {
-    console.log(`Controller: Upload directory ready: ${uploadsDir}`);
-  } else {
-    console.error(`CRITICAL: Upload directory ${uploadsDir} could not be prepared!`);
+  // Final verification
+  try {
+    const stats = fs.statSync(uploadsDir);
+    console.log(`Upload directory exists: ${uploadsDir}`);
+    console.log(`Directory permissions: ${stats.mode.toString(8)}`);
+    console.log(`Directory owner: ${stats.uid}, group: ${stats.gid}`);
+  } catch (err) {
+    console.error(`Could not verify upload directory: ${err.message}`);
   }
 })();
 
@@ -162,8 +182,15 @@ exports.uploadLogos = async (req, res) => {
     if (files.primaryLogo && files.primaryLogo[0]) {
       console.log('Processing primary logo');
       const primaryLogo = files.primaryLogo[0];
+      console.log('Primary logo file details:', {
+        originalName: primaryLogo.originalname,
+        mimetype: primaryLogo.mimetype,
+        size: primaryLogo.size,
+        path: primaryLogo.path
+      });
+      
+      // Define a URL path that will be stored in the database
       const relativePath = `/uploads/assets/logos/${primaryLogo.filename}`;
-      const absolutePath = path.join(__dirname, '..', relativePath);
       
       // Double-check file exists
       if (!fs.existsSync(primaryLogo.path)) {
@@ -171,7 +198,7 @@ exports.uploadLogos = async (req, res) => {
         results.push({
           position: 'primary',
           error: 'File not saved correctly',
-          details: 'File upload failed'
+          details: `File not found at ${primaryLogo.path}`
         });
       } else {
         console.log(`Primary logo saved at ${primaryLogo.path}`);
@@ -222,8 +249,15 @@ exports.uploadLogos = async (req, res) => {
     if (files.secondaryLogo && files.secondaryLogo[0]) {
       console.log('Processing secondary logo');
       const secondaryLogo = files.secondaryLogo[0];
+      console.log('Secondary logo file details:', {
+        originalName: secondaryLogo.originalname,
+        mimetype: secondaryLogo.mimetype,
+        size: secondaryLogo.size,
+        path: secondaryLogo.path
+      });
+      
+      // Define a URL path that will be stored in the database
       const relativePath = `/uploads/assets/logos/${secondaryLogo.filename}`;
-      const absolutePath = path.join(__dirname, '..', relativePath);
       
       // Double-check file exists
       if (!fs.existsSync(secondaryLogo.path)) {
@@ -231,7 +265,7 @@ exports.uploadLogos = async (req, res) => {
         results.push({
           position: 'secondary',
           error: 'File not saved correctly',
-          details: 'File upload failed'
+          details: `File not found at ${secondaryLogo.path}`
         });
       } else {
         console.log(`Secondary logo saved at ${secondaryLogo.path}`);

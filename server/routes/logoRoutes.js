@@ -12,8 +12,21 @@ const mkdir = promisify(fs.mkdir);
 const access = promisify(fs.access);
 const chmod = promisify(fs.chmod);
 
-// Create uploads directory with proper permissions - absolute physical path
-const uploadDir = path.join(__dirname, '..', 'uploads', 'assets', 'logos');
+// Determine if we're in production (cPanel) or development
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Create uploads directory with proper permissions - use absolute path that works with cPanel
+const baseDir = isProduction 
+  ? path.resolve(process.env.HOME || '/home') // cPanel uses /home/{username}
+  : path.join(__dirname, '..');
+
+// Ensure the uploads path exists and is writable
+const uploadsRelativePath = 'uploads/assets/logos';
+const uploadDir = path.join(baseDir, uploadsRelativePath);
+
+console.log(`Server environment: ${isProduction ? 'Production (cPanel)' : 'Development'}`);
+console.log(`Base directory: ${baseDir}`);
+console.log(`Upload directory path: ${uploadDir}`);
 
 // Recursive directory creation function with proper permissions
 async function ensureDirectoryExists(directory) {
@@ -58,23 +71,33 @@ async function ensureDirectoryExists(directory) {
 
 // Ensure directory exists before server starts
 (async () => {
-  // Create each directory in the path separately to ensure proper permissions
-  const pathParts = uploadDir.split(path.sep);
-  let currentPath = '';
+  console.log('Starting directory creation process for uploads...');
   
-  for (let i = 0; i < pathParts.length; i++) {
-    if (pathParts[i]) {
-      currentPath += (currentPath ? path.sep : '') + pathParts[i];
-      await ensureDirectoryExists(currentPath);
+  // Create each level of the directory structure separately
+  const pathSegments = uploadsRelativePath.split('/');
+  let currentPath = baseDir;
+  
+  for (const segment of pathSegments) {
+    currentPath = path.join(currentPath, segment);
+    console.log(`Creating directory segment: ${currentPath}`);
+    const success = await ensureDirectoryExists(currentPath);
+    
+    if (!success) {
+      console.error(`CRITICAL: Failed to create directory segment: ${currentPath}`);
+      console.error(`This will cause file uploads to fail!`);
+      break;
     }
   }
   
-  // Final check of the complete upload path
-  const success = await ensureDirectoryExists(uploadDir);
-  if (success) {
-    console.log(`Upload directory ready: ${uploadDir}`);
-  } else {
-    console.error(`CRITICAL: Upload directory ${uploadDir} could not be prepared!`);
+  // Final verification of the complete path
+  try {
+    const stats = fs.statSync(uploadDir);
+    console.log(`Upload directory exists: ${uploadDir}`);
+    console.log(`Directory permissions: ${stats.mode.toString(8)}`);
+    console.log(`Directory owner: ${stats.uid}, group: ${stats.gid}`);
+    console.log(`Directory is${fs.accessSync(uploadDir, fs.constants.W_OK) ? ' not' : ''} writable`);
+  } catch (err) {
+    console.error(`Could not verify upload directory: ${err.message}`);
   }
 })();
 

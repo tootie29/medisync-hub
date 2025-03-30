@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Upload, RefreshCw, AlertCircle, Info } from 'lucide-react';
+import { Upload, RefreshCw, AlertCircle, Info, FileWarning } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
 
 const LogoManagement = () => {
@@ -18,6 +18,7 @@ const LogoManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [serverInfo, setServerInfo] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLogos();
@@ -96,6 +97,7 @@ const LogoManagement = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setServerInfo(null);
     setUploadProgress(0);
     
     try {
@@ -191,6 +193,11 @@ const LogoManagement = () => {
           }
         } else {
           console.error('Server returned no upload results:', response.data);
+          
+          if (response.data.message) {
+            setServerInfo(response.data.message);
+          }
+          
           toast.error('No logos were updated. Please try again.');
           setError('Upload completed but no logos were updated by the server');
         }
@@ -246,6 +253,16 @@ const LogoManagement = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
+          </div>
+        </div>
+      )}
+      
+      {serverInfo && (
+        <div className="bg-blue-100 p-4 rounded-md mb-4 flex items-start gap-3">
+          <FileWarning className="h-5 w-5 text-blue-600 mt-0.5" />
+          <div>
+            <p className="text-blue-600 font-medium">Server Information</p>
+            <p className="text-blue-600/80 text-sm mt-1">{serverInfo}</p>
           </div>
         </div>
       )}
