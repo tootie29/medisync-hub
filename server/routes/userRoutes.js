@@ -12,6 +12,9 @@ router.get('/:id', userController.getUserById);
 // Get users by role
 router.get('/role/:role', userController.getUsersByRole);
 
+// Login user
+router.post('/login', userController.login);
+
 // Create new user
 router.post('/', userController.createUser);
 

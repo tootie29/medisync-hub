@@ -1,4 +1,3 @@
-
 -- Create the database
 CREATE DATABASE IF NOT EXISTS medi_hub;
 USE medi_hub;
@@ -18,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
   department VARCHAR(100),
   staff_id VARCHAR(50),
   position VARCHAR(100),
+  password VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -124,5 +124,3 @@ VALUES
 ('user-1743345661285', 'sample-user1@example.com', 'Sample User 1', 'student', '555-123-4567', '1998-05-12', 'male'),
 ('user-1743345661286', 'sample-user2@example.com', 'Sample User 2', 'student', '555-123-4568', '1999-07-15', 'female'),
 ('user-1743345661287', 'sample-user3@example.com', 'Sample User 3', 'student', '555-123-4569', '2000-11-20', 'male');
-
--- ... keep existing code (remaining sample data insertion)

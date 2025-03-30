@@ -1,4 +1,3 @@
-
 const { pool } = require('../db/config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -29,17 +28,17 @@ class UserModel {
       const { 
         email, name, role, phone, dateOfBirth, gender, 
         address, emergencyContact, studentId, department, 
-        staffId, position 
+        staffId, position, password 
       } = userData;
 
       const [result] = await pool.query(
         `INSERT INTO users (
           id, email, name, role, phone, date_of_birth, gender, 
-          address, emergency_contact, student_id, department, staff_id, position
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          address, emergency_contact, student_id, department, staff_id, position, password
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, email, name, role, phone, dateOfBirth, gender, 
-          address, emergencyContact, studentId, department, staffId, position
+          address, emergencyContact, studentId, department, staffId, position, password
         ]
       );
 
@@ -55,7 +54,7 @@ class UserModel {
       const { 
         email, name, role, phone, dateOfBirth, gender, 
         address, emergencyContact, studentId, department, 
-        staffId, position 
+        staffId, position, password
       } = userData;
 
       const [result] = await pool.query(
@@ -71,12 +70,13 @@ class UserModel {
           student_id = IFNULL(?, student_id), 
           department = IFNULL(?, department), 
           staff_id = IFNULL(?, staff_id), 
-          position = IFNULL(?, position)
+          position = IFNULL(?, position),
+          password = IFNULL(?, password)
         WHERE id = ?`,
         [
           email, name, role, phone, dateOfBirth, gender, 
           address, emergencyContact, studentId, department, 
-          staffId, position, id
+          staffId, position, password, id
         ]
       );
 
@@ -103,6 +103,16 @@ class UserModel {
       return rows;
     } catch (error) {
       console.error('Error fetching users by role:', error);
+      throw error;
+    }
+  }
+
+  async getUserByEmail(email) {
+    try {
+      const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+      return rows[0];
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
       throw error;
     }
   }

@@ -53,12 +53,16 @@ exports.createUser = async (req, res) => {
       department: userData.department,
       staffId: userData.staff_id || userData.staffId,
       position: userData.position,
+      password: userData.password
     };
     
     console.log('Processed user data for DB:', userDataForDb);
     
     const newUser = await userModel.create(userDataForDb);
-    res.status(201).json(newUser);
+    
+    // Don't send the password back in the response
+    const { password, ...userWithoutPassword } = newUser;
+    res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error('Error in createUser controller:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -84,6 +88,7 @@ exports.updateUser = async (req, res) => {
       department: userData.department,
       staffId: userData.staff_id || userData.staffId,
       position: userData.position,
+      password: userData.password
     };
     
     const updatedUser = await userModel.update(userId, userDataForDb);
@@ -92,9 +97,40 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    res.json(updatedUser);
+    // Don't send the password back in the response
+    const { password, ...userWithoutPassword } = updatedUser;
+    res.json(userWithoutPassword);
   } catch (error) {
     console.error('Error in updateUser controller:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+    
+    const user = await userModel.getUserByEmail(email);
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    
+    // Check if password matches
+    // Note: In a production environment, you would hash passwords
+    if (user.password !== password) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    
+    // Don't include password in response
+    const { password: userPassword, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error('Error in login controller:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

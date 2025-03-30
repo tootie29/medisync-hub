@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -127,20 +128,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Production mode - call API
-      // In a real app, this would be an API call to verify credentials
-      const foundUser = SAMPLE_USERS.find(u => u.email === email);
-      
-      if (!foundUser) {
-        throw new Error('Invalid email or password');
+      try {
+        // Call the login API endpoint
+        const response = await apiClient.post('/users/login', { 
+          email, 
+          password 
+        });
+        
+        // Transform the API response to match our User type
+        const loggedInUser: User = {
+          id: response.data.id,
+          email: response.data.email,
+          name: response.data.name,
+          role: response.data.role as UserRole,
+          phone: response.data.phone || '',
+          dateOfBirth: response.data.date_of_birth || '',
+          gender: response.data.gender as 'male' | 'female' | 'other',
+          address: response.data.address || '',
+          emergencyContact: response.data.emergency_contact || '',
+          ...(response.data.role === 'student' && {
+            studentId: response.data.student_id || '',
+            department: response.data.department || '',
+          }),
+          ...(response.data.role === 'staff' && {
+            staffId: response.data.staff_id || '',
+            position: response.data.position || '',
+          }),
+          createdAt: response.data.created_at,
+          updatedAt: response.data.updated_at,
+        };
+        
+        setUser(loggedInUser);
+        localStorage.setItem('medisyncUser', JSON.stringify(loggedInUser));
+        toast.success(`Welcome, ${loggedInUser.name}!`);
+      } catch (error) {
+        console.error('Login API error:', error);
+        
+        // Fallback to legacy login logic if API call fails
+        const foundUser = SAMPLE_USERS.find(u => u.email === email);
+        
+        if (!foundUser) {
+          throw new Error('Invalid email or password');
+        }
+        
+        setUser(foundUser);
+        localStorage.setItem('medisyncUser', JSON.stringify(foundUser));
+        toast.success(`Welcome, ${foundUser.name}!`);
       }
       
-      // In a real app, you would verify the password here
-      // For the demo, we'll just assume the password is correct if the email matches
-      
-      // Set the user in state and localStorage
-      setUser(foundUser);
-      localStorage.setItem('medisyncUser', JSON.stringify(foundUser));
-      toast.success(`Welcome, ${foundUser.name}!`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Login failed');
       throw error;
@@ -176,8 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         department: userData.department,
         staff_id: userData.staffId,
         position: userData.position,
-        // In a real app, you would handle password securely
-        // For this demo, we're not implementing actual authentication yet
+        password: password // Add password to the data sent to API
       };
       
       if (isPreviewMode) {
