@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Medal } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -30,6 +30,9 @@ const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
   const bmi = typeof latestMedicalRecord.bmi === 'number' ? 
     latestMedicalRecord.bmi : 
     parseFloat(latestMedicalRecord.bmi) || 0;
+    
+  // Check if certificate is enabled and BMI is in healthy range
+  const hasCertificate = latestMedicalRecord.certificateEnabled && bmi >= 18.5 && bmi < 25;
 
   return (
     <Card className="shadow-sm">
@@ -76,6 +79,13 @@ const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-500">Blood Pressure</span>
                 <span className="font-medium">{latestMedicalRecord.bloodPressure}</span>
+              </div>
+            )}
+            
+            {hasCertificate && (
+              <div className="flex justify-between items-center pt-1 text-green-600">
+                <span className="text-sm">Health Certificate</span>
+                <Medal className="h-4 w-4" />
               </div>
             )}
           </div>

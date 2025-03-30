@@ -35,6 +35,7 @@ class MedicalRecordModel {
         record.doctorId = record.doctor_id;
         record.bloodPressure = record.blood_pressure;
         record.followUpDate = record.follow_up_date;
+        record.certificateEnabled = record.certificate_enabled ? true : false;
         record.createdAt = record.created_at;
         record.updatedAt = record.updated_at;
         
@@ -43,6 +44,7 @@ class MedicalRecordModel {
         delete record.doctor_id;
         delete record.blood_pressure;
         delete record.follow_up_date;
+        delete record.certificate_enabled;
         delete record.created_at;
         delete record.updated_at;
       }
@@ -86,6 +88,7 @@ class MedicalRecordModel {
       record.doctorId = record.doctor_id;
       record.bloodPressure = record.blood_pressure;
       record.followUpDate = record.follow_up_date;
+      record.certificateEnabled = record.certificate_enabled ? true : false;
       record.createdAt = record.created_at;
       record.updatedAt = record.updated_at;
       
@@ -94,6 +97,7 @@ class MedicalRecordModel {
       delete record.doctor_id;
       delete record.blood_pressure;
       delete record.follow_up_date;
+      delete record.certificate_enabled;
       delete record.created_at;
       delete record.updated_at;
       
@@ -139,6 +143,7 @@ class MedicalRecordModel {
         record.doctorId = record.doctor_id;
         record.bloodPressure = record.blood_pressure;
         record.followUpDate = record.follow_up_date;
+        record.certificateEnabled = record.certificate_enabled ? true : false;
         record.createdAt = record.created_at;
         record.updatedAt = record.updated_at;
         
@@ -147,6 +152,7 @@ class MedicalRecordModel {
         delete record.doctor_id;
         delete record.blood_pressure;
         delete record.follow_up_date;
+        delete record.certificate_enabled;
         delete record.created_at;
         delete record.updated_at;
       }
@@ -178,8 +184,8 @@ class MedicalRecordModel {
       // 1. Insert medical record
       await connection.query(
         `INSERT INTO medical_records 
-        (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, follow_up_date, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, follow_up_date, certificate_enabled, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, 
           recordData.patientId, 
@@ -193,6 +199,7 @@ class MedicalRecordModel {
           recordData.diagnosis, 
           recordData.notes, 
           recordData.followUpDate,
+          recordData.certificateEnabled || false,
           now,
           now
         ]
@@ -232,6 +239,7 @@ class MedicalRecordModel {
         id, 
         ...recordData, 
         bmi,
+        certificateEnabled: recordData.certificateEnabled || false,
         createdAt: now,
         updatedAt: now
       };
@@ -326,6 +334,11 @@ class MedicalRecordModel {
       if (recordData.followUpDate) {
         setClause.push('follow_up_date = ?');
         params.push(recordData.followUpDate);
+      }
+      
+      if (recordData.certificateEnabled !== undefined) {
+        setClause.push('certificate_enabled = ?');
+        params.push(recordData.certificateEnabled);
       }
       
       // Add updated_at to the SET clause

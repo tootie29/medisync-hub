@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -213,6 +214,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const recordToCreate = {
         ...record,
         bmi,
+        certificateEnabled: record.certificateEnabled || false,
         vitalSigns: Object.keys(updatedVitalSigns).length > 0 ? updatedVitalSigns : undefined
       };
       
@@ -222,7 +224,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: `record-${Date.now()}`,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          bmi
+          bmi,
+          certificateEnabled: record.certificateEnabled || false
         };
         
         setMedicalRecords(prev => [...prev, mockRecord]);
@@ -247,6 +250,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateMedicalRecord = async (id: string, record: Partial<MedicalRecord>): Promise<MedicalRecord> => {
     try {
+      // Calculate BMI if height or weight changes
       if (record.height !== undefined || record.weight !== undefined) {
         const currentRecord = getMedicalRecordById(id);
         if (currentRecord) {
@@ -258,6 +262,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (record.bloodPressure && record.vitalSigns) {
         record.vitalSigns.bloodPressure = record.bloodPressure;
+      }
+      
+      // Handle certificate updates in preview mode
+      if (isPreviewMode) {
+        const index = medicalRecords.findIndex(r => r.id === id);
+        if (index !== -1) {
+          const updatedRecord = {
+            ...medicalRecords[index],
+            ...record,
+            updatedAt: new Date().toISOString()
+          };
+          
+          const newRecords = [...medicalRecords];
+          newRecords[index] = updatedRecord;
+          
+          setMedicalRecords(newRecords);
+          return updatedRecord;
+        }
+        throw new Error('Record not found');
       }
       
       const response = await apiClient.put(`/medical-records/${id}`, record);

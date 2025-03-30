@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { SAMPLE_USERS } from '@/types';
+import { Medal } from 'lucide-react';
 
 interface MedicalHistoryCardProps {
   userMedicalRecords: any[];
@@ -39,12 +40,18 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
                 record.bmi : 
                 parseFloat(record.bmi) || 0;
                 
+              // Check if certificate is enabled and BMI is in healthy range
+              const hasCertificate = record.certificateEnabled && bmi >= 18.5 && bmi < 25;
+                
               return (
                 <div key={record.id} className="border rounded-lg p-4">
                   <div className="flex justify-between">
                     <div>
-                      <h3 className="font-medium">
+                      <h3 className="font-medium flex items-center">
                         {record.diagnosis || 'General Checkup'}
+                        {hasCertificate && (
+                          <Medal className="h-4 w-4 ml-2 text-green-600" />
+                        )}
                       </h3>
                       <p className="text-sm text-gray-500">
                         {format(new Date(record.date), 'MMMM d, yyyy')}

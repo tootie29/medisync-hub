@@ -1,3 +1,4 @@
+
 -- Create the database
 CREATE DATABASE IF NOT EXISTS medi_hub;
 USE medi_hub;
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS medical_records (
   diagnosis TEXT,
   notes TEXT,
   follow_up_date DATE,
+  certificate_enabled BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (patient_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
