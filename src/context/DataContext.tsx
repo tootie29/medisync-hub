@@ -37,7 +37,7 @@ const getApiUrl = () => {
 const API_URL = getApiUrl();
 console.log('Using API URL in DataContext:', API_URL);
 
-// Create a custom axios instance with improved retry logic and connection diagnostics
+// Create a custom axios instance with improved retry logic
 const apiClient = axios.create({
   baseURL: API_URL || 'http://localhost:8080/api', // Fallback for preview mode
   timeout: 15000, // 15 seconds timeout
@@ -46,7 +46,7 @@ const apiClient = axios.create({
   }
 });
 
-// Add response interceptor for error handling with detailed diagnostics
+// Add response interceptor for error handling
 apiClient.interceptors.response.use(
   response => response,
   async error => {
@@ -64,25 +64,7 @@ apiClient.interceptors.response.use(
     
     // Don't retry if we've already tried 3 times
     if (originalRequest._retryCount >= 3) {
-      // Log detailed error information for troubleshooting
-      console.error('Request failed after multiple retries:', {
-        url: originalRequest.url,
-        method: originalRequest.method,
-        error: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data
-      });
-      
-      // Check for specific database connection errors from the server
-      if (error.response?.data?.error === 'Database connection error' || 
-          (error.response?.data?.error && error.response?.data?.error.includes('database'))) {
-        toast.error('Database connection issue', {
-          description: 'The server is having trouble connecting to the database. Please try again later or contact support.',
-          duration: 5000
-        });
-      }
-      
+      console.error('Request failed after multiple retries:', error.message);
       return Promise.reject(error);
     }
     
@@ -102,25 +84,6 @@ apiClient.interceptors.response.use(
     
     return apiClient(originalRequest);
   }
-);
-
-// Add request interceptor to check server health
-let serverHealthChecked = false;
-apiClient.interceptors.request.use(
-  async config => {
-    // Check server health only once per session
-    if (!serverHealthChecked && !window.location.hostname.includes('lovableproject.com')) {
-      try {
-        await apiClient.get('/health');
-        serverHealthChecked = true;
-      } catch (error) {
-        console.warn('Server health check failed:', error.message);
-        // Don't block the original request, just log the issue
-      }
-    }
-    return config;
-  },
-  error => Promise.reject(error)
 );
 
 interface DataContextType {
@@ -174,8 +137,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoadingAppointments, setIsLoadingAppointments] = useState<boolean>(true);
   const [isLoadingMedicines, setIsLoadingMedicines] = useState<boolean>(true);
   
-  const [serverConnectionIssue, setServerConnectionIssue] = useState(false);
-  
   const isPreviewMode = window.location.hostname.includes('lovableproject.com');
 
   useEffect(() => {
@@ -188,35 +149,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    // Check API server connectivity first
-    apiClient.get('/health')
-      .then(response => {
-        console.log('API server health check:', response.data);
-        // If database is not connected, show a warning toast
-        if (response.data.database && !response.data.database.connected) {
-          toast.warning('Database Connection Issue', {
-            description: 'The server is having trouble connecting to the database. Some features may not work properly.',
-            duration: 10000
-          });
-          setServerConnectionIssue(true);
-        } else {
-          // Load data only if server is healthy
-          refreshMedicalRecords();
-          refreshAppointments();
-          refreshMedicines();
-        }
-      })
-      .catch(error => {
-        console.error('Failed to check API server health:', error);
-        toast.error('Server Connection Issue', {
-          description: 'Unable to connect to the API server. Please check your internet connection or try again later.',
-          duration: 10000
-        });
-        setServerConnectionIssue(true);
-        setIsLoadingRecords(false);
-        setIsLoadingAppointments(false);
-        setIsLoadingMedicines(false);
-      });
+    refreshMedicalRecords();
+    refreshAppointments();
+    refreshMedicines();
   }, []);
 
   const refreshMedicalRecords = async () => {
@@ -583,21 +518,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       refreshAppointments,
       refreshMedicines
     }}>
-      {serverConnectionIssue && (
-        <div className="fixed bottom-4 right-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-md max-w-md z-50">
-          <div className="flex">
-            <div className="py-1">
-              <svg className="h-6 w-6 text-yellow-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-bold">Database Connection Warning</p>
-              <p className="text-sm">We're having trouble connecting to our database. Some features may not work properly. Please try again later.</p>
-            </div>
-          </div>
-        </div>
-      )}
       {children}
     </DataContext.Provider>
   );
