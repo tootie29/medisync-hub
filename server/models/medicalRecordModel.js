@@ -1,4 +1,3 @@
-
 const { pool } = require('../db/config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -80,7 +79,11 @@ class MedicalRecordModel {
       );
       
       if (vitalSigns.length > 0) {
-        record.vitalSigns = vitalSigns[0];
+        record.vitalSigns = {
+          heartRate: vitalSigns[0].heart_rate,
+          bloodPressure: vitalSigns[0].blood_pressure,
+          bloodGlucose: vitalSigns[0].blood_glucose
+        };
       }
 
       // Convert snake_case to camelCase
@@ -173,12 +176,17 @@ class MedicalRecordModel {
       const id = recordData.id || uuidv4();
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       
-      // Calculate BMI if not provided
+      // Calculate BMI if not provided or is zero
       let bmi = recordData.bmi;
-      if (!bmi && recordData.height && recordData.weight) {
+      if ((!bmi || bmi === 0) && recordData.height && recordData.weight) {
         const heightInMeters = recordData.height / 100;
         bmi = recordData.weight / (heightInMeters * heightInMeters);
         bmi = parseFloat(bmi.toFixed(2));
+      }
+      
+      // Make sure BMI is never 0
+      if (!bmi || bmi === 0) {
+        console.warn('BMI calculation failed or resulted in 0, using height and weight:', recordData.height, recordData.weight);
       }
       
       // 1. Insert medical record
@@ -260,7 +268,7 @@ class MedicalRecordModel {
       
       // Recalculate BMI if height or weight has changed
       let bmi = recordData.bmi;
-      if ((recordData.height || recordData.weight) && !recordData.bmi) {
+      if ((recordData.height || recordData.weight) && (!recordData.bmi || recordData.bmi === 0)) {
         // Get current record to use existing height/weight if not provided
         const [currentRecords] = await connection.query(
           'SELECT height, weight FROM medical_records WHERE id = ?',
@@ -271,9 +279,11 @@ class MedicalRecordModel {
           const height = recordData.height || currentRecords[0].height;
           const weight = recordData.weight || currentRecords[0].weight;
           
-          const heightInMeters = height / 100;
-          bmi = weight / (heightInMeters * heightInMeters);
-          bmi = parseFloat(bmi.toFixed(2));
+          if (height && weight) {
+            const heightInMeters = height / 100;
+            bmi = weight / (heightInMeters * heightInMeters);
+            bmi = parseFloat(bmi.toFixed(2));
+          }
         }
       }
       

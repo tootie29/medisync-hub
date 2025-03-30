@@ -66,7 +66,7 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
         >
           This is to certify that
           <br />
-          <span>{userName}</span>
+          <span style={{ display: 'block', margin: '10px 0', fontSize: '28px', color: '#333' }}>{userName}</span>
         </div>
         
         <div

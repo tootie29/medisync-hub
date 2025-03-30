@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,12 +13,11 @@ import { getBMICategory, getBMICategoryColor } from '@/utils/helpers';
 import BMICertificate from '@/components/bmi/BMICertificate';
 import axios from 'axios';
 
-// Safe toFixed function to handle non-number BMI values
 const safeToFixed = (value: any, digits: number = 1): string => {
-  if (typeof value === 'number' && !isNaN(value)) {
+  if (typeof value === 'number' && !isNaN(value) && value > 0) {
     return value.toFixed(digits);
   }
-  return '0.0'; // Default value when value is not a valid number
+  return '0.0';
 };
 
 const BMICalculator: React.FC = () => {
@@ -38,12 +36,14 @@ const BMICalculator: React.FC = () => {
   const [showCertificateControls, setShowCertificateControls] = useState<boolean>(false);
   const [certificateEnabled, setCertificateEnabled] = useState<boolean>(false);
   const [showCertificate, setShowCertificate] = useState<boolean>(false);
+  const certificateRef = useRef<HTMLDivElement>(null);
   
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   const isDoctor = user?.role === 'doctor' || user?.role === 'admin';
-  const hasBMICertificate = bmi !== null && bmi >= 18.5 && bmi < 25 && (lastRecord?.certificateEnabled || false);
+  
+  const isHealthyBMI = bmi !== null && bmi >= 18.5 && bmi < 25;
+  const hasBMICertificate = isHealthyBMI && (lastRecord?.certificateEnabled || false);
 
-  // Fetch the latest record for the current user (if patient) or selected patient
   useEffect(() => {
     if (isPatient && user?.id) {
       const records = getMedicalRecordsByPatientId(user.id);
@@ -57,13 +57,20 @@ const BMICalculator: React.FC = () => {
         setWeight(latest.weight);
         setCertificateEnabled(latest.certificateEnabled || false);
         
-        // Safely handle the BMI value
-        if (typeof latest.bmi === 'number') {
+        if (typeof latest.bmi === 'number' && latest.bmi > 0) {
           setBmi(latest.bmi);
-        } else if (typeof latest.bmi === 'string' && !isNaN(parseFloat(latest.bmi))) {
+        } else if (typeof latest.bmi === 'string' && !isNaN(parseFloat(latest.bmi)) && parseFloat(latest.bmi) > 0) {
           setBmi(parseFloat(latest.bmi));
         } else {
-          setBmi(0);
+          if (latest.height > 0 && latest.weight > 0) {
+            const heightInMeters = latest.height / 100;
+            const calculatedBMI = latest.weight / (heightInMeters * heightInMeters);
+            const roundedBMI = parseFloat(calculatedBMI.toFixed(2));
+            setBmi(roundedBMI);
+            updateMedicalRecord(latest.id, { bmi: roundedBMI });
+          } else {
+            setBmi(0);
+          }
         }
       }
     }
@@ -77,7 +84,14 @@ const BMICalculator: React.FC = () => {
     
     const heightInMeters = height / 100;
     const calculatedBMI = weight / (heightInMeters * heightInMeters);
-    setBmi(parseFloat(calculatedBMI.toFixed(2)));
+    const roundedBMI = parseFloat(calculatedBMI.toFixed(2));
+    setBmi(roundedBMI);
+    
+    const shouldEnableCertificate = roundedBMI >= 18.5 && roundedBMI < 25;
+    
+    if (shouldEnableCertificate && lastRecord && isPatient && !lastRecord.certificateEnabled) {
+      toast.info('Your BMI is in the healthy range! A certificate is now available for download.');
+    }
   };
 
   const toggleCertificateAccess = async () => {
@@ -119,32 +133,31 @@ const BMICalculator: React.FC = () => {
     
     try {
       if (isDoctor) {
-        // Show an error if no patient is selected (future enhancement)
         toast.error('Select a patient to save their medical record');
       } else {
-        // For patients updating their own record
+        const isHealthyBMI = bmi >= 18.5 && bmi < 25;
+        
         if (lastRecord) {
-          // Update the existing record - certificate status is preserved
-          updateMedicalRecord(lastRecord.id, {
+          await updateMedicalRecord(lastRecord.id, {
             height,
             weight,
+            bmi,
             date: new Date().toISOString().split('T')[0],
+            certificateEnabled: isHealthyBMI
           });
           toast.success('Medical record updated successfully');
         } else {
-          // Create a new record - certificate is disabled by default
-          addMedicalRecord({
+          await addMedicalRecord({
             patientId: user.id,
-            doctorId: 'self-recorded', // Placeholder for self-recorded
+            doctorId: 'self-recorded',
             date: new Date().toISOString().split('T')[0],
             height,
             weight,
-            certificateEnabled: false
+            certificateEnabled: isHealthyBMI
           });
           toast.success('Medical record created successfully');
         }
         
-        // Refresh the last record
         const records = getMedicalRecordsByPatientId(user.id);
         if (records.length > 0) {
           const latest = records.sort(
@@ -163,7 +176,7 @@ const BMICalculator: React.FC = () => {
   };
 
   const downloadCertificate = () => {
-    if (!hasBMICertificate) {
+    if (!hasBMICertificate || !user?.name) {
       toast.error('Certificate not available');
       return;
     }
@@ -175,11 +188,10 @@ const BMICalculator: React.FC = () => {
       if (element) {
         const certificateContent = element.innerHTML;
         
-        // Create a Blob with the HTML content
         const blob = new Blob([`
           <html>
             <head>
-              <title>Health Certificate</title>
+              <title>Health Certificate for ${user.name}</title>
               <style>
                 body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
                 .certificate { padding: 40px; max-width: 800px; margin: 0 auto; text-align: center; }
@@ -203,19 +215,15 @@ const BMICalculator: React.FC = () => {
           </html>
         `], { type: 'text/html' });
         
-        // Create a temporary URL
         const url = URL.createObjectURL(blob);
         
-        // Create a link element
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'health_certificate.html';
+        a.download = `health_certificate_${user.name.replace(/\s+/g, '_')}.html`;
         
-        // Append to the document and trigger the download
         document.body.appendChild(a);
         a.click();
         
-        // Cleanup
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
@@ -437,7 +445,6 @@ const BMICalculator: React.FC = () => {
         </Card>
       </div>
 
-      {/* Hidden certificate for download */}
       <div style={{ display: showCertificate ? 'block' : 'none', position: 'absolute', left: '-9999px' }}>
         <BMICertificate 
           id="bmi-certificate"

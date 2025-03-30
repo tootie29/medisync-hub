@@ -211,10 +211,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
       
+      // Set certificateEnabled automatically based on BMI if not set
+      const isHealthyBMI = bmi >= 18.5 && bmi < 25;
+      const certificateEnabled = record.certificateEnabled !== undefined ? 
+        record.certificateEnabled : isHealthyBMI;
+      
       const recordToCreate = {
         ...record,
         bmi,
-        certificateEnabled: record.certificateEnabled || false,
+        certificateEnabled,
         vitalSigns: Object.keys(updatedVitalSigns).length > 0 ? updatedVitalSigns : undefined
       };
       
@@ -225,7 +230,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           bmi,
-          certificateEnabled: record.certificateEnabled || false
+          certificateEnabled
         };
         
         setMedicalRecords(prev => [...prev, mockRecord]);
