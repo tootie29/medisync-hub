@@ -3,21 +3,78 @@ const logoModel = require('../models/logoModel');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const { promisify } = require('util');
+
+// Convert fs methods to Promise-based for better error handling
+const mkdir = promisify(fs.mkdir);
+const access = promisify(fs.access);
+const chmod = promisify(fs.chmod);
 
 // Ensure uploads directory exists with proper structure
 const uploadsDir = path.join(__dirname, '..', 'uploads', 'assets', 'logos');
-try {
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
-    console.log(`Created uploads directory: ${uploadsDir}`);
-  } else {
-    // Verify permissions
-    fs.accessSync(uploadsDir, fs.constants.W_OK);
-    console.log(`Uploads directory is writable: ${uploadsDir}`);
+
+// Helper function to create directory with proper permissions
+async function ensureDirectoryExists(directory) {
+  console.log(`Controller: Ensuring directory exists: ${directory}`);
+  try {
+    // Check if directory exists
+    await access(directory, fs.constants.F_OK);
+    console.log(`Directory already exists: ${directory}`);
+    
+    // Set directory permissions to 0755 (rwxr-xr-x)
+    await chmod(directory, 0o755);
+    console.log(`Set permissions on: ${directory}`);
+    
+    // Verify write access
+    await access(directory, fs.constants.W_OK);
+    console.log(`Directory is writable: ${directory}`);
+    
+    return true;
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log(`Directory does not exist, creating: ${directory}`);
+      try {
+        // Create directory with permissions
+        await mkdir(directory, { recursive: true, mode: 0o755 });
+        console.log(`Created directory: ${directory}`);
+        
+        // Double-check write permissions
+        await access(directory, fs.constants.W_OK);
+        console.log(`Verified write access to: ${directory}`);
+        
+        return true;
+      } catch (mkdirErr) {
+        console.error(`Failed to create directory ${directory}:`, mkdirErr);
+        return false;
+      }
+    } else {
+      console.error(`Error accessing directory ${directory}:`, err);
+      return false;
+    }
   }
-} catch (error) {
-  console.error('Error with uploads directory:', error);
 }
+
+// Ensure directory exists when controller is first loaded
+(async () => {
+  // Create each directory in the path separately to ensure proper permissions
+  const pathParts = uploadsDir.split(path.sep);
+  let currentPath = '';
+  
+  for (let i = 0; i < pathParts.length; i++) {
+    if (pathParts[i]) {
+      currentPath += (currentPath ? path.sep : '') + pathParts[i];
+      await ensureDirectoryExists(currentPath);
+    }
+  }
+  
+  // Final check of the complete upload path
+  const success = await ensureDirectoryExists(uploadsDir);
+  if (success) {
+    console.log(`Controller: Upload directory ready: ${uploadsDir}`);
+  } else {
+    console.error(`CRITICAL: Upload directory ${uploadsDir} could not be prepared!`);
+  }
+})();
 
 // Default logo path
 const defaultLogoPath = '/uploads/assets/logos/default-logo.png';
@@ -88,16 +145,14 @@ exports.uploadLogos = async (req, res) => {
   const results = [];
   
   try {
+    // First, ensure the upload directory exists
+    await ensureDirectoryExists(uploadsDir);
+    
     console.log('Files received for upload:', files ? Object.keys(files).length : 'none');
     
     if (!files || Object.keys(files).length === 0) {
       console.error('No files were provided in the request');
       return res.status(400).json({ error: 'No files were uploaded' });
-    }
-    
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
-      console.log(`Created uploads directory: ${uploadsDir}`);
     }
     
     // Get server base URL
@@ -108,6 +163,7 @@ exports.uploadLogos = async (req, res) => {
       console.log('Processing primary logo');
       const primaryLogo = files.primaryLogo[0];
       const relativePath = `/uploads/assets/logos/${primaryLogo.filename}`;
+      const absolutePath = path.join(__dirname, '..', relativePath);
       
       // Double-check file exists
       if (!fs.existsSync(primaryLogo.path)) {
@@ -119,6 +175,14 @@ exports.uploadLogos = async (req, res) => {
         });
       } else {
         console.log(`Primary logo saved at ${primaryLogo.path}`);
+        
+        // Ensure file has correct permissions
+        try {
+          fs.chmodSync(primaryLogo.path, 0o644); // rw-r--r--
+          console.log(`Set file permissions on: ${primaryLogo.path}`);
+        } catch (permErr) {
+          console.error(`Could not set file permissions: ${permErr.message}`);
+        }
         
         try {
           // Add to database with transaction support
@@ -159,6 +223,7 @@ exports.uploadLogos = async (req, res) => {
       console.log('Processing secondary logo');
       const secondaryLogo = files.secondaryLogo[0];
       const relativePath = `/uploads/assets/logos/${secondaryLogo.filename}`;
+      const absolutePath = path.join(__dirname, '..', relativePath);
       
       // Double-check file exists
       if (!fs.existsSync(secondaryLogo.path)) {
@@ -170,6 +235,14 @@ exports.uploadLogos = async (req, res) => {
         });
       } else {
         console.log(`Secondary logo saved at ${secondaryLogo.path}`);
+        
+        // Ensure file has correct permissions
+        try {
+          fs.chmodSync(secondaryLogo.path, 0o644); // rw-r--r--
+          console.log(`Set file permissions on: ${secondaryLogo.path}`);
+        } catch (permErr) {
+          console.error(`Could not set file permissions: ${permErr.message}`);
+        }
         
         try {
           // Add to database with transaction support

@@ -46,6 +46,7 @@ exports.updateLogo = async (logo) => {
   
   try {
     await connection.beginTransaction();
+    console.log(`Model: Started transaction for logo position ${logo.position}`);
     
     // First check if a logo for this position already exists
     const [existingLogos] = await connection.query(
@@ -60,13 +61,14 @@ exports.updateLogo = async (logo) => {
       console.log(`Model: Updating existing logo for position ${logo.position}`);
       logoId = existingLogos[0].id;
       
+      // First try updating
       const [result] = await connection.query(
-        'UPDATE logos SET url = ? WHERE id = ?',
+        'UPDATE logos SET url = ?, updated_at = NOW() WHERE id = ?',
         [logo.url, logoId]
       );
       console.log(`Model: Updated logo with ID: ${logoId}, Affected rows:`, result.affectedRows);
       
-      // If update fails, force an insert with the same ID
+      // If update fails, force a delete and insert
       if (result.affectedRows === 0) {
         console.log(`Model: Update failed, forcing delete and insert for position ${logo.position}`);
         
@@ -75,7 +77,7 @@ exports.updateLogo = async (logo) => {
         
         // Insert with the same ID
         const [insertResult] = await connection.query(
-          'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
+          'INSERT INTO logos (id, url, position, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
           [logoId, logo.url, logo.position]
         );
         console.log(`Model: Forced insert result:`, insertResult);
@@ -90,7 +92,7 @@ exports.updateLogo = async (logo) => {
       logoId = logo.id || uuidv4();
       
       const [result] = await connection.query(
-        'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
+        'INSERT INTO logos (id, url, position, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
         [logoId, logo.url, logo.position]
       );
       console.log(`Model: Created new logo with ID: ${logoId}, Result:`, result);
@@ -102,8 +104,8 @@ exports.updateLogo = async (logo) => {
     
     // Verify the logo exists in database before committing
     const [verifyRows] = await connection.query(
-      'SELECT * FROM logos WHERE position = ?',
-      [logo.position]
+      'SELECT * FROM logos WHERE position = ? AND url = ?',
+      [logo.position, logo.url]
     );
     
     if (verifyRows.length === 0) {
@@ -116,9 +118,18 @@ exports.updateLogo = async (logo) => {
     return logoId;
   } catch (error) {
     console.error('Database error in updateLogo:', error);
-    await connection.rollback();
+    
+    // Try to rollback the transaction
+    try {
+      await connection.rollback();
+      console.log(`Model: Transaction rolled back for logo position ${logo.position}`);
+    } catch (rollbackError) {
+      console.error('Error rolling back transaction:', rollbackError);
+    }
+    
     throw new Error(`Failed to update logo in database: ${error.message}`);
   } finally {
     connection.release();
+    console.log(`Model: Released database connection for logo position ${logo.position}`);
   }
 };

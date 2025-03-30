@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Upload, RefreshCw, AlertCircle } from 'lucide-react';
+import { Upload, RefreshCw, AlertCircle, Info } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
 
 const LogoManagement = () => {
@@ -16,6 +17,7 @@ const LogoManagement = () => {
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   useEffect(() => {
     fetchLogos();
@@ -67,8 +69,8 @@ const LogoManagement = () => {
   const handlePrimaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 2 * 1024 * 1024) { // 2MB max
-        toast.error('Logo file is too large. Maximum size is 2MB.');
+      if (file.size > 1 * 1024 * 1024) { // 1MB max
+        toast.error('Logo file is too large. Maximum size is 1MB.');
         e.target.value = ''; // Reset input
         return;
       }
@@ -80,8 +82,8 @@ const LogoManagement = () => {
   const handleSecondaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 2 * 1024 * 1024) { // 2MB max
-        toast.error('Logo file is too large. Maximum size is 2MB.');
+      if (file.size > 1 * 1024 * 1024) { // 1MB max
+        toast.error('Logo file is too large. Maximum size is 1MB.');
         e.target.value = ''; // Reset input
         return;
       }
@@ -94,6 +96,7 @@ const LogoManagement = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setUploadProgress(0);
     
     try {
       const formData = new FormData();
@@ -124,19 +127,33 @@ const LogoManagement = () => {
           }
         }
         
+        // Create cancellation token
+        const source = axios.CancelToken.source();
+        
+        // Set timeout to cancel if it takes too long
+        const timeoutId = setTimeout(() => {
+          source.cancel('Upload took too long');
+          console.log('Upload canceled due to timeout');
+        }, 60000); // 60 seconds timeout
+        
         // Set reasonable timeouts and handle progress
         const response = await axios.post('/api/logos', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
-          timeout: 30000, // 30 seconds timeout
+          timeout: 60000, // 60 seconds timeout
+          cancelToken: source.token,
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
               const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
               console.log(`Upload progress: ${percentCompleted}%`);
+              setUploadProgress(percentCompleted);
             }
           }
         });
+        
+        // Clear timeout since request completed
+        clearTimeout(timeoutId);
         
         console.log('LogoManagement: Upload response:', response.data);
         
@@ -197,6 +214,7 @@ const LogoManagement = () => {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -318,16 +336,26 @@ const LogoManagement = () => {
         </div>
       </div>
       
-      <div className="flex items-center gap-4">
+      {isLoading && uploadProgress > 0 && (
+        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+          <div 
+            className="bg-medical-primary h-2.5 rounded-full" 
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
+          <p className="text-xs text-gray-500 mt-1">Upload progress: {uploadProgress}%</p>
+        </div>
+      )}
+      
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <Button
           onClick={handleSubmit}
           disabled={isLoading || (!primaryLogo && !secondaryLogo)}
-          className="bg-medical-primary hover:bg-medical-secondary text-white"
+          className="bg-medical-primary hover:bg-medical-secondary text-white w-full sm:w-auto"
         >
           {isLoading ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Updating Logos...
+              Uploading...
             </>
           ) : (
             <>
@@ -341,10 +369,16 @@ const LogoManagement = () => {
           variant="outline"
           onClick={handleManualRefresh}
           disabled={isLoading}
+          className="w-full sm:w-auto"
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingLogos ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
+        
+        <div className="flex items-center mt-2 sm:mt-0 text-xs text-gray-500">
+          <Info className="h-3 w-3 mr-1" />
+          Recommended size: 500KB or less
+        </div>
       </div>
     </div>
   );

@@ -5,24 +5,78 @@ const logoController = require('../controllers/logoController');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { promisify } = require('util');
+
+// Convert fs methods to Promise-based for better error handling
+const mkdir = promisify(fs.mkdir);
+const access = promisify(fs.access);
+const chmod = promisify(fs.chmod);
 
 // Create uploads directory with proper permissions - absolute physical path
 const uploadDir = path.join(__dirname, '..', 'uploads', 'assets', 'logos');
 
-// Ensure directory exists before server starts
-try {
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
-    console.log(`Created upload directory: ${uploadDir}`);
-  } else {
-    console.log(`Upload directory exists: ${uploadDir}`);
-    // Check write permissions
-    fs.accessSync(uploadDir, fs.constants.W_OK);
-    console.log(`Upload directory is writable: ${uploadDir}`);
+// Recursive directory creation function with proper permissions
+async function ensureDirectoryExists(directory) {
+  console.log(`Ensuring directory exists: ${directory}`);
+  try {
+    // Check if directory exists
+    await access(directory, fs.constants.F_OK);
+    console.log(`Directory already exists: ${directory}`);
+    
+    // Set directory permissions to 0755 (rwxr-xr-x)
+    await chmod(directory, 0o755);
+    console.log(`Set permissions on: ${directory}`);
+    
+    // Verify write access
+    await access(directory, fs.constants.W_OK);
+    console.log(`Directory is writable: ${directory}`);
+    
+    return true;
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log(`Directory does not exist, creating: ${directory}`);
+      try {
+        // Create directory with permissions
+        await mkdir(directory, { recursive: true, mode: 0o755 });
+        console.log(`Created directory: ${directory}`);
+        
+        // Double-check write permissions
+        await access(directory, fs.constants.W_OK);
+        console.log(`Verified write access to: ${directory}`);
+        
+        return true;
+      } catch (mkdirErr) {
+        console.error(`Failed to create directory ${directory}:`, mkdirErr);
+        return false;
+      }
+    } else {
+      console.error(`Error accessing directory ${directory}:`, err);
+      return false;
+    }
   }
-} catch (error) {
-  console.error(`ERROR with upload directory: ${uploadDir}`, error);
 }
+
+// Ensure directory exists before server starts
+(async () => {
+  // Create each directory in the path separately to ensure proper permissions
+  const pathParts = uploadDir.split(path.sep);
+  let currentPath = '';
+  
+  for (let i = 0; i < pathParts.length; i++) {
+    if (pathParts[i]) {
+      currentPath += (currentPath ? path.sep : '') + pathParts[i];
+      await ensureDirectoryExists(currentPath);
+    }
+  }
+  
+  // Final check of the complete upload path
+  const success = await ensureDirectoryExists(uploadDir);
+  if (success) {
+    console.log(`Upload directory ready: ${uploadDir}`);
+  } else {
+    console.error(`CRITICAL: Upload directory ${uploadDir} could not be prepared!`);
+  }
+})();
 
 // Configure multer for file uploads with enhanced reliability
 const storage = multer.diskStorage({
@@ -30,27 +84,20 @@ const storage = multer.diskStorage({
     console.log(`Starting file upload to: ${uploadDir}`);
     
     // Ensure directory exists before storing
-    if (!fs.existsSync(uploadDir)) {
-      try {
-        fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
-        console.log(`Created upload directory during request: ${uploadDir}`);
-      } catch (dirError) {
-        console.error(`Failed to create upload directory: ${uploadDir}`, dirError);
-        return cb(dirError, null);
-      }
-    }
-    
-    // Verify write permissions
-    try {
-      fs.accessSync(uploadDir, fs.constants.W_OK);
-      console.log(`Verified upload directory is writable: ${uploadDir}`);
-    } catch (accessError) {
-      console.error(`Upload directory is not writable: ${uploadDir}`, accessError);
-      return cb(accessError, null);
-    }
-    
-    console.log(`Will store file in: ${uploadDir}`);
-    cb(null, uploadDir);
+    ensureDirectoryExists(uploadDir)
+      .then(success => {
+        if (success) {
+          console.log(`Will store file in: ${uploadDir}`);
+          cb(null, uploadDir);
+        } else {
+          console.error(`Cannot save file - upload directory issue: ${uploadDir}`);
+          cb(new Error('Upload directory is not accessible'), null);
+        }
+      })
+      .catch(err => {
+        console.error(`Error preparing upload directory: ${uploadDir}`, err);
+        cb(err, null);
+      });
   },
   filename: function (req, file, cb) {
     // Generate a more reliable filename
@@ -66,7 +113,7 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit to avoid timeouts
+    fileSize: 1 * 1024 * 1024, // 1MB limit to avoid timeouts
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -107,6 +154,14 @@ router.post('/', upload.fields([
       console.error(`Primary logo file not saved to disk: ${primaryPath}`);
     } else {
       console.log(`Verified primary logo exists on disk: ${primaryPath}`);
+      
+      // Ensure file has correct permissions
+      try {
+        fs.chmodSync(primaryPath, 0o644); // rw-r--r--
+        console.log(`Set file permissions on: ${primaryPath}`);
+      } catch (permErr) {
+        console.error(`Could not set file permissions: ${permErr.message}`);
+      }
     }
   }
   
@@ -118,6 +173,14 @@ router.post('/', upload.fields([
       console.error(`Secondary logo file not saved to disk: ${secondaryPath}`);
     } else {
       console.log(`Verified secondary logo exists on disk: ${secondaryPath}`);
+      
+      // Ensure file has correct permissions
+      try {
+        fs.chmodSync(secondaryPath, 0o644); // rw-r--r--
+        console.log(`Set file permissions on: ${secondaryPath}`);
+      } catch (permErr) {
+        console.error(`Could not set file permissions: ${permErr.message}`);
+      }
     }
   }
   
