@@ -23,11 +23,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const isMobile = useMediaQuery("(max-width: 639px)");
   const isSmallDesktop = useMediaQuery("(min-width: 1024px) and (max-width: 1279px)");
   
-  // Default logo path - make sure this points to a valid image in your public folder
-  const defaultLogoPath = '/lovable-uploads/e4352921-3b28-44c3-a2f8-02b0923e132f.png';
+  // Default logo path for client-side fallback
+  const clientDefaultLogoPath = '/placeholder.svg';
   
-  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>(defaultLogoPath);
-  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>(defaultLogoPath);
+  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>(clientDefaultLogoPath);
+  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>(clientDefaultLogoPath);
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
 
   useEffect(() => {
@@ -37,36 +37,34 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const fetchLogos = async () => {
     try {
       console.log('AuthLayout: Fetching logos...');
-      const response = await axios.get('/api/logos');
-      console.log('AuthLayout: Logos response:', response.data);
+      // Fetch primary logo directly
+      const primaryResponse = await axios.get('/api/logos/primary');
+      console.log('AuthLayout: Primary logo response:', primaryResponse.data);
       
-      // Make sure we have an array of logos
-      const logos = Array.isArray(response.data) ? response.data : [];
-      
-      // Find logos by position
-      const primary = logos.find((logo: Logo) => logo.position === 'primary');
-      const secondary = logos.find((logo: Logo) => logo.position === 'secondary');
-      
-      if (primary && primary.url) {
-        console.log('AuthLayout: Primary logo URL:', primary.url);
-        setPrimaryLogoUrl(primary.url);
+      if (primaryResponse.data && primaryResponse.data.url) {
+        console.log('AuthLayout: Primary logo URL:', primaryResponse.data.url);
+        setPrimaryLogoUrl(primaryResponse.data.url);
       } else {
-        // Ensure defaultLogoPath is used if no logo found
-        setPrimaryLogoUrl(defaultLogoPath);
+        // Ensure fallback is used if no logo found
+        setPrimaryLogoUrl(clientDefaultLogoPath);
       }
       
-      if (secondary && secondary.url) {
-        console.log('AuthLayout: Secondary logo URL:', secondary.url);
-        setSecondaryLogoUrl(secondary.url);
+      // Fetch secondary logo directly
+      const secondaryResponse = await axios.get('/api/logos/secondary');
+      console.log('AuthLayout: Secondary logo response:', secondaryResponse.data);
+      
+      if (secondaryResponse.data && secondaryResponse.data.url) {
+        console.log('AuthLayout: Secondary logo URL:', secondaryResponse.data.url);
+        setSecondaryLogoUrl(secondaryResponse.data.url);
       } else {
-        // Ensure defaultLogoPath is used if no logo found
-        setSecondaryLogoUrl(defaultLogoPath);
+        // Ensure fallback is used if no logo found
+        setSecondaryLogoUrl(clientDefaultLogoPath);
       }
     } catch (error) {
       console.error('AuthLayout: Error fetching logos:', error);
       // Keep default logos on error
-      setPrimaryLogoUrl(defaultLogoPath);
-      setSecondaryLogoUrl(defaultLogoPath);
+      setPrimaryLogoUrl(clientDefaultLogoPath);
+      setSecondaryLogoUrl(clientDefaultLogoPath);
     } finally {
       setIsLoadingLogos(false);
     }
@@ -113,7 +111,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
                 onError={(e) => {
                   console.error('Failed to load primary logo in AuthLayout:', primaryLogoUrl);
-                  e.currentTarget.src = defaultLogoPath;
+                  e.currentTarget.src = clientDefaultLogoPath;
                 }}
               />
             </div>
@@ -124,7 +122,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
                 onError={(e) => {
                   console.error('Failed to load secondary logo in AuthLayout:', secondaryLogoUrl);
-                  e.currentTarget.src = defaultLogoPath;
+                  e.currentTarget.src = clientDefaultLogoPath;
                 }}
               />
             </div>
@@ -151,7 +149,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-16 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load primary logo in AuthLayout (mobile):', primaryLogoUrl);
-                        e.currentTarget.src = defaultLogoPath;
+                        e.currentTarget.src = clientDefaultLogoPath;
                       }}
                     />
                   </div>
@@ -162,7 +160,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-16 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load secondary logo in AuthLayout (mobile):', secondaryLogoUrl);
-                        e.currentTarget.src = defaultLogoPath;
+                        e.currentTarget.src = clientDefaultLogoPath;
                       }}
                     />
                   </div>
@@ -177,7 +175,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-14 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load primary logo in AuthLayout (tablet):', primaryLogoUrl);
-                        e.currentTarget.src = defaultLogoPath;
+                        e.currentTarget.src = clientDefaultLogoPath;
                       }}
                     />
                   </div>
@@ -188,7 +186,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-14 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load secondary logo in AuthLayout (tablet):', secondaryLogoUrl);
-                        e.currentTarget.src = defaultLogoPath;
+                        e.currentTarget.src = clientDefaultLogoPath;
                       }}
                     />
                   </div>

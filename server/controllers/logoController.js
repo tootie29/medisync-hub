@@ -10,8 +10,27 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Default logo path to use when no logo is found - updated to use absolute path
-const defaultLogoPath = '/lovable-uploads/e4352921-3b28-44c3-a2f8-02b0923e132f.png';
+// Default logo path to use when no logo is found - using uploads folder in the server
+const defaultLogoPath = '/uploads/logos/default-logo.png';
+const defaultLogoFilePath = path.join(__dirname, '..', 'uploads/logos/default-logo.png');
+
+// Ensure the default logo exists in the server uploads folder
+// We'll copy it from public if not exists
+if (!fs.existsSync(defaultLogoFilePath)) {
+  try {
+    // Create a basic default logo if none exists
+    // Here we're just ensuring the directory exists
+    if (!fs.existsSync(path.dirname(defaultLogoFilePath))) {
+      fs.mkdirSync(path.dirname(defaultLogoFilePath), { recursive: true });
+    }
+    
+    // You could copy a default logo here if you had one
+    // For now, we'll just use a placeholder
+    console.log('Default logo not found, will use fallback paths');
+  } catch (error) {
+    console.error('Error setting up default logo:', error);
+  }
+}
 
 // Get all logos
 exports.getAllLogos = async (req, res) => {
@@ -78,6 +97,15 @@ exports.uploadLogos = async (req, res) => {
       const primaryLogo = files.primaryLogo[0];
       const relativePath = `/uploads/logos/${primaryLogo.filename}`;
       
+      // Log the file details for debugging
+      console.log('Uploaded primary logo:', {
+        originalname: primaryLogo.originalname,
+        filename: primaryLogo.filename,
+        path: primaryLogo.path,
+        relativePath: relativePath,
+        fullUrl: `${baseUrl}${relativePath}`
+      });
+      
       // Save to database
       const logoId = uuidv4();
       await logoModel.updateLogo({
@@ -97,6 +125,15 @@ exports.uploadLogos = async (req, res) => {
     if (files.secondaryLogo && files.secondaryLogo[0]) {
       const secondaryLogo = files.secondaryLogo[0];
       const relativePath = `/uploads/logos/${secondaryLogo.filename}`;
+      
+      // Log the file details for debugging
+      console.log('Uploaded secondary logo:', {
+        originalname: secondaryLogo.originalname,
+        filename: secondaryLogo.filename,
+        path: secondaryLogo.path,
+        relativePath: relativePath,
+        fullUrl: `${baseUrl}${relativePath}`
+      });
       
       // Save to database
       const logoId = uuidv4();

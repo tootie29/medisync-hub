@@ -83,7 +83,7 @@ app.use(`/api/appointments`, appointmentRoutes);
 app.use(`/api/medicines`, medicineRoutes);
 app.use(`/api/logos`, logoRoutes);
 
-// Serve uploaded files
+// Serve uploaded files - make sure the path is correct
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check endpoint with detailed information

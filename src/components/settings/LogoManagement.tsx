@@ -22,8 +22,8 @@ const LogoManagement = () => {
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Default logo path - make sure this points to a valid image in your public folder
-  const defaultLogoPath = '/lovable-uploads/e4352921-3b28-44c3-a2f8-02b0923e132f.png';
+  // Default logo path for client-side fallback
+  const clientDefaultLogoPath = '/placeholder.svg';
 
   useEffect(() => {
     // Fetch the current logos from the database
@@ -49,25 +49,45 @@ const LogoManagement = () => {
         console.log('Primary logo URL:', primary.url);
         setPrimaryLogoUrl(primary.url);
       } else {
-        // Fallback to default logo
-        setPrimaryLogoUrl(defaultLogoPath);
+        // If API returns no logo, fetch a specific position
+        try {
+          const positionResponse = await axios.get('/api/logos/primary');
+          if (positionResponse.data && positionResponse.data.url) {
+            setPrimaryLogoUrl(positionResponse.data.url);
+          } else {
+            setPrimaryLogoUrl(clientDefaultLogoPath);
+          }
+        } catch (error) {
+          console.error('Error fetching primary logo by position:', error);
+          setPrimaryLogoUrl(clientDefaultLogoPath);
+        }
       }
       
       if (secondary && secondary.url) {
         console.log('Secondary logo URL:', secondary.url);
         setSecondaryLogoUrl(secondary.url);
       } else {
-        // Fallback to default logo
-        setSecondaryLogoUrl(defaultLogoPath);
+        // If API returns no logo, fetch a specific position
+        try {
+          const positionResponse = await axios.get('/api/logos/secondary');
+          if (positionResponse.data && positionResponse.data.url) {
+            setSecondaryLogoUrl(positionResponse.data.url);
+          } else {
+            setSecondaryLogoUrl(clientDefaultLogoPath);
+          }
+        } catch (error) {
+          console.error('Error fetching secondary logo by position:', error);
+          setSecondaryLogoUrl(clientDefaultLogoPath);
+        }
       }
     } catch (error) {
       console.error('Error fetching logos:', error);
       setError('Failed to load logos. Please try again.');
       toast.error('Failed to load logos');
       
-      // Fallback to default logo if API fails
-      setPrimaryLogoUrl(defaultLogoPath);
-      setSecondaryLogoUrl(defaultLogoPath);
+      // Fallback to placeholder if API fails
+      setPrimaryLogoUrl(clientDefaultLogoPath);
+      setSecondaryLogoUrl(clientDefaultLogoPath);
     } finally {
       setIsLoadingLogos(false);
     }
@@ -169,7 +189,7 @@ const LogoManagement = () => {
                   className="max-h-full object-contain"
                   onError={(e) => {
                     console.error('Failed to load primary logo:', primaryLogoUrl);
-                    e.currentTarget.src = defaultLogoPath;
+                    e.currentTarget.src = clientDefaultLogoPath;
                   }}
                 />
               </div>
@@ -206,7 +226,7 @@ const LogoManagement = () => {
                   className="max-h-full object-contain"
                   onError={(e) => {
                     console.error('Failed to load secondary logo:', secondaryLogoUrl);
-                    e.currentTarget.src = defaultLogoPath;
+                    e.currentTarget.src = clientDefaultLogoPath;
                   }}
                 />
               </div>
