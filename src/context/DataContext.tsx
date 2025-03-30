@@ -1,11 +1,11 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
   Appointment, 
   Medicine, 
   User,
-  SAMPLE_USERS 
+  SAMPLE_USERS,
+  CreateMedicalRecordInput
 } from '@/types';
 import { toast } from "sonner";
 import axios from 'axios';
@@ -88,7 +88,7 @@ interface DataContextType {
   
   getMedicalRecordsByPatientId: (patientId: string) => MedicalRecord[];
   getMedicalRecordById: (id: string) => MedicalRecord | undefined;
-  addMedicalRecord: (record: Omit<MedicalRecord, 'id' | 'createdAt' | 'updatedAt' | 'bmi'>) => Promise<MedicalRecord>;
+  addMedicalRecord: (record: CreateMedicalRecordInput) => Promise<MedicalRecord>;
   updateMedicalRecord: (id: string, record: Partial<MedicalRecord>) => Promise<MedicalRecord>;
   deleteMedicalRecord: (id: string) => Promise<void>;
   
@@ -199,7 +199,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return parseFloat(bmi.toFixed(2));
   };
 
-  const addMedicalRecord = async (record: Omit<MedicalRecord, 'id' | 'createdAt' | 'updatedAt' | 'bmi'>): Promise<MedicalRecord> => {
+  const addMedicalRecord = async (record: CreateMedicalRecordInput): Promise<MedicalRecord> => {
     try {
       const bmi = calculateBMI(record.height, record.weight);
       

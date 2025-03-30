@@ -82,7 +82,7 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
                       <h3 className="font-medium flex items-center">
                         {record.diagnosis || 'General Checkup'}
                         {hasCertificate && (
-                          <Medal className="h-4 w-4 ml-2 text-green-600" title="Health Certificate Available" />
+                          <Medal className="h-4 w-4 ml-2 text-green-600" aria-label="Health Certificate Available" />
                         )}
                       </h3>
                       <p className="text-sm text-gray-500">

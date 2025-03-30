@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -98,15 +99,16 @@ const MedicalRecords: React.FC = () => {
     return 0;
   };
 
-  const safeToFixed = (value: any, digits: number = 1): string => {
-    if (typeof value === 'number' && !isNaN(value)) {
+  const safeToFixed = (value: any, digits: number = 1, height?: number, weight?: number): string => {
+    if (typeof value === 'number' && !isNaN(value) && value > 0) {
       return value.toFixed(digits);
-    } else if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+    } else if (typeof value === 'string' && !isNaN(parseFloat(value)) && parseFloat(value) > 0) {
       return parseFloat(value).toFixed(digits);
     }
     
-    if (typeof arguments[2] === 'number' && typeof arguments[3] === 'number') {
-      const calculatedBmi = calculateBmi(arguments[2], arguments[3]);
+    // If invalid, calculate from height and weight
+    if (height && weight && height > 0 && weight > 0) {
+      const calculatedBmi = calculateBmi(height, weight);
       if (calculatedBmi > 0) {
         return calculatedBmi.toFixed(digits);
       }
@@ -195,7 +197,6 @@ const MedicalRecords: React.FC = () => {
           date: new Date().toISOString().split('T')[0],
           height: formData.height as number,
           weight: formData.weight as number,
-          bmi: calculatedBmi,
           bloodPressure: formData.bloodPressure,
           temperature: formData.temperature,
           diagnosis: formData.diagnosis,

@@ -44,33 +44,20 @@ export interface MedicalRecord {
   updatedAt: string;
 }
 
-export interface Appointment {
-  id: string;
+export interface CreateMedicalRecordInput {
   patientId: string;
-  doctorId?: string;
+  doctorId: string;
   date: string;
-  startTime: string;
-  endTime: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  reason: string;
+  height: number;
+  weight: number;
+  bloodPressure?: string;
+  temperature?: number;
+  diagnosis?: string;
+  medications?: string[];
   notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Medicine {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  threshold: number;
-  unit: string;
-  description?: string;
-  dosage?: string;
-  expiryDate?: string;
-  supplier?: string;
-  createdAt: string;
-  updatedAt: string;
+  followUpDate?: string;
+  vitalSigns?: VitalSigns;
+  certificateEnabled?: boolean;
 }
 
 export const ROLES: UserRole[] = ['student', 'staff', 'doctor', 'admin'];
