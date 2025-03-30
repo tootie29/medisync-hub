@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -25,60 +26,46 @@ const LogoManagement = () => {
     setIsLoadingLogos(true);
     setError(null);
     try {
-      console.log('Fetching logos...');
-      const response = await axios.get('/api/logos');
-      console.log('Logos response:', response.data);
+      console.log('LogoManagement: Fetching logos...');
+      // Add a timestamp to prevent caching
+      const timestamp = Date.now();
       
-      // Make sure we have an array of logos
-      const logos = Array.isArray(response.data) ? response.data : [];
+      // Fetch primary logo directly (more reliable than getting all logos)
+      const primaryResponse = await axios.get(`/api/logos/primary?t=${timestamp}`);
+      console.log('LogoManagement: Primary logo response:', primaryResponse.data);
       
-      // Find logos by position using direct array methods
-      const primary = logos.find((logo: Logo) => logo.position === 'primary');
-      const secondary = logos.find((logo: Logo) => logo.position === 'secondary');
-      
-      if (primary && primary.url) {
-        console.log('Primary logo URL:', primary.url);
-        setPrimaryLogoUrl(primary.url);
+      if (primaryResponse.data && primaryResponse.data.url) {
+        console.log('LogoManagement: Primary logo URL:', primaryResponse.data.url);
+        // Add a timestamp to prevent browser caching
+        const url = new URL(primaryResponse.data.url, window.location.origin);
+        url.searchParams.append('t', timestamp.toString());
+        setPrimaryLogoUrl(url.toString());
       } else {
-        // If API returns no logo, fetch a specific position
-        try {
-          const positionResponse = await axios.get('/api/logos/primary');
-          if (positionResponse.data && positionResponse.data.url) {
-            setPrimaryLogoUrl(positionResponse.data.url);
-          } else {
-            setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
-          }
-        } catch (error) {
-          console.error('Error fetching primary logo by position:', error);
-          setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
-        }
+        setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
       
-      if (secondary && secondary.url) {
-        console.log('Secondary logo URL:', secondary.url);
-        setSecondaryLogoUrl(secondary.url);
+      // Fetch secondary logo directly (more reliable than getting all logos)
+      const secondaryResponse = await axios.get(`/api/logos/secondary?t=${timestamp}`);
+      console.log('LogoManagement: Secondary logo response:', secondaryResponse.data);
+      
+      if (secondaryResponse.data && secondaryResponse.data.url) {
+        console.log('LogoManagement: Secondary logo URL:', secondaryResponse.data.url);
+        // Add a timestamp to prevent browser caching
+        const url = new URL(secondaryResponse.data.url, window.location.origin);
+        url.searchParams.append('t', timestamp.toString());
+        setSecondaryLogoUrl(url.toString());
       } else {
-        // If API returns no logo, fetch a specific position
-        try {
-          const positionResponse = await axios.get('/api/logos/secondary');
-          if (positionResponse.data && positionResponse.data.url) {
-            setSecondaryLogoUrl(positionResponse.data.url);
-          } else {
-            setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
-          }
-        } catch (error) {
-          console.error('Error fetching secondary logo by position:', error);
-          setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
-        }
+        setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
     } catch (error) {
-      console.error('Error fetching logos:', error);
+      console.error('LogoManagement: Error fetching logos:', error);
       setError('Failed to load logos. Please try again.');
       toast.error('Failed to load logos');
       
       // Fallback to placeholder if API fails
-      setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
-      setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
+      const timestamp = Date.now();
+      setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
+      setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
     } finally {
       setIsLoadingLogos(false);
     }
@@ -114,28 +101,53 @@ const LogoManagement = () => {
       
       // Only proceed if at least one file is selected
       if (primaryLogo || secondaryLogo) {
-        console.log('Uploading logos...');
+        console.log('LogoManagement: Uploading logos...');
+        
+        // Add a client-side timeout of 30 seconds for the upload
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
         const response = await axios.post('/api/logos', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
-          }
+          },
+          signal: controller.signal
         });
-        console.log('Upload response:', response.data);
+        
+        clearTimeout(timeoutId);
+        
+        console.log('LogoManagement: Upload response:', response.data);
         
         toast.success('Logos updated successfully');
-        // Reset file input
+        // Reset file inputs
         setPrimaryLogo(null);
         setSecondaryLogo(null);
         
-        // Refresh the logos from server
-        fetchLogos();
+        // Clear file input fields by resetting the form
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach((input: any) => {
+          input.value = '';
+        });
+        
+        // Refresh the logos from server after a short delay to allow server processing
+        setTimeout(() => {
+          fetchLogos();
+        }, 500);
       } else {
         toast.error('Please select at least one logo to update');
       }
-    } catch (error) {
-      console.error('Error updating logos:', error);
-      setError('Failed to upload logos. Please try again.');
-      toast.error('Failed to update logos');
+    } catch (error: any) {
+      console.error('LogoManagement: Error updating logos:', error);
+      
+      let errorMessage = 'Failed to upload logos. Please try again.';
+      if (error.name === 'AbortError') {
+        errorMessage = 'Upload timed out. Please try with a smaller image or check your connection.';
+      } else if (error.response) {
+        errorMessage = `Error: ${error.response.data.error || error.response.statusText}`;
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

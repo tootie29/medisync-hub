@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useMediaQuery } from '@/hooks/use-mobile';
 import axios from 'axios';
 import { CLIENT_FALLBACK_LOGO_PATH } from '@/components/settings/SiteSettingsModel';
+import { toast } from 'sonner';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -27,6 +28,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>(CLIENT_FALLBACK_LOGO_PATH);
   const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>(CLIENT_FALLBACK_LOGO_PATH);
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     fetchLogos();
@@ -35,34 +37,46 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const fetchLogos = async () => {
     try {
       console.log('AuthLayout: Fetching logos...');
-      // Fetch primary logo directly
-      const primaryResponse = await axios.get('/api/logos/primary');
+      setIsLoadingLogos(true);
+      setFetchError(false);
+      
+      // Fetch primary logo directly with a cache-busting query parameter
+      const timestamp = Date.now();
+      const primaryResponse = await axios.get(`/api/logos/primary?t=${timestamp}`);
       console.log('AuthLayout: Primary logo response:', primaryResponse.data);
       
       if (primaryResponse.data && primaryResponse.data.url) {
         console.log('AuthLayout: Primary logo URL:', primaryResponse.data.url);
-        setPrimaryLogoUrl(primaryResponse.data.url);
+        // Add cache-busting parameter to the image URL
+        const url = new URL(primaryResponse.data.url, window.location.origin);
+        url.searchParams.append('t', timestamp.toString());
+        setPrimaryLogoUrl(url.toString());
       } else {
         // Ensure fallback is used if no logo found
-        setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
+        setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
       
-      // Fetch secondary logo directly
-      const secondaryResponse = await axios.get('/api/logos/secondary');
+      // Fetch secondary logo directly with a cache-busting query parameter
+      const secondaryResponse = await axios.get(`/api/logos/secondary?t=${timestamp}`);
       console.log('AuthLayout: Secondary logo response:', secondaryResponse.data);
       
       if (secondaryResponse.data && secondaryResponse.data.url) {
         console.log('AuthLayout: Secondary logo URL:', secondaryResponse.data.url);
-        setSecondaryLogoUrl(secondaryResponse.data.url);
+        // Add cache-busting parameter to the image URL
+        const url = new URL(secondaryResponse.data.url, window.location.origin);
+        url.searchParams.append('t', timestamp.toString());
+        setSecondaryLogoUrl(url.toString());
       } else {
         // Ensure fallback is used if no logo found
-        setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
+        setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
     } catch (error) {
       console.error('AuthLayout: Error fetching logos:', error);
+      setFetchError(true);
       // Keep default logos on error
-      setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
-      setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
+      const timestamp = Date.now();
+      setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
+      setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
     } finally {
       setIsLoadingLogos(false);
     }

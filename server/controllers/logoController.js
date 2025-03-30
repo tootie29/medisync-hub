@@ -12,7 +12,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Default logo path to use when no logo is found - using a professional path
 const defaultLogoPath = '/uploads/assets/logos/default-logo.png';
-const defaultLogoFilePath = path.join(__dirname, '..', 'uploads/assets/logos/default-logo.png');
+const defaultLogoFilePath = path.join(__dirname, '..', defaultLogoPath);
 
 // Ensure the default logo exists in the server uploads folder
 if (!fs.existsSync(defaultLogoFilePath)) {
@@ -46,6 +46,7 @@ exports.getAllLogos = async (req, res) => {
       url: logo.url.startsWith('http') ? logo.url : `${baseUrl}${logo.url}`
     }));
     
+    console.log('Returning logos with URLs:', logosWithUrls);
     res.status(200).json(logosWithUrls);
   } catch (error) {
     console.error('Error fetching logos:', error);
@@ -57,14 +58,20 @@ exports.getAllLogos = async (req, res) => {
 exports.getLogoByPosition = async (req, res) => {
   try {
     const position = req.params.position;
+    console.log(`Fetching logo for position: ${position}`);
+    
     const logo = await logoModel.getLogoByPosition(position);
+    console.log(`Logo found for position ${position}:`, logo);
     
     if (!logo) {
       // Return default logo if not found
       const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const defaultLogoUrl = `${baseUrl}${defaultLogoPath}`;
+      console.log(`No logo found for ${position}, using default:`, defaultLogoUrl);
+      
       return res.status(200).json({
         id: 'default',
-        url: `${baseUrl}${defaultLogoPath}`,
+        url: defaultLogoUrl,
         position: position
       });
     }
@@ -72,10 +79,11 @@ exports.getLogoByPosition = async (req, res) => {
     // Add absolute URL to the logo
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     logo.url = logo.url.startsWith('http') ? logo.url : `${baseUrl}${logo.url}`;
+    console.log(`Returning logo for ${position} with URL:`, logo.url);
     
     res.status(200).json(logo);
   } catch (error) {
-    console.error('Error fetching logo:', error);
+    console.error(`Error fetching logo for position ${req.params.position}:`, error);
     res.status(500).json({ error: 'Failed to fetch logo' });
   }
 };
@@ -85,6 +93,8 @@ exports.uploadLogos = async (req, res) => {
   try {
     const files = req.files;
     const results = [];
+    
+    console.log('Files received for upload:', files);
     
     // Get server base URL
     const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -105,11 +115,13 @@ exports.uploadLogos = async (req, res) => {
       
       // Save to database
       const logoId = uuidv4();
-      await logoModel.updateLogo({
+      const updatedId = await logoModel.updateLogo({
         id: logoId,
         url: relativePath,
         position: 'primary'
       });
+      
+      console.log('Primary logo saved to database with ID:', updatedId);
       
       results.push({
         position: 'primary',
@@ -134,11 +146,13 @@ exports.uploadLogos = async (req, res) => {
       
       // Save to database
       const logoId = uuidv4();
-      await logoModel.updateLogo({
+      const updatedId = await logoModel.updateLogo({
         id: logoId,
         url: relativePath,
         position: 'secondary'
       });
+      
+      console.log('Secondary logo saved to database with ID:', updatedId);
       
       results.push({
         position: 'secondary',
@@ -147,12 +161,14 @@ exports.uploadLogos = async (req, res) => {
       });
     }
 
+    console.log('Logo upload results:', results);
+    
     res.status(200).json({ 
       message: 'Logos uploaded successfully',
       uploads: results
     });
   } catch (error) {
     console.error('Error uploading logos:', error);
-    res.status(500).json({ error: 'Failed to upload logos' });
+    res.status(500).json({ error: 'Failed to upload logos', details: error.message });
   }
 };
