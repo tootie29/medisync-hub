@@ -1,3 +1,4 @@
+
 export type UserRole = 'student' | 'staff' | 'doctor' | 'admin';
 
 export interface User {
@@ -58,6 +59,35 @@ export interface CreateMedicalRecordInput {
   followUpDate?: string;
   vitalSigns?: VitalSigns;
   certificateEnabled?: boolean;
+}
+
+export interface Appointment {
+  id: string;
+  patientId: string;
+  doctorId?: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  reason: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Medicine {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  threshold: number;
+  unit: string;
+  description?: string;
+  dosage?: string;
+  expiryDate?: string;
+  supplier?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const ROLES: UserRole[] = ['student', 'staff', 'doctor', 'admin'];
