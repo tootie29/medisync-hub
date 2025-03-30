@@ -5,10 +5,10 @@ const logoController = require('../controllers/logoController');
 const multer = require('multer');
 const path = require('path');
 
-// Configure multer for file uploads
+// Configure multer for file uploads with professional path
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../uploads/logos'));
+    cb(null, path.join(__dirname, '../uploads/assets/logos'));
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

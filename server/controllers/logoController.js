@@ -4,18 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../uploads/logos');
+// Ensure uploads directory exists with a professional path structure
+const uploadsDir = path.join(__dirname, '../uploads/assets/logos');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Default logo path to use when no logo is found - using uploads folder in the server
-const defaultLogoPath = '/uploads/logos/default-logo.png';
-const defaultLogoFilePath = path.join(__dirname, '..', 'uploads/logos/default-logo.png');
+// Default logo path to use when no logo is found - using a professional path
+const defaultLogoPath = '/uploads/assets/logos/default-logo.png';
+const defaultLogoFilePath = path.join(__dirname, '..', 'uploads/assets/logos/default-logo.png');
 
 // Ensure the default logo exists in the server uploads folder
-// We'll copy it from public if not exists
 if (!fs.existsSync(defaultLogoFilePath)) {
   try {
     // Create a basic default logo if none exists
@@ -24,8 +23,6 @@ if (!fs.existsSync(defaultLogoFilePath)) {
       fs.mkdirSync(path.dirname(defaultLogoFilePath), { recursive: true });
     }
     
-    // You could copy a default logo here if you had one
-    // For now, we'll just use a placeholder
     console.log('Default logo not found, will use fallback paths');
   } catch (error) {
     console.error('Error setting up default logo:', error);
@@ -95,7 +92,7 @@ exports.uploadLogos = async (req, res) => {
     // Process primary logo if uploaded
     if (files.primaryLogo && files.primaryLogo[0]) {
       const primaryLogo = files.primaryLogo[0];
-      const relativePath = `/uploads/logos/${primaryLogo.filename}`;
+      const relativePath = `/uploads/assets/logos/${primaryLogo.filename}`;
       
       // Log the file details for debugging
       console.log('Uploaded primary logo:', {
@@ -124,7 +121,7 @@ exports.uploadLogos = async (req, res) => {
     // Process secondary logo if uploaded
     if (files.secondaryLogo && files.secondaryLogo[0]) {
       const secondaryLogo = files.secondaryLogo[0];
-      const relativePath = `/uploads/logos/${secondaryLogo.filename}`;
+      const relativePath = `/uploads/assets/logos/${secondaryLogo.filename}`;
       
       // Log the file details for debugging
       console.log('Uploaded secondary logo:', {

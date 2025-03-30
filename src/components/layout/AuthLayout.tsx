@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMediaQuery } from '@/hooks/use-mobile';
 import axios from 'axios';
+import { CLIENT_FALLBACK_LOGO_PATH } from '@/components/settings/SiteSettingsModel';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -23,11 +24,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const isMobile = useMediaQuery("(max-width: 639px)");
   const isSmallDesktop = useMediaQuery("(min-width: 1024px) and (max-width: 1279px)");
   
-  // Default logo path for client-side fallback
-  const clientDefaultLogoPath = '/placeholder.svg';
-  
-  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>(clientDefaultLogoPath);
-  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>(clientDefaultLogoPath);
+  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>(CLIENT_FALLBACK_LOGO_PATH);
+  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>(CLIENT_FALLBACK_LOGO_PATH);
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
 
   useEffect(() => {
@@ -46,7 +44,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
         setPrimaryLogoUrl(primaryResponse.data.url);
       } else {
         // Ensure fallback is used if no logo found
-        setPrimaryLogoUrl(clientDefaultLogoPath);
+        setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
       }
       
       // Fetch secondary logo directly
@@ -58,13 +56,13 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
         setSecondaryLogoUrl(secondaryResponse.data.url);
       } else {
         // Ensure fallback is used if no logo found
-        setSecondaryLogoUrl(clientDefaultLogoPath);
+        setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
       }
     } catch (error) {
       console.error('AuthLayout: Error fetching logos:', error);
       // Keep default logos on error
-      setPrimaryLogoUrl(clientDefaultLogoPath);
-      setSecondaryLogoUrl(clientDefaultLogoPath);
+      setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
+      setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
     } finally {
       setIsLoadingLogos(false);
     }
@@ -111,7 +109,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
                 onError={(e) => {
                   console.error('Failed to load primary logo in AuthLayout:', primaryLogoUrl);
-                  e.currentTarget.src = clientDefaultLogoPath;
+                  e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
                 }}
               />
             </div>
@@ -122,7 +120,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
                 onError={(e) => {
                   console.error('Failed to load secondary logo in AuthLayout:', secondaryLogoUrl);
-                  e.currentTarget.src = clientDefaultLogoPath;
+                  e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
                 }}
               />
             </div>
@@ -149,7 +147,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-16 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load primary logo in AuthLayout (mobile):', primaryLogoUrl);
-                        e.currentTarget.src = clientDefaultLogoPath;
+                        e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
                       }}
                     />
                   </div>
@@ -160,7 +158,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-16 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load secondary logo in AuthLayout (mobile):', secondaryLogoUrl);
-                        e.currentTarget.src = clientDefaultLogoPath;
+                        e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
                       }}
                     />
                   </div>
@@ -175,7 +173,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-14 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load primary logo in AuthLayout (tablet):', primaryLogoUrl);
-                        e.currentTarget.src = clientDefaultLogoPath;
+                        e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
                       }}
                     />
                   </div>
@@ -186,7 +184,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                       className="h-14 w-auto object-contain"
                       onError={(e) => {
                         console.error('Failed to load secondary logo in AuthLayout (tablet):', secondaryLogoUrl);
-                        e.currentTarget.src = clientDefaultLogoPath;
+                        e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
                       }}
                     />
                   </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -6,12 +5,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Upload, RefreshCw, AlertCircle } from 'lucide-react';
-
-interface Logo {
-  id: string;
-  url: string;
-  position: 'primary' | 'secondary';
-}
+import { Logo, DEFAULT_LOGO_PATH, CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
 
 const LogoManagement = () => {
   const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
@@ -21,9 +15,6 @@ const LogoManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Default logo path for client-side fallback
-  const clientDefaultLogoPath = '/placeholder.svg';
 
   useEffect(() => {
     // Fetch the current logos from the database
@@ -55,11 +46,11 @@ const LogoManagement = () => {
           if (positionResponse.data && positionResponse.data.url) {
             setPrimaryLogoUrl(positionResponse.data.url);
           } else {
-            setPrimaryLogoUrl(clientDefaultLogoPath);
+            setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
           }
         } catch (error) {
           console.error('Error fetching primary logo by position:', error);
-          setPrimaryLogoUrl(clientDefaultLogoPath);
+          setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
         }
       }
       
@@ -73,11 +64,11 @@ const LogoManagement = () => {
           if (positionResponse.data && positionResponse.data.url) {
             setSecondaryLogoUrl(positionResponse.data.url);
           } else {
-            setSecondaryLogoUrl(clientDefaultLogoPath);
+            setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
           }
         } catch (error) {
           console.error('Error fetching secondary logo by position:', error);
-          setSecondaryLogoUrl(clientDefaultLogoPath);
+          setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
         }
       }
     } catch (error) {
@@ -86,8 +77,8 @@ const LogoManagement = () => {
       toast.error('Failed to load logos');
       
       // Fallback to placeholder if API fails
-      setPrimaryLogoUrl(clientDefaultLogoPath);
-      setSecondaryLogoUrl(clientDefaultLogoPath);
+      setPrimaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
+      setSecondaryLogoUrl(CLIENT_FALLBACK_LOGO_PATH);
     } finally {
       setIsLoadingLogos(false);
     }
@@ -189,7 +180,7 @@ const LogoManagement = () => {
                   className="max-h-full object-contain"
                   onError={(e) => {
                     console.error('Failed to load primary logo:', primaryLogoUrl);
-                    e.currentTarget.src = clientDefaultLogoPath;
+                    e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
                   }}
                 />
               </div>
@@ -226,7 +217,7 @@ const LogoManagement = () => {
                   className="max-h-full object-contain"
                   onError={(e) => {
                     console.error('Failed to load secondary logo:', secondaryLogoUrl);
-                    e.currentTarget.src = clientDefaultLogoPath;
+                    e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
                   }}
                 />
               </div>
