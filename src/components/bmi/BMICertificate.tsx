@@ -14,6 +14,21 @@ interface BMICertificateProps {
 const BMICertificate: React.FC<BMICertificateProps> = ({ 
   id, userName, bmi, height, weight, date 
 }) => {
+  // If BMI is 0 or invalid, recalculate it from height and weight
+  const calculatedBmi = (() => {
+    if (bmi && bmi > 0) return bmi;
+    
+    if (height && weight && height > 0 && weight > 0) {
+      const heightInMeters = height / 100;
+      return weight / (heightInMeters * heightInMeters);
+    }
+    
+    return 0;
+  })();
+  
+  // Only display the BMI if it's a valid number
+  const displayBmi = calculatedBmi > 0 ? calculatedBmi.toFixed(1) : "0.0";
+  
   return (
     <div 
       id={id} 
@@ -76,7 +91,7 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
             marginBottom: '10px'
           }}
         >
-          has a BMI of <span className="bmi-value" style={{ fontWeight: 'bold', color: '#22c55e' }}>{bmi.toFixed(1)}</span>
+          has a BMI of <span className="bmi-value" style={{ fontWeight: 'bold', color: '#22c55e' }}>{displayBmi}</span>
         </div>
         
         <div
@@ -89,7 +104,7 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
         </div>
         
         <div className="bmi-category-result">
-          This BMI falls within the <span className="bmi-category" style={{ fontWeight: 'bold', color: '#22c55e' }}>{getBMICategory(bmi)}</span> range.
+          This BMI falls within the <span className="bmi-category" style={{ fontWeight: 'bold', color: '#22c55e' }}>{getBMICategory(calculatedBmi)}</span> range.
         </div>
         
         <div 
