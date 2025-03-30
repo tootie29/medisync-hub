@@ -37,12 +37,12 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               
-              <Route element={<AuthLayout>{''}</AuthLayout>}>
+              <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
               </Route>
 
-              <Route element={<MainLayout>{''}</MainLayout>}>
+              <Route element={<MainLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/appointments" element={<Appointments />} />
                 <Route path="/records" element={<MedicalRecords />} />
