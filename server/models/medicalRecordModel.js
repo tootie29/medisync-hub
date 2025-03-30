@@ -301,9 +301,15 @@ class MedicalRecordModel {
         }
       }
       
-      // Handle certificate status explicitly
+      // Handle certificate status explicitly - convert to boolean first
       let certificateEnabled = recordData.certificateEnabled;
-      console.log('Certificate status in update:', certificateEnabled);
+      console.log('Certificate status type in update:', typeof certificateEnabled);
+      console.log('Certificate status value in update:', certificateEnabled);
+      
+      // Ensure it's a proper boolean
+      if (certificateEnabled !== undefined) {
+        certificateEnabled = Boolean(certificateEnabled);
+      }
       
       // Only auto-calculate if not explicitly provided
       if (certificateEnabled === undefined && bmi) {
@@ -371,6 +377,7 @@ class MedicalRecordModel {
       
       if (certificateEnabled !== undefined) {
         setClause.push('certificate_enabled = ?');
+        // Store as 1 or 0 for MySQL
         params.push(certificateEnabled ? 1 : 0);
         console.log('Setting certificate_enabled to:', certificateEnabled ? 1 : 0);
       }

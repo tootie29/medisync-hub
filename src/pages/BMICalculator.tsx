@@ -102,11 +102,14 @@ const BMICalculator: React.FC = () => {
     
     try {
       setLoading(true);
+      console.log('Toggling certificate access from', certificateEnabled, 'to', !certificateEnabled);
+      
       const updatedRecord = await updateMedicalRecord(lastRecord.id, {
         certificateEnabled: !certificateEnabled
       });
       
-      setCertificateEnabled(updatedRecord.certificateEnabled || false);
+      console.log('Updated record received:', updatedRecord);
+      setCertificateEnabled(updatedRecord.certificateEnabled);
       setLastRecord(updatedRecord);
       
       toast.success(`Certificate access ${updatedRecord.certificateEnabled ? 'enabled' : 'disabled'} for patient`);

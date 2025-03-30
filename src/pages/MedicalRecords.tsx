@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -187,11 +186,13 @@ const MedicalRecords: React.FC = () => {
     const isHealthyBmi = calculatedBmi >= 18.5 && calculatedBmi < 25;
     
     try {
+      console.log('Submitting form with certificateEnabled:', formData.certificateEnabled);
+      
       if (editingRecordId) {
         updateMedicalRecord(editingRecordId, {
           ...formData,
           bmi: calculatedBmi,
-          certificateEnabled: formData.certificateEnabled
+          certificateEnabled: Boolean(formData.certificateEnabled)
         });
         setEditingRecordId(null);
       } else {
@@ -208,7 +209,8 @@ const MedicalRecords: React.FC = () => {
           notes: formData.notes,
           medications: formData.medications,
           followUpDate: formData.followUpDate,
-          certificateEnabled: formData.certificateEnabled !== undefined ? formData.certificateEnabled : isHealthyBmi,
+          certificateEnabled: formData.certificateEnabled !== undefined ? 
+            Boolean(formData.certificateEnabled) : isHealthyBmi,
           vitalSigns: {
             heartRate: formData.vitalSigns?.heartRate || 0,
             bloodGlucose: formData.vitalSigns?.bloodGlucose || 0
