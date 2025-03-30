@@ -46,16 +46,16 @@ exports.updateLogo = async (logo) => {
     if (existingLogos.length > 0) {
       // Update existing logo
       console.log(`Model: Updating existing logo for position ${logo.position}`);
-      await db.query(
+      const [result] = await db.query(
         'UPDATE logos SET url = ? WHERE position = ?',
         [logo.url, logo.position]
       );
-      console.log(`Model: Updated logo with ID: ${existingLogos[0].id}`);
+      console.log(`Model: Updated logo with ID: ${existingLogos[0].id}, Result:`, result);
       return existingLogos[0].id;
     } else {
       // Insert new logo
       console.log(`Model: Creating new logo for position ${logo.position}`);
-      const result = await db.query(
+      const [result] = await db.query(
         'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
         [logo.id, logo.url, logo.position]
       );

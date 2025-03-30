@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -32,6 +33,18 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
 
   useEffect(() => {
     fetchLogos();
+    
+    // Listen for refresh events from the logo management component
+    const refreshHandler = () => {
+      console.log('AuthLayout: Received logo refresh event');
+      fetchLogos();
+    };
+    
+    window.addEventListener('refreshLogos', refreshHandler);
+    
+    return () => {
+      window.removeEventListener('refreshLogos', refreshHandler);
+    };
   }, []);
 
   const fetchLogos = async () => {

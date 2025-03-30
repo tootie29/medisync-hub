@@ -8,6 +8,7 @@ const { v4: uuidv4 } = require('uuid');
 const uploadsDir = path.join(__dirname, '../uploads/assets/logos');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log(`Created uploads directory: ${uploadsDir}`);
 }
 
 // Default logo path to use when no logo is found - using a professional path
@@ -94,7 +95,12 @@ exports.uploadLogos = async (req, res) => {
     const files = req.files;
     const results = [];
     
-    console.log('Files received for upload:', files);
+    console.log('Files received for upload:', JSON.stringify(files, null, 2));
+    
+    if (!files || ((!files.primaryLogo || files.primaryLogo.length === 0) && 
+                  (!files.secondaryLogo || files.secondaryLogo.length === 0))) {
+      return res.status(400).json({ error: 'No files were uploaded' });
+    }
     
     // Get server base URL
     const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -113,21 +119,37 @@ exports.uploadLogos = async (req, res) => {
         fullUrl: `${baseUrl}${relativePath}`
       });
       
+      // Verify file exists
+      if (!fs.existsSync(primaryLogo.path)) {
+        console.error(`Primary logo file does not exist at path: ${primaryLogo.path}`);
+      } else {
+        console.log(`Primary logo file exists at path: ${primaryLogo.path}`);
+      }
+      
       // Save to database
       const logoId = uuidv4();
-      const updatedId = await logoModel.updateLogo({
-        id: logoId,
-        url: relativePath,
-        position: 'primary'
-      });
-      
-      console.log('Primary logo saved to database with ID:', updatedId);
-      
-      results.push({
-        position: 'primary',
-        filename: primaryLogo.filename,
-        path: `${baseUrl}${relativePath}`
-      });
+      try {
+        const updatedId = await logoModel.updateLogo({
+          id: logoId,
+          url: relativePath,
+          position: 'primary'
+        });
+        
+        console.log('Primary logo saved to database with ID:', updatedId);
+        
+        results.push({
+          position: 'primary',
+          filename: primaryLogo.filename,
+          path: `${baseUrl}${relativePath}`
+        });
+      } catch (dbError) {
+        console.error('Database error saving primary logo:', dbError);
+        results.push({
+          position: 'primary',
+          error: 'Database update failed',
+          details: dbError.message
+        });
+      }
     }
 
     // Process secondary logo if uploaded
@@ -144,21 +166,37 @@ exports.uploadLogos = async (req, res) => {
         fullUrl: `${baseUrl}${relativePath}`
       });
       
+      // Verify file exists
+      if (!fs.existsSync(secondaryLogo.path)) {
+        console.error(`Secondary logo file does not exist at path: ${secondaryLogo.path}`);
+      } else {
+        console.log(`Secondary logo file exists at path: ${secondaryLogo.path}`);
+      }
+      
       // Save to database
       const logoId = uuidv4();
-      const updatedId = await logoModel.updateLogo({
-        id: logoId,
-        url: relativePath,
-        position: 'secondary'
-      });
-      
-      console.log('Secondary logo saved to database with ID:', updatedId);
-      
-      results.push({
-        position: 'secondary',
-        filename: secondaryLogo.filename,
-        path: `${baseUrl}${relativePath}`
-      });
+      try {
+        const updatedId = await logoModel.updateLogo({
+          id: logoId,
+          url: relativePath,
+          position: 'secondary'
+        });
+        
+        console.log('Secondary logo saved to database with ID:', updatedId);
+        
+        results.push({
+          position: 'secondary',
+          filename: secondaryLogo.filename,
+          path: `${baseUrl}${relativePath}`
+        });
+      } catch (dbError) {
+        console.error('Database error saving secondary logo:', dbError);
+        results.push({
+          position: 'secondary',
+          error: 'Database update failed',
+          details: dbError.message
+        });
+      }
     }
 
     console.log('Logo upload results:', results);

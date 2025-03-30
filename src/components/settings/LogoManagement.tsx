@@ -101,7 +101,7 @@ const LogoManagement = () => {
       
       // Only proceed if at least one file is selected
       if (primaryLogo || secondaryLogo) {
-        console.log('LogoManagement: Uploading logos...');
+        console.log('LogoManagement: Uploading logos...', primaryLogo, secondaryLogo);
         
         // Add a client-side timeout of 30 seconds for the upload
         const controller = new AbortController();
@@ -118,21 +118,29 @@ const LogoManagement = () => {
         
         console.log('LogoManagement: Upload response:', response.data);
         
-        toast.success('Logos updated successfully');
-        // Reset file inputs
-        setPrimaryLogo(null);
-        setSecondaryLogo(null);
-        
-        // Clear file input fields by resetting the form
-        const fileInputs = document.querySelectorAll('input[type="file"]');
-        fileInputs.forEach((input: any) => {
-          input.value = '';
-        });
-        
-        // Refresh the logos from server after a short delay to allow server processing
-        setTimeout(() => {
-          fetchLogos();
-        }, 500);
+        if (response.data.uploads && response.data.uploads.length > 0) {
+          toast.success('Logos updated successfully');
+          // Reset file inputs
+          setPrimaryLogo(null);
+          setSecondaryLogo(null);
+          
+          // Clear file input fields by resetting the form
+          const fileInputs = document.querySelectorAll('input[type="file"]');
+          fileInputs.forEach((input: any) => {
+            input.value = '';
+          });
+          
+          // Refresh the logos from server after a short delay to allow server processing
+          setTimeout(() => {
+            fetchLogos();
+            
+            // Trigger a refresh of the authentication layout if it's loaded
+            // This will update the logos in the login/register pages
+            window.dispatchEvent(new CustomEvent('refreshLogos'));
+          }, 1000);
+        } else {
+          toast.error('No logos were updated. Please try again.');
+        }
       } else {
         toast.error('Please select at least one logo to update');
       }

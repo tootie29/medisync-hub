@@ -16,6 +16,10 @@ if (!fs.existsSync(uploadDir)) {
 // Configure multer for file uploads with professional path
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    // Double check directory exists before storing
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
     console.log(`Storing file in: ${uploadDir}`);
     cb(null, uploadDir);
   },
