@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -83,8 +84,37 @@ app.use(`/api/appointments`, appointmentRoutes);
 app.use(`/api/medicines`, medicineRoutes);
 app.use(`/api/logos`, logoRoutes);
 
-// Serve uploaded files - make sure the path is correct
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Determine the uploads directory based on environment
+const isProduction = process.env.NODE_ENV === 'production';
+const baseUploadDir = isProduction
+  ? process.env.HOME || '/home'  // cPanel uses /home/{username}
+  : path.join(__dirname);
+
+// Add serving uploaded files from both possible locations
+const uploadsPath = path.join(baseUploadDir, 'uploads');
+const legacyUploadsPath = path.join(__dirname, 'uploads');
+
+// Log upload paths for debugging
+console.log(`Serving uploads from: ${uploadsPath}`);
+console.log(`Also checking legacy uploads path: ${legacyUploadsPath}`);
+
+// Serve uploaded files from the correct location
+app.use('/uploads', (req, res, next) => {
+  // First check if file exists in the new absolute path
+  const absolutePath = path.join(uploadsPath, req.url);
+  fs.access(absolutePath, fs.constants.F_OK, (err) => {
+    if (!err) {
+      // File exists in the new path
+      console.log(`Serving file from absolute path: ${absolutePath}`);
+      res.sendFile(absolutePath);
+    } else {
+      // File not found in new path, try legacy path
+      const legacyPath = path.join(legacyUploadsPath, req.url);
+      console.log(`File not found in new path, trying legacy path: ${legacyPath}`);
+      express.static(legacyUploadsPath)(req, res, next);
+    }
+  });
+});
 
 // Health check endpoint with detailed information
 app.get(`/api/health`, (req, res) => {

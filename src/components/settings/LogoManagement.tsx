@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Upload, RefreshCw, AlertCircle, Info, FileWarning } from 'lucide-react';
+import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
 
 const LogoManagement = () => {
@@ -19,9 +19,19 @@ const LogoManagement = () => {
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [serverInfo, setServerInfo] = useState<string | null>(null);
+  const [serverDetails, setServerDetails] = useState<any>(null);
 
   useEffect(() => {
     fetchLogos();
+    // Get server health information for diagnostics
+    axios.get('/api/health')
+      .then(response => {
+        setServerDetails(response.data);
+        console.log('Server health info:', response.data);
+      })
+      .catch(error => {
+        console.error('Failed to fetch server health info:', error);
+      });
   }, [lastRefresh]);
 
   const fetchLogos = async () => {
@@ -198,8 +208,8 @@ const LogoManagement = () => {
             setServerInfo(response.data.message);
           }
           
-          toast.error('No logos were updated. Please try again.');
-          setError('Upload completed but no logos were updated by the server');
+          toast.error('No logos were updated. Please check server logs.');
+          setError('Upload completed but no logos were updated by the server. This might be a file permission issue on the server.');
         }
       } else {
         toast.error('Please select at least one logo to update');
@@ -236,23 +246,71 @@ const LogoManagement = () => {
 
   return (
     <div className="space-y-6">
+      {serverDetails && (
+        <div className="bg-blue-100 p-4 rounded-md mb-4 flex items-start gap-3">
+          <Server className="h-5 w-5 text-blue-600 mt-0.5" />
+          <div>
+            <p className="text-blue-600 font-medium">Server Environment</p>
+            <p className="text-blue-600/80 text-sm mt-1">
+              Running in {serverDetails.server?.environment} mode
+              {serverDetails.database?.connected 
+                ? " with a connected database" 
+                : " but database is not connected"}
+            </p>
+            <div className="mt-2 flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setServerDetails(null)}
+                className="text-xs"
+              >
+                Hide Details
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {error && (
         <div className="bg-destructive/15 p-4 rounded-md mb-4 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
           <div>
             <p className="text-destructive font-medium">{error}</p>
             <p className="text-destructive/80 text-sm mt-1">
-              Try refreshing the page or contact support if the issue persists.
+              This may be caused by file permission issues on the server. 
+              Please check that the server has write permissions to /uploads/assets/logos directory.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManualRefresh}
-              className="mt-2"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManualRefresh}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+              
+              {!serverDetails && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    axios.get('/api/health')
+                      .then(response => {
+                        setServerDetails(response.data);
+                        console.log('Server health info:', response.data);
+                      })
+                      .catch(error => {
+                        console.error('Failed to fetch server health info:', error);
+                        toast.error('Failed to get server information');
+                      });
+                  }}
+                >
+                  <HardDrive className="h-4 w-4 mr-2" />
+                  Check Server Status
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}

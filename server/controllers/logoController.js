@@ -6,98 +6,8 @@ const { v4: uuidv4 } = require('uuid');
 const { promisify } = require('util');
 
 // Convert fs methods to Promise-based for better error handling
-const mkdir = promisify(fs.mkdir);
 const access = promisify(fs.access);
 const chmod = promisify(fs.chmod);
-
-// Determine if we're in production (cPanel) or development
-const isProduction = process.env.NODE_ENV === 'production';
-
-// Ensure uploads directory exists with proper structure
-const baseDir = isProduction 
-  ? path.resolve(process.env.HOME || '/home') // cPanel uses /home/{username}
-  : path.join(__dirname, '..');
-
-// Define paths consistently with routes
-const uploadsRelativePath = 'uploads/assets/logos';
-const uploadsDir = path.join(baseDir, uploadsRelativePath);
-
-console.log(`Controller: Using upload directory: ${uploadsDir}`);
-
-// Helper function to create directory with proper permissions
-async function ensureDirectoryExists(directory) {
-  console.log(`Controller: Ensuring directory exists: ${directory}`);
-  try {
-    // Check if directory exists
-    await access(directory, fs.constants.F_OK);
-    console.log(`Directory already exists: ${directory}`);
-    
-    // Set directory permissions to 0755 (rwxr-xr-x)
-    await chmod(directory, 0o755);
-    console.log(`Set permissions on: ${directory}`);
-    
-    // Verify write access
-    await access(directory, fs.constants.W_OK);
-    console.log(`Directory is writable: ${directory}`);
-    
-    return true;
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      console.log(`Directory does not exist, creating: ${directory}`);
-      try {
-        // Create directory with permissions
-        await mkdir(directory, { recursive: true, mode: 0o755 });
-        console.log(`Created directory: ${directory}`);
-        
-        // Double-check write permissions
-        await access(directory, fs.constants.W_OK);
-        console.log(`Verified write access to: ${directory}`);
-        
-        return true;
-      } catch (mkdirErr) {
-        console.error(`Failed to create directory ${directory}:`, mkdirErr);
-        return false;
-      }
-    } else {
-      console.error(`Error accessing directory ${directory}:`, err);
-      return false;
-    }
-  }
-}
-
-// Ensure directory exists when controller is first loaded
-(async () => {
-  console.log('Controller: Starting directory creation process for uploads...');
-  
-  // Create each level of the directory structure separately
-  const pathSegments = uploadsRelativePath.split('/');
-  let currentPath = baseDir;
-  
-  for (const segment of pathSegments) {
-    currentPath = path.join(currentPath, segment);
-    console.log(`Creating directory segment: ${currentPath}`);
-    const success = await ensureDirectoryExists(currentPath);
-    
-    if (!success) {
-      console.error(`CRITICAL: Failed to create directory segment: ${currentPath}`);
-      console.error(`This will cause file uploads to fail!`);
-      break;
-    }
-  }
-  
-  // Final verification
-  try {
-    const stats = fs.statSync(uploadsDir);
-    console.log(`Upload directory exists: ${uploadsDir}`);
-    console.log(`Directory permissions: ${stats.mode.toString(8)}`);
-    console.log(`Directory owner: ${stats.uid}, group: ${stats.gid}`);
-  } catch (err) {
-    console.error(`Could not verify upload directory: ${err.message}`);
-  }
-})();
-
-// Default logo path
-const defaultLogoPath = '/uploads/assets/logos/default-logo.png';
 
 // Get all logos
 exports.getAllLogos = async (req, res) => {
@@ -136,7 +46,7 @@ exports.getLogoByPosition = async (req, res) => {
     if (!logo) {
       // Return default logo if not found
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const defaultLogoUrl = `${baseUrl}${defaultLogoPath}`;
+      const defaultLogoUrl = `${baseUrl}/uploads/assets/logos/default-logo.png`;
       console.log(`No logo found for ${position}, using default:`, defaultLogoUrl);
       
       return res.status(200).json({
@@ -165,9 +75,6 @@ exports.uploadLogos = async (req, res) => {
   const results = [];
   
   try {
-    // First, ensure the upload directory exists
-    await ensureDirectoryExists(uploadsDir);
-    
     console.log('Files received for upload:', files ? Object.keys(files).length : 'none');
     
     if (!files || Object.keys(files).length === 0) {
@@ -175,8 +82,11 @@ exports.uploadLogos = async (req, res) => {
       return res.status(400).json({ error: 'No files were uploaded' });
     }
     
-    // Get server base URL
+    // Get server base URL and upload info
     const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const uploadInfo = req.uploadInfo || {};
+    
+    console.log('Upload info from request:', uploadInfo);
 
     // Process primary logo
     if (files.primaryLogo && files.primaryLogo[0]) {

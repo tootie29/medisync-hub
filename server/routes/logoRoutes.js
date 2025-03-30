@@ -16,17 +16,20 @@ const chmod = promisify(fs.chmod);
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Create uploads directory with proper permissions - use absolute path that works with cPanel
+// In cPanel, HOME env var points to the user's home directory (typically /home/username)
 const baseDir = isProduction 
-  ? path.resolve(process.env.HOME || '/home') // cPanel uses /home/{username}
-  : path.join(__dirname, '..');
+  ? process.env.HOME || '/home' // Use HOME env var or fallback to /home
+  : path.join(__dirname, '../'); // In dev, use server directory as base
 
 // Ensure the uploads path exists and is writable
-const uploadsRelativePath = 'uploads/assets/logos';
-const uploadDir = path.join(baseDir, uploadsRelativePath);
+const uploadsDir = 'uploads';
+const assetsDir = 'assets';
+const logosDir = 'logos';
+const fullUploadPath = path.join(baseDir, uploadsDir, assetsDir, logosDir);
 
 console.log(`Server environment: ${isProduction ? 'Production (cPanel)' : 'Development'}`);
 console.log(`Base directory: ${baseDir}`);
-console.log(`Upload directory path: ${uploadDir}`);
+console.log(`Full upload path: ${fullUploadPath}`);
 
 // Recursive directory creation function with proper permissions
 async function ensureDirectoryExists(directory) {
@@ -40,10 +43,6 @@ async function ensureDirectoryExists(directory) {
     await chmod(directory, 0o755);
     console.log(`Set permissions on: ${directory}`);
     
-    // Verify write access
-    await access(directory, fs.constants.W_OK);
-    console.log(`Directory is writable: ${directory}`);
-    
     return true;
   } catch (err) {
     if (err.code === 'ENOENT') {
@@ -52,11 +51,6 @@ async function ensureDirectoryExists(directory) {
         // Create directory with permissions
         await mkdir(directory, { recursive: true, mode: 0o755 });
         console.log(`Created directory: ${directory}`);
-        
-        // Double-check write permissions
-        await access(directory, fs.constants.W_OK);
-        console.log(`Verified write access to: ${directory}`);
-        
         return true;
       } catch (mkdirErr) {
         console.error(`Failed to create directory ${directory}:`, mkdirErr);
@@ -69,56 +63,50 @@ async function ensureDirectoryExists(directory) {
   }
 }
 
-// Ensure directory exists before server starts
+// Create directory structure sequentially to ensure each level has proper permissions
 (async () => {
-  console.log('Starting directory creation process for uploads...');
+  // First create the base uploads directory
+  const uploadsPath = path.join(baseDir, uploadsDir);
+  await ensureDirectoryExists(uploadsPath);
   
-  // Create each level of the directory structure separately
-  const pathSegments = uploadsRelativePath.split('/');
-  let currentPath = baseDir;
+  // Then create the assets subdirectory
+  const assetsPath = path.join(uploadsPath, assetsDir);
+  await ensureDirectoryExists(assetsPath);
   
-  for (const segment of pathSegments) {
-    currentPath = path.join(currentPath, segment);
-    console.log(`Creating directory segment: ${currentPath}`);
-    const success = await ensureDirectoryExists(currentPath);
-    
-    if (!success) {
-      console.error(`CRITICAL: Failed to create directory segment: ${currentPath}`);
-      console.error(`This will cause file uploads to fail!`);
-      break;
-    }
-  }
+  // Finally create the logos subdirectory
+  const logosPath = path.join(assetsPath, logosDir);
+  await ensureDirectoryExists(logosPath);
   
-  // Final verification of the complete path
+  // Log the directory structure for verification
   try {
-    const stats = fs.statSync(uploadDir);
-    console.log(`Upload directory exists: ${uploadDir}`);
-    console.log(`Directory permissions: ${stats.mode.toString(8)}`);
-    console.log(`Directory owner: ${stats.uid}, group: ${stats.gid}`);
-    console.log(`Directory is${fs.accessSync(uploadDir, fs.constants.W_OK) ? ' not' : ''} writable`);
-  } catch (err) {
-    console.error(`Could not verify upload directory: ${err.message}`);
+    console.log("Directory structure:");
+    console.log(`- Base dir: ${baseDir} - ${fs.existsSync(baseDir) ? 'Exists' : 'Missing'}`);
+    console.log(`- Uploads: ${uploadsPath} - ${fs.existsSync(uploadsPath) ? 'Exists' : 'Missing'}`);
+    console.log(`- Assets: ${assetsPath} - ${fs.existsSync(assetsPath) ? 'Exists' : 'Missing'}`);
+    console.log(`- Logos: ${logosPath} - ${fs.existsSync(logosPath) ? 'Exists' : 'Missing'}`);
+  } catch (error) {
+    console.error("Error checking directory structure:", error);
   }
 })();
 
-// Configure multer for file uploads with enhanced reliability
+// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    console.log(`Starting file upload to: ${uploadDir}`);
+    console.log(`Starting file upload to: ${fullUploadPath}`);
     
     // Ensure directory exists before storing
-    ensureDirectoryExists(uploadDir)
+    ensureDirectoryExists(fullUploadPath)
       .then(success => {
         if (success) {
-          console.log(`Will store file in: ${uploadDir}`);
-          cb(null, uploadDir);
+          console.log(`Will store file in: ${fullUploadPath}`);
+          cb(null, fullUploadPath);
         } else {
-          console.error(`Cannot save file - upload directory issue: ${uploadDir}`);
+          console.error(`Cannot save file - upload directory issue: ${fullUploadPath}`);
           cb(new Error('Upload directory is not accessible'), null);
         }
       })
       .catch(err => {
-        console.error(`Error preparing upload directory: ${uploadDir}`, err);
+        console.error(`Error preparing upload directory: ${fullUploadPath}`, err);
         cb(err, null);
       });
   },
@@ -136,7 +124,7 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 1 * 1024 * 1024, // 1MB limit to avoid timeouts
+    fileSize: 1 * 1024 * 1024, // 1MB limit
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -164,6 +152,15 @@ router.post('/', upload.fields([
     console.error('No files were uploaded in the request');
     return res.status(400).json({ error: 'No files were uploaded' });
   }
+  
+  // Add upload path information to request for controller reference
+  req.uploadInfo = {
+    baseDir,
+    uploadsDir,
+    assetsDir,
+    logosDir,
+    fullUploadPath
+  };
   
   // Validate the uploaded files exist on disk before proceeding
   let filesOk = true;
