@@ -2,8 +2,6 @@
 const logoModel = require('../models/logoModel');
 const { v4: uuidv4 } = require('uuid');
 const fileUtils = require('../utils/fileUtils');
-const path = require('path');
-const fs = require('fs');
 
 /**
  * Get all logos
@@ -93,15 +91,6 @@ exports.uploadLogos = async (req, res) => {
     const uploadInfo = req.uploadInfo || {};
     
     console.log('Upload info from request:', uploadInfo);
-    
-    // Ensure the upload directory exists with proper permissions
-    const isProduction = process.env.NODE_ENV === 'production';
-    const baseDir = process.env.UPLOAD_BASE_DIR || 
-                    (isProduction ? '/home/entrsolu/api.climasys.entrsolutions.com' : path.join(__dirname, '../../'));
-    const uploadsPath = path.join(baseDir, 'uploads', 'assets', 'logos');
-    
-    console.log(`Ensuring upload directory exists: ${uploadsPath}`);
-    await fileUtils.ensureDirectoryExists(uploadsPath);
 
     // Process logos
     if (files.primaryLogo && files.primaryLogo[0]) {
