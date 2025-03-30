@@ -60,6 +60,7 @@ exports.updateMedicalRecord = async (req, res) => {
     
     // Explicitly handle certificateEnabled as a boolean
     if (recordData.certificateEnabled !== undefined) {
+      // Convert any truthy/falsy value to a strict boolean
       recordData.certificateEnabled = Boolean(recordData.certificateEnabled);
       console.log('Certificate status set to:', recordData.certificateEnabled);
     }
