@@ -43,6 +43,10 @@ exports.updateLogo = async (logo) => {
       [logo.position]
     );
     
+    console.log(`Model: Check for existing ${logo.position} logo returned:`, existingLogos);
+    
+    let logoId;
+    
     if (existingLogos.length > 0) {
       // Update existing logo - explicitly set the URL to ensure update
       console.log(`Model: Updating existing logo for position ${logo.position}`);
@@ -52,33 +56,43 @@ exports.updateLogo = async (logo) => {
       );
       console.log(`Model: Updated logo with ID: ${existingLogos[0].id}, Result:`, result);
       
-      // Verify the update occurred
-      const [verifyRows] = await db.query(
-        'SELECT * FROM logos WHERE position = ?',
-        [logo.position]
-      );
-      console.log(`Model: Verification after update:`, verifyRows[0]);
+      logoId = existingLogos[0].id;
       
-      return existingLogos[0].id;
+      // If no rows were affected, force an insert
+      if (result.affectedRows === 0) {
+        console.warn(`Model: Update failed for logo position ${logo.position}, forcing insert`);
+        logoId = uuidv4();
+        const [insertResult] = await db.query(
+          'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
+          [logoId, logo.url, logo.position]
+        );
+        console.log(`Model: Forced insert with ID: ${logoId}, Result:`, insertResult);
+      }
     } else {
       // Insert new logo
       console.log(`Model: Creating new logo for position ${logo.position}`);
-      const logoId = uuidv4();
+      logoId = logo.id || uuidv4();
       const [result] = await db.query(
         'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
         [logoId, logo.url, logo.position]
       );
       console.log(`Model: Created new logo with ID: ${logoId}, Result:`, result);
-      
-      // Verify the insert occurred
-      const [verifyRows] = await db.query(
-        'SELECT * FROM logos WHERE id = ?',
-        [logoId]
-      );
-      console.log(`Model: Verification after insert:`, verifyRows[0]);
-      
-      return logoId;
     }
+    
+    // Verify the update/insert occurred
+    const [verifyRows] = await db.query(
+      'SELECT * FROM logos WHERE position = ?',
+      [logo.position]
+    );
+    
+    if (verifyRows.length === 0) {
+      console.error(`Model: Verification failed - no logo found for position ${logo.position} after update`);
+      throw new Error(`Failed to update logo in database: Verification failed`);
+    }
+    
+    console.log(`Model: Verification successful - logo for position ${logo.position}:`, verifyRows[0]);
+    
+    return logoId;
   } catch (error) {
     console.error('Database error in updateLogo:', error);
     throw new Error(`Failed to update logo in database: ${error.message}`);

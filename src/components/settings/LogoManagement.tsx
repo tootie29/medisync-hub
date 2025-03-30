@@ -16,11 +16,12 @@ const LogoManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
 
   useEffect(() => {
     // Fetch the current logos from the database
     fetchLogos();
-  }, []);
+  }, [lastRefresh]);
 
   const fetchLogos = async () => {
     setIsLoadingLogos(true);
@@ -73,13 +74,17 @@ const LogoManagement = () => {
 
   const handlePrimaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setPrimaryLogo(e.target.files[0]);
+      const file = e.target.files[0];
+      console.log('Selected primary logo file:', file.name, file.type, file.size);
+      setPrimaryLogo(file);
     }
   };
 
   const handleSecondaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSecondaryLogo(e.target.files[0]);
+      const file = e.target.files[0];
+      console.log('Selected secondary logo file:', file.name, file.type, file.size);
+      setSecondaryLogo(file);
     }
   };
 
@@ -104,19 +109,23 @@ const LogoManagement = () => {
       // Only proceed if at least one file is selected
       if (primaryLogo || secondaryLogo) {
         console.log('LogoManagement: Uploading logos...', 
-          primaryLogo ? primaryLogo.name : 'no primary', 
-          secondaryLogo ? secondaryLogo.name : 'no secondary'
+          primaryLogo ? `primary: ${primaryLogo.name}` : 'no primary', 
+          secondaryLogo ? `secondary: ${secondaryLogo.name}` : 'no secondary'
         );
+        
+        // Debug formData
+        console.log('LogoManagement: FormData contents:');
+        for (let [key, value] of formData.entries()) {
+          if (value instanceof File) {
+            console.log(`${key}: File ${value.name}, size: ${value.size}, type: ${value.type}`);
+          } else {
+            console.log(`${key}: ${value}`);
+          }
+        }
         
         // Add a client-side timeout of 30 seconds for the upload
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
-        
-        // Log formData before sending
-        console.log('LogoManagement: FormData entries:');
-        for (let pair of formData.entries()) {
-          console.log(pair[0], pair[1]);
-        }
         
         const response = await axios.post('/api/logos', formData, {
           headers: {
@@ -130,27 +139,41 @@ const LogoManagement = () => {
         console.log('LogoManagement: Upload response:', response.data);
         
         if (response.data.uploads && response.data.uploads.length > 0) {
-          toast.success('Logos updated successfully');
-          // Reset file inputs
-          setPrimaryLogo(null);
-          setSecondaryLogo(null);
+          // Check for any errors in the uploads
+          const uploadErrors = response.data.uploads.filter(upload => upload.error);
           
-          // Clear file input fields by resetting the form
-          const fileInputs = document.querySelectorAll('input[type="file"]');
-          fileInputs.forEach((input: any) => {
-            input.value = '';
-          });
-          
-          // Refresh the logos from server after a short delay to allow server processing
-          setTimeout(() => {
-            fetchLogos();
+          if (uploadErrors.length > 0) {
+            const errorMsg = uploadErrors.map(err => 
+              `${err.position} logo: ${err.error} - ${err.details}`
+            ).join('; ');
             
-            // Trigger a refresh of the authentication layout if it's loaded
-            // This will update the logos in the login/register pages
-            window.dispatchEvent(new CustomEvent('refreshLogos'));
-          }, 1000);
+            setError(`Some logos failed to upload: ${errorMsg}`);
+            toast.error('Some logos failed to upload');
+          } else {
+            toast.success('Logos updated successfully');
+            
+            // Reset file inputs
+            setPrimaryLogo(null);
+            setSecondaryLogo(null);
+            
+            // Clear file input fields by resetting the form
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach((input: any) => {
+              input.value = '';
+            });
+            
+            // Force refresh the logos
+            setLastRefresh(Date.now());
+            
+            // Trigger a refresh of the authentication layout
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('refreshLogos'));
+              console.log('LogoManagement: Dispatched refreshLogos event');
+            }, 500);
+          }
         } else {
           toast.error('No logos were updated. Please try again.');
+          setError('Upload completed but no logos were updated by the server');
         }
       } else {
         toast.error('Please select at least one logo to update');
@@ -163,6 +186,9 @@ const LogoManagement = () => {
         errorMessage = 'Upload timed out. Please try with a smaller image or check your connection.';
       } else if (error.response) {
         errorMessage = `Error: ${error.response.data.error || error.response.statusText}`;
+        if (error.response.data.details) {
+          errorMessage += ` - ${error.response.data.details}`;
+        }
       }
       
       setError(errorMessage);
@@ -170,6 +196,15 @@ const LogoManagement = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleManualRefresh = () => {
+    setLastRefresh(Date.now());
+    fetchLogos();
+    toast.info('Refreshing logos...');
+    
+    // Also refresh in the auth layout
+    window.dispatchEvent(new CustomEvent('refreshLogos'));
   };
 
   return (
@@ -185,7 +220,7 @@ const LogoManagement = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchLogos}
+              onClick={handleManualRefresh}
               className="mt-2"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -230,6 +265,11 @@ const LogoManagement = () => {
               onChange={handlePrimaryLogoChange}
               className="cursor-pointer"
             />
+            {primaryLogo && (
+              <p className="text-xs text-gray-500 mt-1">
+                Selected: {primaryLogo.name} ({Math.round(primaryLogo.size / 1024)} KB)
+              </p>
+            )}
           </div>
         </div>
         
@@ -267,27 +307,43 @@ const LogoManagement = () => {
               onChange={handleSecondaryLogoChange}
               className="cursor-pointer"
             />
+            {secondaryLogo && (
+              <p className="text-xs text-gray-500 mt-1">
+                Selected: {secondaryLogo.name} ({Math.round(secondaryLogo.size / 1024)} KB)
+              </p>
+            )}
           </div>
         </div>
       </div>
       
-      <Button
-        onClick={handleSubmit}
-        disabled={isLoading || (!primaryLogo && !secondaryLogo)}
-        className="bg-medical-primary hover:bg-medical-secondary text-white"
-      >
-        {isLoading ? (
-          <>
-            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-            Updating Logos...
-          </>
-        ) : (
-          <>
-            <Upload className="mr-2 h-4 w-4" />
-            Update Logos
-          </>
-        )}
-      </Button>
+      <div className="flex items-center gap-4">
+        <Button
+          onClick={handleSubmit}
+          disabled={isLoading || (!primaryLogo && !secondaryLogo)}
+          className="bg-medical-primary hover:bg-medical-secondary text-white"
+        >
+          {isLoading ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Updating Logos...
+            </>
+          ) : (
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              Update Logos
+            </>
+          )}
+        </Button>
+        
+        <Button
+          variant="outline"
+          onClick={handleManualRefresh}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingLogos ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
     </div>
   );
 };
