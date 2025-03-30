@@ -2,6 +2,9 @@
 const logoModel = require('../models/logoModel');
 const { v4: uuidv4 } = require('uuid');
 const fileUtils = require('../utils/fileUtils');
+const path = require('path');
+const fs = require('fs');
+const { promisify } = require('util');
 
 /**
  * Get all logos
@@ -71,6 +74,74 @@ const getDefaultLogo = (req, res, position) => {
 };
 
 /**
+ * Get file system diagnostics for debugging
+ */
+exports.getUploadDiagnostics = async (req, res) => {
+  try {
+    const baseDir = process.env.UPLOAD_BASE_DIR || '/home/entrsolu/api.climasys.entrsolutions.com';
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      baseDir,
+      directories: {}
+    };
+    
+    // Check key directories
+    const dirsToCheck = [
+      { path: baseDir, name: 'baseDir' },
+      { path: path.join(baseDir, 'uploads'), name: 'uploads' },
+      { path: path.join(baseDir, 'uploads/assets'), name: 'assets' },
+      { path: path.join(baseDir, 'uploads/assets/logos'), name: 'logos' }
+    ];
+    
+    for (const dir of dirsToCheck) {
+      diagnostics.directories[dir.name] = await fileUtils.getFileInfo(dir.path);
+    }
+    
+    // Try to write a test file
+    const testFilePath = path.join(baseDir, 'uploads/assets/logos', `test-${Date.now()}.txt`);
+    try {
+      await promisify(fs.writeFile)(testFilePath, 'test');
+      diagnostics.writeTest = {
+        success: true,
+        path: testFilePath
+      };
+      
+      // Try to read it back
+      const content = await promisify(fs.readFile)(testFilePath, 'utf8');
+      diagnostics.readTest = {
+        success: true,
+        content
+      };
+      
+      // Clean up
+      await promisify(fs.unlink)(testFilePath);
+      diagnostics.deleteTest = { success: true };
+    } catch (writeError) {
+      diagnostics.writeTest = {
+        success: false,
+        error: writeError.message
+      };
+    }
+    
+    // Get current process info
+    try {
+      diagnostics.process = {
+        pid: process.pid,
+        uid: process.getuid ? process.getuid() : 'unknown',
+        gid: process.getgid ? process.getgid() : 'unknown'
+      };
+    } catch (e) {
+      diagnostics.process = { error: e.message };
+    }
+    
+    res.status(200).json(diagnostics);
+  } catch (error) {
+    console.error('Error getting upload diagnostics:', error);
+    res.status(500).json({ error: 'Failed to get upload diagnostics' });
+  }
+};
+
+/**
  * Upload logos
  */
 exports.uploadLogos = async (req, res) => {
@@ -91,7 +162,23 @@ exports.uploadLogos = async (req, res) => {
     const uploadInfo = req.uploadInfo || {};
     
     console.log('Upload info from request:', uploadInfo);
-
+    
+    // Directory diagnostics
+    const baseDir = process.env.UPLOAD_BASE_DIR || '/home/entrsolu/api.climasys.entrsolutions.com';
+    const uploadDir = path.join(baseDir, 'uploads/assets/logos');
+    
+    // Make sure the directory exists and is writable
+    const dirResult = await fileUtils.ensureDirectoryExists(uploadDir);
+    if (!dirResult.success) {
+      console.error('Upload directory issues:', dirResult);
+      return res.status(500).json({
+        error: 'Upload directory is not accessible',
+        details: dirResult
+      });
+    }
+    
+    console.log('Upload directory status:', dirResult);
+    
     // Process logos
     if (files.primaryLogo && files.primaryLogo[0]) {
       const primaryResult = await processLogoUpload(req, files.primaryLogo[0], 'primary', baseUrl);
@@ -141,8 +228,38 @@ const processLogoUpload = async (req, logoFile, position, baseUrl) => {
     path: logoFile.path
   });
   
+  // Get file info for diagnostics
+  const fileInfo = await fileUtils.getFileInfo(logoFile.path);
+  console.log(`${position} logo file info:`, fileInfo);
+  
+  // If file doesn't exist or isn't readable, abort
+  if (!fileInfo.exists || !fileInfo.isReadable) {
+    return {
+      position: position,
+      error: 'File not saved correctly or not readable',
+      details: `File issues at ${logoFile.path}`,
+      fileInfo
+    };
+  }
+  
   // Define a URL path that will be stored in the database
-  const relativePath = `/uploads/assets/logos/${logoFile.filename}`;
+  // Make sure it's relative to API server
+  const baseDir = process.env.UPLOAD_BASE_DIR || '/home/entrsolu/api.climasys.entrsolutions.com';
+  let relativePath;
+  
+  if (logoFile.path.startsWith(baseDir)) {
+    // Extract relative path from absolute path
+    relativePath = logoFile.path.substring(baseDir.length);
+    // Ensure it starts with /
+    if (!relativePath.startsWith('/')) {
+      relativePath = '/' + relativePath;
+    }
+  } else {
+    // Use default path structure
+    relativePath = `/uploads/assets/logos/${logoFile.filename}`;
+  }
+  
+  console.log(`${position} logo relative path: ${relativePath}`);
   
   // Double-check file exists
   if (!fileUtils.verifyFileExists(logoFile.path)) {
@@ -156,7 +273,10 @@ const processLogoUpload = async (req, logoFile, position, baseUrl) => {
   console.log(`${position} logo saved at ${logoFile.path}`);
   
   // Ensure file has correct permissions
-  await fileUtils.ensureFilePermissions(logoFile.path);
+  const permissionResult = await fileUtils.ensureFilePermissions(logoFile.path);
+  if (!permissionResult) {
+    console.warn(`Could not set permissions for ${logoFile.path}, but continuing anyway`);
+  }
   
   try {
     // Add to database with transaction support
@@ -177,7 +297,9 @@ const processLogoUpload = async (req, logoFile, position, baseUrl) => {
       position: position,
       filename: logoFile.filename,
       path: `${baseUrl}${relativePath}`,
-      db_id: id
+      db_id: id,
+      originalFile: logoFile.path,
+      relativePath: relativePath
     };
     
   } catch (dbError) {
@@ -185,7 +307,9 @@ const processLogoUpload = async (req, logoFile, position, baseUrl) => {
     return {
       position: position,
       error: 'Database update failed',
-      details: dbError.message
+      details: dbError.message,
+      originalFile: logoFile.path,
+      relativePath: relativePath
     };
   }
 };

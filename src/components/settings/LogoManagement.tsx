@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive } from 'lucide-react';
+import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive, Terminal, Bug } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
 
 const LogoManagement = () => {
@@ -19,6 +20,8 @@ const LogoManagement = () => {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [serverInfo, setServerInfo] = useState<string | null>(null);
   const [serverDetails, setServerDetails] = useState<any>(null);
+  const [diagnosticInfo, setDiagnosticInfo] = useState<any>(null);
+  const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
 
   useEffect(() => {
     fetchLogos();
@@ -73,6 +76,19 @@ const LogoManagement = () => {
       setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
     } finally {
       setIsLoadingLogos(false);
+    }
+  };
+
+  const fetchDiagnostics = async () => {
+    try {
+      setShowDiagnostics(true);
+      const response = await axios.get('/api/logos/diagnostics');
+      setDiagnosticInfo(response.data);
+      console.log('Diagnostics info:', response.data);
+      toast.success('Diagnostics information loaded');
+    } catch (error) {
+      console.error('Failed to fetch diagnostics:', error);
+      toast.error('Failed to load diagnostics information');
     }
   };
 
@@ -178,6 +194,9 @@ const LogoManagement = () => {
             
             setError(`Some logos failed to upload: ${errorMsg}`);
             toast.error('Some logos failed to upload');
+            
+            // Automatically fetch diagnostics if there's an error
+            await fetchDiagnostics();
           } else {
             toast.success('Logos updated successfully');
             
@@ -209,6 +228,9 @@ const LogoManagement = () => {
           
           toast.error('No logos were updated. Please check server logs.');
           setError('Upload completed but no logos were updated by the server. This might be a file permission issue on the server.');
+          
+          // Automatically fetch diagnostics if there's an error
+          await fetchDiagnostics();
         }
       } else {
         toast.error('Please select at least one logo to update');
@@ -228,6 +250,9 @@ const LogoManagement = () => {
       
       setError(errorMessage);
       toast.error(errorMessage);
+      
+      // Automatically fetch diagnostics if there's an error
+      await fetchDiagnostics();
     } finally {
       setIsLoading(false);
       setUploadProgress(0);
@@ -306,6 +331,15 @@ const LogoManagement = () => {
                 Retry
               </Button>
               
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchDiagnostics}
+              >
+                <Bug className="h-4 w-4 mr-2" />
+                Run Diagnostics
+              </Button>
+              
               {!serverDetails && (
                 <Button
                   variant="outline"
@@ -337,6 +371,74 @@ const LogoManagement = () => {
           <div>
             <p className="text-blue-600 font-medium">Server Information</p>
             <p className="text-blue-600/80 text-sm mt-1">{serverInfo}</p>
+          </div>
+        </div>
+      )}
+      
+      {showDiagnostics && diagnosticInfo && (
+        <div className="bg-gray-100 p-4 rounded-md mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center">
+              <Terminal className="h-5 w-5 text-gray-600 mr-2" />
+              <p className="font-medium">Server Diagnostics</p>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowDiagnostics(false)}
+            >
+              Hide
+            </Button>
+          </div>
+          
+          <div className="text-xs font-mono bg-black text-green-400 p-3 rounded overflow-auto max-h-60">
+            <div>Timestamp: {diagnosticInfo.timestamp}</div>
+            <div className="mt-1">Base Directory: {diagnosticInfo.baseDir}</div>
+            
+            <div className="mt-2 font-semibold">Directory Status:</div>
+            {Object.entries(diagnosticInfo.directories).map(([name, info]: [string, any]) => (
+              <div key={name} className="ml-2">
+                <div>{name}: {info.exists ? '✅ Exists' : '❌ Missing'}</div>
+                {info.exists && (
+                  <>
+                    <div className="ml-2">Permissions: {info.permissions}</div>
+                    <div className="ml-2">Owner: {info.owner}</div>
+                    <div className="ml-2">
+                      {info.isWritable 
+                        ? '✅ Directory is writable' 
+                        : '❌ Directory is NOT writable'}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+            
+            <div className="mt-2 font-semibold">Write Test:</div>
+            {diagnosticInfo.writeTest ? (
+              <div className="ml-2">
+                {diagnosticInfo.writeTest.success 
+                  ? `✅ Successfully wrote test file to ${diagnosticInfo.writeTest.path}` 
+                  : `❌ Failed to write test file: ${diagnosticInfo.writeTest.error}`}
+              </div>
+            ) : (
+              <div className="ml-2">No write test performed</div>
+            )}
+            
+            <div className="mt-2 font-semibold">Process Info:</div>
+            {diagnosticInfo.process ? (
+              <div className="ml-2">
+                <div>PID: {diagnosticInfo.process.pid}</div>
+                <div>UID: {diagnosticInfo.process.uid}</div>
+                <div>GID: {diagnosticInfo.process.gid}</div>
+              </div>
+            ) : (
+              <div className="ml-2">No process info available</div>
+            )}
+            
+            <div className="mt-3 text-yellow-300">
+              If directories show as not writable, contact your server administrator to set proper permissions. 
+              Command to fix: <span className="bg-gray-800 px-1">chmod -R 755 {diagnosticInfo.baseDir}/uploads</span>
+            </div>
           </div>
         </div>
       )}
@@ -464,6 +566,16 @@ const LogoManagement = () => {
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingLogos ? 'animate-spin' : ''}`} />
           Refresh
+        </Button>
+        
+        <Button
+          variant="outline"
+          onClick={fetchDiagnostics}
+          disabled={isLoading}
+          className="w-full sm:w-auto"
+        >
+          <Bug className="mr-2 h-4 w-4" />
+          Diagnostics
         </Button>
         
         <div className="flex items-center mt-2 sm:mt-0 text-xs text-gray-500">

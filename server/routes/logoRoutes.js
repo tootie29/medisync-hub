@@ -6,6 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { promisify } = require('util');
+const fileUtils = require('../utils/fileUtils');
 
 // Convert fs methods to Promise-based for better error handling
 const mkdir = promisify(fs.mkdir);
@@ -17,7 +18,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // Get base directory from environment or use default
 const baseDir = process.env.UPLOAD_BASE_DIR || 
-                (isProduction ? '/home/entrsolu' : path.join(__dirname, '../'));
+                (isProduction ? '/home/entrsolu/api.climasys.entrsolutions.com' : path.join(__dirname, '../'));
 
 // Define upload paths
 const uploadsDir = 'uploads';
@@ -29,78 +30,43 @@ console.log(`Server environment: ${isProduction ? 'Production (cPanel)' : 'Devel
 console.log(`Base directory: ${baseDir}`);
 console.log(`Full upload path: ${fullUploadPath}`);
 
-// Recursive directory creation function with proper permissions
-async function ensureDirectoryExists(directory) {
-  console.log(`Ensuring directory exists: ${directory}`);
+// Run directory initialization at startup
+(async () => {
   try {
-    // Check if directory exists
-    await access(directory, fs.constants.F_OK);
-    console.log(`Directory already exists: ${directory}`);
+    // Use the fileUtils method for ensuring directory exists
+    const result = await fileUtils.ensureDirectoryExists(fullUploadPath);
     
-    // Set directory permissions to 0755 (rwxr-xr-x)
-    await chmod(directory, 0o755);
-    console.log(`Set permissions on: ${directory}`);
-    
-    return true;
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      console.log(`Directory does not exist, creating: ${directory}`);
-      try {
-        // Create directory with permissions
-        await mkdir(directory, { recursive: true, mode: 0o755 });
-        console.log(`Created directory: ${directory}`);
-        return true;
-      } catch (mkdirErr) {
-        console.error(`Failed to create directory ${directory}:`, mkdirErr);
-        return false;
+    if (result.success) {
+      console.log(`Upload directory is ready: ${fullUploadPath}`);
+      if (result.dirInfo) {
+        console.log(`  - Permissions: ${result.dirInfo.permissions}`);
+        console.log(`  - Owner: ${result.dirInfo.owner}`);
+        console.log(`  - Writable: ${result.dirInfo.isWritable ? 'Yes' : 'No'}`);
       }
     } else {
-      console.error(`Error accessing directory ${directory}:`, err);
-      return false;
+      console.error(`Failed to initialize upload directory: ${fullUploadPath}`);
+      console.error(`Error: ${result.error}`);
     }
-  }
-}
-
-// Create directory structure sequentially to ensure each level has proper permissions
-(async () => {
-  // First create the base uploads directory
-  const uploadsPath = path.join(baseDir, uploadsDir);
-  await ensureDirectoryExists(uploadsPath);
-  
-  // Then create the assets subdirectory
-  const assetsPath = path.join(uploadsPath, assetsDir);
-  await ensureDirectoryExists(assetsPath);
-  
-  // Finally create the logos subdirectory
-  const logosPath = path.join(assetsPath, logosDir);
-  await ensureDirectoryExists(logosPath);
-  
-  // Log the directory structure for verification
-  try {
-    console.log("Directory structure:");
-    console.log(`- Base dir: ${baseDir} - ${fs.existsSync(baseDir) ? 'Exists' : 'Missing'}`);
-    console.log(`- Uploads: ${uploadsPath} - ${fs.existsSync(uploadsPath) ? 'Exists' : 'Missing'}`);
-    console.log(`- Assets: ${assetsPath} - ${fs.existsSync(assetsPath) ? 'Exists' : 'Missing'}`);
-    console.log(`- Logos: ${logosPath} - ${fs.existsSync(logosPath) ? 'Exists' : 'Missing'}`);
   } catch (error) {
-    console.error("Error checking directory structure:", error);
+    console.error('Error during directory initialization:', error);
   }
 })();
 
-// Configure multer for file uploads
+// Configure multer for file uploads with improved error handling
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     console.log(`Starting file upload to: ${fullUploadPath}`);
     
     // Ensure directory exists before storing
-    ensureDirectoryExists(fullUploadPath)
-      .then(success => {
-        if (success) {
+    fileUtils.ensureDirectoryExists(fullUploadPath)
+      .then(result => {
+        if (result.success && result.isWritable) {
           console.log(`Will store file in: ${fullUploadPath}`);
           cb(null, fullUploadPath);
         } else {
           console.error(`Cannot save file - upload directory issue: ${fullUploadPath}`);
-          cb(new Error('Upload directory is not accessible'), null);
+          console.error('Directory details:', result);
+          cb(new Error(`Upload directory is not accessible or writable: ${fullUploadPath}`), null);
         }
       })
       .catch(err => {
@@ -137,6 +103,9 @@ const upload = multer({
 
 // Get all logos
 router.get('/', logoController.getAllLogos);
+
+// New diagnostic endpoint
+router.get('/diagnostics', logoController.getUploadDiagnostics);
 
 // Upload new logos with improved error handling
 router.post('/', upload.fields([
