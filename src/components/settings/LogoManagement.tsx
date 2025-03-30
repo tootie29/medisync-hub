@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -244,6 +243,15 @@ const LogoManagement = () => {
     window.dispatchEvent(new CustomEvent('refreshLogos'));
   };
 
+  const formatServerEnvironment = (details: any) => {
+    if (!details || !details.server) return "Unknown";
+    
+    const environment = details.server.environment || "unknown";
+    const dbStatus = details.database && details.database.connected ? "connected" : "not connected";
+    
+    return `${environment} mode with database ${dbStatus}`;
+  };
+
   return (
     <div className="space-y-6">
       {serverDetails && (
@@ -252,10 +260,7 @@ const LogoManagement = () => {
           <div>
             <p className="text-blue-600 font-medium">Server Environment</p>
             <p className="text-blue-600/80 text-sm mt-1">
-              Running in {serverDetails.server?.environment} mode
-              {serverDetails.database?.connected 
-                ? " with a connected database" 
-                : " but database is not connected"}
+              Running in {formatServerEnvironment(serverDetails)}
             </p>
             <div className="mt-2 flex items-center space-x-2">
               <Button
@@ -266,6 +271,17 @@ const LogoManagement = () => {
               >
                 Hide Details
               </Button>
+              {(!serverDetails.database?.connected) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleManualRefresh}
+                  className="text-xs"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Retry Connection
+                </Button>
+              )}
             </div>
           </div>
         </div>
