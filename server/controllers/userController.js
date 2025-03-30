@@ -94,6 +94,24 @@ exports.updateUser = async (req, res) => {
     const userId = req.params.id;
     const userData = req.body;
     
+    // Check for doctor role permission if not updating own profile
+    if (userData.requestingUserRole && userData.requestingUserId) {
+      const isDoctor = userData.requestingUserRole === 'doctor';
+      const isAdmin = userData.requestingUserRole === 'admin';
+      const isSelfUpdate = userData.requestingUserId === userId;
+      
+      // Remove metadata fields before updating
+      delete userData.requestingUserRole;
+      delete userData.requestingUserId;
+      
+      // If not self, doctor, or admin, reject the update
+      if (!isSelfUpdate && !isDoctor && !isAdmin) {
+        return res.status(403).json({ 
+          message: 'Permission denied. Only doctors, admins, or the user themselves can update user data.'
+        });
+      }
+    }
+    
     // First check if user exists
     const existingUser = await userModel.getById(userId);
     if (!existingUser) {

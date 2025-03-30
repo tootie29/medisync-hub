@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Link } from 'react-router-dom';
-import { Search, ExternalLink } from 'lucide-react';
+import { Search, ExternalLink, Edit } from 'lucide-react';
 import { formatDate } from '@/utils/helpers';
 import { SAMPLE_USERS } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 const PatientRecordsTable: React.FC = () => {
   const { medicalRecords } = useData();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
   // Get unique patient IDs from medical records
@@ -51,8 +53,8 @@ const PatientRecordsTable: React.FC = () => {
       )
     : patientData;
 
-  console.log("Available patients:", filteredPatients);
-  console.log("Routing to medical records with patient ID");
+  // Check if user is a doctor or admin
+  const canEditPatientData = user && (user.role === 'doctor' || user.role === 'admin');
 
   return (
     <Card>
@@ -78,7 +80,7 @@ const PatientRecordsTable: React.FC = () => {
                 <TableHead>Role</TableHead>
                 <TableHead>Record Count</TableHead>
                 <TableHead>Latest Record</TableHead>
-                <TableHead className="text-right">View</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -95,12 +97,23 @@ const PatientRecordsTable: React.FC = () => {
                       }
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button asChild size="sm" variant="ghost">
-                        <Link to={`/records?patient=${patient?.id}`}>
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Records
-                        </Link>
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to={`/records?patient=${patient?.id}`}>
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            Records
+                          </Link>
+                        </Button>
+                        
+                        {canEditPatientData && (
+                          <Button asChild size="sm" variant="ghost">
+                            <Link to={`/patients/edit/${patient?.id}`}>
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

@@ -41,6 +41,7 @@ interface AuthContextType {
   logout: () => void;
   register: (userData: Partial<User>, password: string) => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
+  updatePatient: (patientId: string, userData: Partial<User>) => Promise<void>;
   isRegistering: boolean;
 }
 
@@ -247,6 +248,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           staff_id: userData.staffId,
           position: userData.position,
         }),
+        // Add metadata about the requesting user for permission checks
+        requestingUserId: user.id,
+        requestingUserRole: user.role
       };
       
       // Update user through API
@@ -279,8 +283,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // New function to allow doctors to update patient data
+  const updatePatient = async (patientId: string, userData: Partial<User>) => {
+    if (!user) {
+      throw new Error('User not logged in');
+    }
+
+    // Only doctors and admins can update other users' data
+    if (user.role !== 'doctor' && user.role !== 'admin') {
+      throw new Error('Permission denied. Only doctors and admins can update patient data.');
+    }
+
+    setIsLoading(true);
+    try {
+      if (isPreviewMode) {
+        // In preview mode, simulate successful update
+        toast.success('Patient data updated successfully!');
+        return;
+      }
+      
+      // Format the data for the API
+      const formattedData = {
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        date_of_birth: userData.dateOfBirth,
+        gender: userData.gender,
+        address: userData.address,
+        emergency_contact: userData.emergencyContact,
+        student_id: userData.studentId,
+        department: userData.department,
+        staff_id: userData.staffId,
+        position: userData.position,
+        // Add metadata about the requesting user for permission checks
+        requestingUserId: user.id,
+        requestingUserRole: user.role
+      };
+      
+      // Update patient through API
+      await apiClient.put(`/users/${patientId}`, formattedData);
+      
+      toast.success('Patient data updated successfully!');
+    } catch (error) {
+      let errorMessage = 'Failed to update patient data';
+      
+      if (axios.isAxiosError(error) && error.response) {
+        errorMessage = error.response.data?.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isRegistering, login, logout, register, updateProfile }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isLoading, 
+      isRegistering, 
+      login, 
+      logout, 
+      register, 
+      updateProfile,
+      updatePatient 
+    }}>
       {children}
     </AuthContext.Provider>
   );
