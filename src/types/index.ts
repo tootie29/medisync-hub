@@ -39,6 +39,7 @@ export interface MedicalRecord {
   notes?: string;
   followUpDate?: string;
   vitalSigns?: VitalSigns;
+  certificateEnabled?: boolean; // Add the new property
   createdAt: string;
   updatedAt: string;
 }
@@ -153,6 +154,7 @@ export const SAMPLE_MEDICAL_RECORDS: MedicalRecord[] = [
       bloodPressure: '120/80',
       bloodGlucose: 95
     },
+    certificateEnabled: false,
     createdAt: '2023-03-15T10:30:00Z',
     updatedAt: '2023-03-15T10:30:00Z',
   },
@@ -175,6 +177,7 @@ export const SAMPLE_MEDICAL_RECORDS: MedicalRecord[] = [
       bloodPressure: '130/85',
       bloodGlucose: 100
     },
+    certificateEnabled: false,
     createdAt: '2023-04-10T14:15:00Z',
     updatedAt: '2023-04-10T14:15:00Z',
   },
