@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { MedicalRecord, SAMPLE_USERS, VitalSigns } from '@/types';
 import { format } from 'date-fns';
-import { Activity, Calendar, FileText, Filter, AwardCheck } from 'lucide-react';
+import { Activity, Calendar, FileText, Filter, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -363,7 +364,7 @@ const MedicalRecords: React.FC = () => {
                               }));
                             }}
                           />
-                          <AwardCheck className={`h-5 w-5 ${formData.certificateEnabled ? 'text-green-500' : 'text-gray-300'}`} />
+                          <Award className={`h-5 w-5 ${formData.certificateEnabled ? 'text-green-500' : 'text-gray-300'}`} />
                         </div>
                       </div>
                     </div>
