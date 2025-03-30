@@ -9,44 +9,37 @@ import {
 import { toast } from "sonner";
 import axios from 'axios';
 
-// Define the API URL with improved environment detection
 const getApiUrl = () => {
-  // First check if we're running in the Lovable preview environment
   const isLovablePreview = window.location.hostname.includes('lovableproject.com');
   if (isLovablePreview) {
     console.log('Running in Lovable preview - using sample data instead of API');
     return null;
   }
   
-  // For production environments
   const hostname = window.location.hostname;
   if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
     return 'https://api.climasys.entrsolutions.com/api';
   }
   
-  // Environment variable (if set)
   const envApiUrl = import.meta.env.VITE_API_URL;
   if (envApiUrl) {
     return envApiUrl;
   }
   
-  // Local development fallback
   return 'http://localhost:8080/api';
 };
 
 const API_URL = getApiUrl();
 console.log('Using API URL in DataContext:', API_URL);
 
-// Create a custom axios instance with improved retry logic
 const apiClient = axios.create({
-  baseURL: API_URL || 'http://localhost:8080/api', // Fallback for preview mode
-  timeout: 15000, // 15 seconds timeout
+  baseURL: API_URL || 'http://localhost:8080/api',
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   }
 });
 
-// Add response interceptor for error handling
 apiClient.interceptors.response.use(
   response => response,
   async error => {
@@ -54,7 +47,6 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
     
-    // For Lovable preview, return mock data instead of retrying
     if (window.location.hostname.includes('lovableproject.com')) {
       console.log('API error in preview mode, will fall back to sample data');
       return Promise.reject(error);
@@ -62,23 +54,19 @@ apiClient.interceptors.response.use(
     
     const originalRequest = error.config;
     
-    // Don't retry if we've already tried 3 times
     if (originalRequest._retryCount >= 3) {
       console.error('Request failed after multiple retries:', error.message);
       return Promise.reject(error);
     }
     
-    // Initialize retry count
     if (originalRequest._retryCount === undefined) {
       originalRequest._retryCount = 0;
     }
     
-    // Increment retry count
     originalRequest._retryCount++;
     
     console.log(`Retrying request (${originalRequest._retryCount}/3)...`);
     
-    // Wait before retrying (exponential backoff)
     const delay = originalRequest._retryCount * 1000;
     await new Promise(resolve => setTimeout(resolve, delay));
     
@@ -91,22 +79,18 @@ interface DataContextType {
   appointments: Appointment[];
   medicines: Medicine[];
   
-  // Loading states
   isLoadingRecords: boolean;
   isLoadingAppointments: boolean;
   isLoadingMedicines: boolean;
   
-  // User functions
   getUserById: (id: string) => User | undefined;
   
-  // Medical Records functions
   getMedicalRecordsByPatientId: (patientId: string) => MedicalRecord[];
   getMedicalRecordById: (id: string) => MedicalRecord | undefined;
   addMedicalRecord: (record: Omit<MedicalRecord, 'id' | 'createdAt' | 'updatedAt' | 'bmi'>) => Promise<MedicalRecord>;
   updateMedicalRecord: (id: string, record: Partial<MedicalRecord>) => Promise<MedicalRecord>;
   deleteMedicalRecord: (id: string) => Promise<void>;
   
-  // Appointments functions
   getAppointmentsByPatientId: (patientId: string) => Appointment[];
   getAppointmentsByDoctorId: (doctorId: string) => Appointment[];
   getAppointmentById: (id: string) => Appointment | undefined;
@@ -114,13 +98,11 @@ interface DataContextType {
   updateAppointment: (id: string, appointment: Partial<Appointment>) => Promise<Appointment>;
   deleteAppointment: (id: string) => Promise<void>;
   
-  // Medicines functions
   getMedicineById: (id: string) => Medicine | undefined;
   addMedicine: (medicine: Omit<Medicine, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Medicine>;
   updateMedicine: (id: string, medicine: Partial<Medicine>) => Promise<Medicine>;
   deleteMedicine: (id: string) => Promise<void>;
   
-  // Refresh data functions
   refreshMedicalRecords: () => Promise<void>;
   refreshAppointments: () => Promise<void>;
   refreshMedicines: () => Promise<void>;
@@ -145,7 +127,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoadingRecords(false);
       setIsLoadingAppointments(false);
       setIsLoadingMedicines(false);
-      // In preview mode, we won't load any data from API
       return;
     }
 
@@ -236,7 +217,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       
       if (isPreviewMode) {
-        // In preview mode, create a mock record with a fake ID
         const mockRecord: MedicalRecord = {
           ...recordToCreate,
           id: `record-${Date.now()}`,
@@ -327,7 +307,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addAppointment = async (appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> => {
     try {
       if (isPreviewMode) {
-        // In preview mode, create a mock appointment with a fake ID
         const mockAppointment: Appointment = {
           ...appointment,
           id: `appointment-${Date.now()}`,
@@ -354,7 +333,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return mockAppointment;
       }
       
-      const response = await apiClient.post('/appointments', appointment);
+      let appointmentToSend = { ...appointment };
+      
+      const storedUser = localStorage.getItem('currentUser');
+      const currentUser = storedUser ? JSON.parse(storedUser) : null;
+      
+      if (currentUser && currentUser.id && 
+          (appointmentToSend.patientId.startsWith('user-') || 
+           appointmentToSend.patientId.includes('-temp-'))) {
+        console.log(`Replacing temporary patient ID with actual user ID: ${currentUser.id}`);
+        appointmentToSend.patientId = currentUser.id;
+      }
+      
+      const response = await apiClient.post('/appointments', appointmentToSend);
       const newAppointment = response.data;
       
       setAppointments(prev => [...prev, newAppointment]);
@@ -422,7 +413,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addMedicine = async (medicine: Omit<Medicine, 'id' | 'createdAt' | 'updatedAt'>): Promise<Medicine> => {
     try {
       if (isPreviewMode) {
-        // In preview mode, create a mock medicine with a fake ID
         const mockMedicine: Medicine = {
           ...medicine,
           id: `medicine-${Date.now()}`,

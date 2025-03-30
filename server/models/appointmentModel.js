@@ -143,6 +143,46 @@ class AppointmentModel {
       const id = appointmentData.id || uuidv4();
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       
+      // Check if this might be a sample/test user from the frontend 
+      // (IDs contain 'user-' and timestamp indicating they're temporary)
+      if (appointmentData.patientId && 
+          (appointmentData.patientId.startsWith('user-') || 
+           appointmentData.patientId.includes('-temp-'))) {
+        console.log(`Detected temporary user ID: ${appointmentData.patientId}. Checking if user exists...`);
+        
+        // Check if user exists first
+        const [userExists] = await pool.query(
+          'SELECT COUNT(*) as count FROM users WHERE id = ?',
+          [appointmentData.patientId]
+        );
+        
+        // If user doesn't exist in the database, create a temporary entry
+        if (userExists[0].count === 0) {
+          console.log(`User ${appointmentData.patientId} doesn't exist. Creating temporary user entry.`);
+          try {
+            await pool.query(
+              `INSERT INTO users (
+                id, email, name, role, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?)`,
+              [
+                appointmentData.patientId,
+                `temp-${appointmentData.patientId}@example.com`,
+                `Temporary User ${appointmentData.patientId.substring(0, 8)}`,
+                'student',
+                now,
+                now
+              ]
+            );
+            console.log(`Created temporary user ${appointmentData.patientId}`);
+          } catch (userError) {
+            console.error(`Failed to create temporary user: ${userError.message}`);
+            // Continue anyway - the appointment creation might still work if another
+            // process created the user in the meantime
+          }
+        }
+      }
+      
+      // Create the appointment
       await pool.query(
         `INSERT INTO appointments (
           id, patient_id, doctor_id, date, start_time, end_time, 

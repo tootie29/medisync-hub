@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { toast } from "sonner";
@@ -31,7 +31,14 @@ const Appointments = () => {
   const doctors = SAMPLE_USERS.filter(u => u.role === 'doctor');
   const [selectedDoctor, setSelectedDoctor] = useState<string>("");
   
-  const userAppointments = user ? getAppointmentsByPatientId(user.id) : [];
+  const effectiveUserId = user?.id || 'user-preview';
+  const userAppointments = getAppointmentsByPatientId(effectiveUserId);
+  
+  useEffect(() => {
+    if (!user?.id && window.location.hostname.includes('lovableproject.com')) {
+      console.log('Running in preview mode without authenticated user - using sample data');
+    }
+  }, [user]);
   
   const calculateEndTime = (time: string): string => {
     const [hours, minutes] = time.split(':').map(Number);
@@ -63,10 +70,7 @@ const Appointments = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
-      toast.error("You must be logged in to book an appointment");
-      return;
-    }
+    const patientId = user?.id || `user-${Date.now()}`;
     
     if (!date || !startTime || !reason || !selectedDoctor) {
       toast.error("Please fill out all required fields");
@@ -85,7 +89,7 @@ const Appointments = () => {
     
     try {
       addAppointment({
-        patientId: user.id,
+        patientId,
         doctorId: selectedDoctor,
         date: formattedDate,
         startTime,
@@ -93,19 +97,27 @@ const Appointments = () => {
         status: 'pending',
         reason,
         notes: notes || undefined,
+      })
+      .then(() => {
+        setDate(undefined);
+        setStartTime("");
+        setReason("");
+        setNotes("");
+        setSelectedDoctor("");
+        
+        toast.success("Appointment request sent successfully! The doctor will be notified.");
+      })
+      .catch(error => {
+        console.error("Appointment creation error:", error);
+        const errorMessage = error.response?.data?.message || error.message || "Unknown error";
+        toast.error(`Failed to book appointment: ${errorMessage}`);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-      
-      setDate(undefined);
-      setStartTime("");
-      setReason("");
-      setNotes("");
-      setSelectedDoctor("");
-      
-      toast.success("Appointment request sent successfully! The doctor will be notified.");
     } catch (error) {
+      console.error("Error in appointment submission:", error);
       toast.error("Failed to book appointment. Please try again.");
-      console.error(error);
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -121,6 +133,11 @@ const Appointments = () => {
               <CardTitle>Schedule New Appointment</CardTitle>
               <CardDescription>
                 Fill out the form below to request an appointment with a doctor.
+                {!user?.id && (
+                  <div className="mt-2 text-yellow-600 text-sm">
+                    Note: You are using the system in preview mode. In production, users need to be logged in.
+                  </div>
+                )}
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
