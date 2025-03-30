@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { MedicalRecord, SAMPLE_USERS, VitalSigns } from '@/types';
 import { format } from 'date-fns';
-import { Activity, Calendar, FileText, Filter } from 'lucide-react';
+import { Activity, Calendar, FileText, Filter, AwardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -44,6 +44,7 @@ const MedicalRecords: React.FC = () => {
     notes: '',
     medications: [],
     followUpDate: '',
+    certificateEnabled: false,
     vitalSigns: {
       heartRate: 0,
       bloodGlucose: 0
@@ -106,7 +107,6 @@ const MedicalRecords: React.FC = () => {
       return parseFloat(value).toFixed(digits);
     }
     
-    // If invalid, calculate from height and weight
     if (height && weight && height > 0 && weight > 0) {
       const calculatedBmi = calculateBmi(height, weight);
       if (calculatedBmi > 0) {
@@ -146,6 +146,7 @@ const MedicalRecords: React.FC = () => {
         notes: record.notes || '',
         medications: record.medications || [],
         followUpDate: record.followUpDate || '',
+        certificateEnabled: record.certificateEnabled !== undefined ? record.certificateEnabled : false,
         vitalSigns: {
           heartRate: record.vitalSigns?.heartRate || 0,
           bloodGlucose: record.vitalSigns?.bloodGlucose || 0
@@ -162,6 +163,7 @@ const MedicalRecords: React.FC = () => {
         notes: '',
         medications: [],
         followUpDate: '',
+        certificateEnabled: false,
         vitalSigns: {
           heartRate: 0,
           bloodGlucose: 0
@@ -181,12 +183,14 @@ const MedicalRecords: React.FC = () => {
     
     const heightInMeters = formData.height as number / 100;
     const calculatedBmi = (formData.weight as number) / (heightInMeters * heightInMeters);
+    const isHealthyBmi = calculatedBmi >= 18.5 && calculatedBmi < 25;
     
     try {
       if (editingRecordId) {
         updateMedicalRecord(editingRecordId, {
           ...formData,
-          bmi: calculatedBmi
+          bmi: calculatedBmi,
+          certificateEnabled: formData.certificateEnabled
         });
         setEditingRecordId(null);
       } else {
@@ -203,7 +207,7 @@ const MedicalRecords: React.FC = () => {
           notes: formData.notes,
           medications: formData.medications,
           followUpDate: formData.followUpDate,
-          certificateEnabled: calculatedBmi >= 18.5 && calculatedBmi < 25,
+          certificateEnabled: formData.certificateEnabled !== undefined ? formData.certificateEnabled : isHealthyBmi,
           vitalSigns: {
             heartRate: formData.vitalSigns?.heartRate || 0,
             bloodGlucose: formData.vitalSigns?.bloodGlucose || 0
@@ -334,6 +338,36 @@ const MedicalRecords: React.FC = () => {
                         required
                       />
                     </div>
+                    
+                    <div className="md:col-span-2 mt-2 pb-2 border-b">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="certificateEnabled" className="font-medium">Health Certificate</Label>
+                          <p className="text-sm text-gray-500">
+                            Enable health certificate for this patient
+                            {formData.height && formData.weight ? (
+                              <span className="ml-1">
+                                (BMI: {calculateBmi(formData.height as number, formData.weight as number).toFixed(1)})
+                              </span>
+                            ) : null}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="certificateEnabled"
+                            checked={formData.certificateEnabled}
+                            onCheckedChange={(checked) => {
+                              setFormData(prev => ({
+                                ...prev,
+                                certificateEnabled: checked
+                              }));
+                            }}
+                          />
+                          <AwardCheck className={`h-5 w-5 ${formData.certificateEnabled ? 'text-green-500' : 'text-gray-300'}`} />
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div>
                       <Label htmlFor="bloodPressure">Blood Pressure</Label>
                       <Input
