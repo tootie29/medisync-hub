@@ -53,8 +53,9 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
+    // Generate a more reliable filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
+    const ext = path.extname(file.originalname).toLowerCase();
     const filename = 'logo-' + uniqueSuffix + ext;
     console.log(`Generated filename: ${filename}`);
     cb(null, filename);
@@ -67,6 +68,7 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: (req, file, cb) => {
+    // Only accept image files
     if (file.mimetype.startsWith('image/')) {
       console.log(`Accepting file: ${file.originalname}, mimetype: ${file.mimetype}`);
       cb(null, true);

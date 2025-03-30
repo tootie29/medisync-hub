@@ -37,6 +37,10 @@ exports.updateLogo = async (logo) => {
   try {
     console.log(`Model: Updating logo for position: ${logo.position}`, logo);
     
+    if (!logo.url || !logo.position) {
+      throw new Error('Logo URL and position are required');
+    }
+    
     // First check if a logo for this position already exists
     const [existingLogos] = await db.query(
       'SELECT * FROM logos WHERE position = ?',
@@ -72,11 +76,22 @@ exports.updateLogo = async (logo) => {
       // Insert new logo
       console.log(`Model: Creating new logo for position ${logo.position}`);
       logoId = logo.id || uuidv4();
-      const [result] = await db.query(
-        'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
-        [logoId, logo.url, logo.position]
-      );
-      console.log(`Model: Created new logo with ID: ${logoId}, Result:`, result);
+      
+      try {
+        const [result] = await db.query(
+          'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
+          [logoId, logo.url, logo.position]
+        );
+        console.log(`Model: Created new logo with ID: ${logoId}, Result:`, result);
+        
+        // Check if the insert was successful
+        if (result.affectedRows === 0) {
+          throw new Error('Insert operation failed - no rows affected');
+        }
+      } catch (insertError) {
+        console.error(`Model: Error inserting logo:`, insertError);
+        throw new Error(`Failed to insert logo: ${insertError.message}`);
+      }
     }
     
     // Verify the update/insert occurred

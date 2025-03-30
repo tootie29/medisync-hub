@@ -94,6 +94,7 @@ exports.getLogoByPosition = async (req, res) => {
 // Upload new logos
 exports.uploadLogos = async (req, res) => {
   try {
+    console.log('Upload logos endpoint hit');
     const files = req.files;
     const results = [];
     
@@ -101,6 +102,7 @@ exports.uploadLogos = async (req, res) => {
     
     if (!files || ((!files.primaryLogo || files.primaryLogo.length === 0) && 
                   (!files.secondaryLogo || files.secondaryLogo.length === 0))) {
+      console.error('No files were provided in the request');
       return res.status(400).json({ error: 'No files were uploaded' });
     }
     
@@ -115,6 +117,15 @@ exports.uploadLogos = async (req, res) => {
       }
     }
     
+    // Verify the uploads directory is writable
+    try {
+      fs.accessSync(uploadsDir, fs.constants.W_OK);
+      console.log(`Verified uploads directory is writable: ${uploadsDir}`);
+    } catch (accessError) {
+      console.error(`Uploads directory is not writable: ${uploadsDir}`, accessError);
+      return res.status(500).json({ error: 'Server error: Upload directory is not writable' });
+    }
+    
     // Get server base URL
     const baseUrl = `${req.protocol}://${req.get('host')}`;
 
@@ -122,19 +133,11 @@ exports.uploadLogos = async (req, res) => {
     if (files.primaryLogo && files.primaryLogo[0]) {
       const primaryLogo = files.primaryLogo[0];
       const relativePath = `/uploads/assets/logos/${primaryLogo.filename}`;
+      const absolutePath = path.join(__dirname, '..', relativePath);
       
-      // Log the file details for debugging
-      console.log('Processing primary logo:', {
-        originalname: primaryLogo.originalname,
-        filename: primaryLogo.filename,
-        path: primaryLogo.path,
-        relativePath: relativePath,
-        fullUrl: `${baseUrl}${relativePath}`
-      });
-      
-      // Verify file exists
+      // Check if multer successfully saved the file
       if (!fs.existsSync(primaryLogo.path)) {
-        console.error(`Primary logo file does not exist at path: ${primaryLogo.path}`);
+        console.error(`Primary logo file does not exist at the expected path: ${primaryLogo.path}`);
         results.push({
           position: 'primary',
           error: 'File not saved to disk properly',
@@ -187,19 +190,11 @@ exports.uploadLogos = async (req, res) => {
     if (files.secondaryLogo && files.secondaryLogo[0]) {
       const secondaryLogo = files.secondaryLogo[0];
       const relativePath = `/uploads/assets/logos/${secondaryLogo.filename}`;
+      const absolutePath = path.join(__dirname, '..', relativePath);
       
-      // Log the file details for debugging
-      console.log('Processing secondary logo:', {
-        originalname: secondaryLogo.originalname,
-        filename: secondaryLogo.filename,
-        path: secondaryLogo.path,
-        relativePath: relativePath,
-        fullUrl: `${baseUrl}${relativePath}`
-      });
-      
-      // Verify file exists
+      // Check if multer successfully saved the file
       if (!fs.existsSync(secondaryLogo.path)) {
-        console.error(`Secondary logo file does not exist at path: ${secondaryLogo.path}`);
+        console.error(`Secondary logo file does not exist at the expected path: ${secondaryLogo.path}`);
         results.push({
           position: 'secondary',
           error: 'File not saved to disk properly',
@@ -252,6 +247,7 @@ exports.uploadLogos = async (req, res) => {
     
     // Check if any uploads were successful
     if (results.length === 0) {
+      console.error('No logo uploads were successful');
       return res.status(500).json({ 
         error: 'Failed to process logo uploads',
         details: 'No files were successfully processed'

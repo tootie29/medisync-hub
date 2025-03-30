@@ -75,6 +75,12 @@ const LogoManagement = () => {
   const handlePrimaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      // Validate file size before setting
+      if (file.size > 5 * 1024 * 1024) { // 5MB max
+        toast.error('Logo file is too large. Maximum size is 5MB.');
+        e.target.value = ''; // Reset input
+        return;
+      }
       console.log('Selected primary logo file:', file.name, file.type, file.size);
       setPrimaryLogo(file);
     }
@@ -83,6 +89,12 @@ const LogoManagement = () => {
   const handleSecondaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      // Validate file size before setting
+      if (file.size > 5 * 1024 * 1024) { // 5MB max
+        toast.error('Logo file is too large. Maximum size is 5MB.');
+        e.target.value = ''; // Reset input
+        return;
+      }
       console.log('Selected secondary logo file:', file.name, file.type, file.size);
       setSecondaryLogo(file);
     }
@@ -123,18 +135,16 @@ const LogoManagement = () => {
           }
         }
         
-        // Add a client-side timeout of 30 seconds for the upload
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-        
+        // Set a longer timeout for uploads and a longer response timeout
         const response = await axios.post('/api/logos', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
-          signal: controller.signal
+          timeout: 60000, // 60 seconds timeout
+          onUploadProgress: (progressEvent) => {
+            console.log('Upload progress:', progressEvent.loaded, '/', progressEvent.total);
+          }
         });
-        
-        clearTimeout(timeoutId);
         
         console.log('LogoManagement: Upload response:', response.data);
         
@@ -172,6 +182,7 @@ const LogoManagement = () => {
             }, 500);
           }
         } else {
+          console.error('Server returned no upload results:', response.data);
           toast.error('No logos were updated. Please try again.');
           setError('Upload completed but no logos were updated by the server');
         }
@@ -182,7 +193,7 @@ const LogoManagement = () => {
       console.error('LogoManagement: Error updating logos:', error);
       
       let errorMessage = 'Failed to upload logos. Please try again.';
-      if (error.name === 'AbortError') {
+      if (error.name === 'CanceledError' || error.code === 'ECONNABORTED') {
         errorMessage = 'Upload timed out. Please try with a smaller image or check your connection.';
       } else if (error.response) {
         errorMessage = `Error: ${error.response.data.error || error.response.statusText}`;
