@@ -38,25 +38,21 @@ exports.createUser = async (req, res) => {
       userData.id = uuidv4();
     }
     
-    // Convert any camelCase properties to snake_case for the database
-    // This ensures compatibility between frontend and backend naming conventions
+    // Process the input data to match database column names
     const userDataForDb = {
       id: userData.id,
       email: userData.email,
       name: userData.name,
       role: userData.role,
       phone: userData.phone,
-      date_of_birth: userData.date_of_birth || userData.dateOfBirth,
+      dateOfBirth: userData.date_of_birth || userData.dateOfBirth,
       gender: userData.gender,
       address: userData.address,
-      emergency_contact: userData.emergency_contact || userData.emergencyContact,
-      student_id: userData.student_id || userData.studentId,
+      emergencyContact: userData.emergency_contact || userData.emergencyContact,
+      studentId: userData.student_id || userData.studentId,
       department: userData.department,
-      staff_id: userData.staff_id || userData.staffId,
+      staffId: userData.staff_id || userData.staffId,
       position: userData.position,
-      // Store password hash in a real application
-      // For this demo, we're not implementing actual authentication yet
-      // In a production app, you would hash the password before storing it
     };
     
     console.log('Processed user data for DB:', userDataForDb);
@@ -73,7 +69,24 @@ exports.updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
     const userData = req.body;
-    const updatedUser = await userModel.update(userId, userData);
+    
+    // Process the input data to match database column names
+    const userDataForDb = {
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      phone: userData.phone,
+      dateOfBirth: userData.date_of_birth || userData.dateOfBirth,
+      gender: userData.gender,
+      address: userData.address,
+      emergencyContact: userData.emergency_contact || userData.emergencyContact,
+      studentId: userData.student_id || userData.studentId,
+      department: userData.department,
+      staffId: userData.staff_id || userData.staffId,
+      position: userData.position,
+    };
+    
+    const updatedUser = await userModel.update(userId, userDataForDb);
     
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });

@@ -120,6 +120,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
       }
     } catch (error) {
       console.error('Registration error:', error);
+      // Error is already displayed by the AuthContext
     }
   };
 
