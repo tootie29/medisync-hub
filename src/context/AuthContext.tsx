@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -46,11 +45,35 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Create a user storage to keep track of registered users in preview mode
+interface RegisteredUser extends User {
+  password: string;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
   const isPreviewMode = window.location.hostname.includes('lovableproject.com');
+  
+  // Retrieve registered users from localStorage
+  const getRegisteredUsers = (): RegisteredUser[] => {
+    const storedUsers = localStorage.getItem('medisyncRegisteredUsers');
+    if (storedUsers) {
+      try {
+        return JSON.parse(storedUsers);
+      } catch (error) {
+        console.error('Failed to parse stored registered users', error);
+        return [];
+      }
+    }
+    return [];
+  };
+  
+  // Save registered users to localStorage
+  const saveRegisteredUsers = (users: RegisteredUser[]) => {
+    localStorage.setItem('medisyncRegisteredUsers', JSON.stringify(users));
+  };
 
   useEffect(() => {
     // Check if user is already logged in (from localStorage)
@@ -69,8 +92,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // In a real app, this would be an API call
-      // For now, we'll simulate authentication with our sample data
+      // In preview mode, check registered users first
+      if (isPreviewMode) {
+        console.log('Login in preview mode - checking registered users first');
+        const registeredUsers = getRegisteredUsers();
+        const foundRegisteredUser = registeredUsers.find(u => 
+          u.email === email && u.password === password
+        );
+        
+        if (foundRegisteredUser) {
+          // Found in registered users, login successful
+          const { password: _, ...userWithoutPassword } = foundRegisteredUser;
+          setUser(userWithoutPassword);
+          localStorage.setItem('medisyncUser', JSON.stringify(userWithoutPassword));
+          toast.success(`Welcome, ${userWithoutPassword.name}!`);
+          setIsLoading(false);
+          return;
+        }
+        
+        // If not found in registered users, check sample users
+        const foundSampleUser = SAMPLE_USERS.find(u => u.email === email);
+        
+        if (foundSampleUser) {
+          // For sample users, we don't check password in demo
+          setUser(foundSampleUser);
+          localStorage.setItem('medisyncUser', JSON.stringify(foundSampleUser));
+          toast.success(`Welcome, ${foundSampleUser.name}!`);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Not found in either registered or sample users
+        throw new Error('Invalid email or password');
+      }
+      
+      // Production mode - call API
+      // In a real app, this would be an API call to verify credentials
       const foundUser = SAMPLE_USERS.find(u => u.email === email);
       
       if (!foundUser) {
@@ -151,6 +208,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
+        // Save registered user with password
+        const registeredUser: RegisteredUser = {
+          ...newUser,
+          password: password
+        };
+        
+        // Add to registered users list
+        const currentUsers = getRegisteredUsers();
+        currentUsers.push(registeredUser);
+        saveRegisteredUsers(currentUsers);
+        console.log('Saved registered user:', registeredUser.email);
+        
         // Set the user in state and localStorage
         setUser(newUser);
         localStorage.setItem('medisyncUser', JSON.stringify(newUser));
@@ -226,6 +295,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Update user in state and localStorage
         setUser(updatedUser);
         localStorage.setItem('medisyncUser', JSON.stringify(updatedUser));
+        
+        // Also update in registered users if it exists there
+        const registeredUsers = getRegisteredUsers();
+        const updatedRegisteredUsers = registeredUsers.map(ru => {
+          if (ru.id === user.id) {
+            return { ...ru, ...userData, updatedAt: new Date().toISOString() };
+          }
+          return ru;
+        });
+        saveRegisteredUsers(updatedRegisteredUsers);
+        
         toast.success('Profile updated successfully!');
         return;
       }
