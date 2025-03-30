@@ -53,7 +53,8 @@ const PatientEditForm: React.FC<PatientEditFormProps> = ({ patientId, onSuccess 
         // Check if in preview mode
         if (window.location.hostname.includes('lovableproject.com')) {
           // Use sample data in preview mode
-          const samplePatient = window.SAMPLE_USERS?.find(u => u.id === patientId);
+          const sampleUsers = (window as any).sampleUsers || [];
+          const samplePatient = sampleUsers.find((u: any) => u.id === patientId);
           if (samplePatient) {
             setPatient(samplePatient);
             setFormData({
