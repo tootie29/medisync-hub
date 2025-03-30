@@ -6,11 +6,14 @@ const userController = require('../controllers/userController');
 // Get all users
 router.get('/', userController.getAllUsers);
 
-// Get user by ID
-router.get('/:id', userController.getUserById);
-
 // Get users by role
 router.get('/role/:role', userController.getUsersByRole);
+
+// Ensure sample users exist (for testing)
+router.post('/ensure-samples', userController.ensureSampleUsers);
+
+// Get user by ID
+router.get('/:id', userController.getUserById);
 
 // Create new user
 router.post('/', userController.createUser);
