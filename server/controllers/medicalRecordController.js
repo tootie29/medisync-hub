@@ -41,7 +41,9 @@ exports.getMedicalRecordsByPatientId = async (req, res) => {
 exports.createMedicalRecord = async (req, res) => {
   try {
     const recordData = req.body;
+    console.log('Creating medical record with data:', recordData);
     const newRecord = await medicalRecordModel.create(recordData);
+    console.log('Medical record created:', newRecord);
     res.status(201).json(newRecord);
   } catch (error) {
     console.error('Error in createMedicalRecord controller:', error);
@@ -53,12 +55,22 @@ exports.updateMedicalRecord = async (req, res) => {
   try {
     const recordId = req.params.id;
     const recordData = req.body;
+    console.log('Updating medical record with ID:', recordId);
+    console.log('Update data:', recordData);
+    
+    // Explicitly handle certificateEnabled as a boolean
+    if (recordData.certificateEnabled !== undefined) {
+      recordData.certificateEnabled = Boolean(recordData.certificateEnabled);
+      console.log('Certificate status set to:', recordData.certificateEnabled);
+    }
+    
     const updatedRecord = await medicalRecordModel.update(recordId, recordData);
     
     if (!updatedRecord) {
       return res.status(404).json({ message: 'Medical record not found' });
     }
     
+    console.log('Medical record updated:', updatedRecord);
     res.json(updatedRecord);
   } catch (error) {
     console.error('Error in updateMedicalRecord controller:', error);

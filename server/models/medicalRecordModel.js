@@ -196,10 +196,12 @@ class MedicalRecordModel {
         }
       }
       
-      // Auto-enable certificate for healthy BMI range (18.5-24.9)
+      // Explicitly handle certificate status
       const certificateEnabled = recordData.certificateEnabled !== undefined ? 
-        recordData.certificateEnabled : 
+        Boolean(recordData.certificateEnabled) : 
         (bmi >= 18.5 && bmi < 25);
+      
+      console.log('Creating record with certificate status:', certificateEnabled);
       
       // 1. Insert medical record
       await connection.query(
@@ -259,7 +261,7 @@ class MedicalRecordModel {
         id, 
         ...recordData, 
         bmi,
-        certificateEnabled: recordData.certificateEnabled || false,
+        certificateEnabled,
         createdAt: now,
         updatedAt: now
       };
@@ -299,8 +301,11 @@ class MedicalRecordModel {
         }
       }
       
-      // Auto-enable certificate for healthy BMI range if not specified
+      // Handle certificate status explicitly
       let certificateEnabled = recordData.certificateEnabled;
+      console.log('Certificate status in update:', certificateEnabled);
+      
+      // Only auto-calculate if not explicitly provided
       if (certificateEnabled === undefined && bmi) {
         certificateEnabled = (bmi >= 18.5 && bmi < 25);
       }
@@ -366,7 +371,8 @@ class MedicalRecordModel {
       
       if (certificateEnabled !== undefined) {
         setClause.push('certificate_enabled = ?');
-        params.push(certificateEnabled);
+        params.push(certificateEnabled ? 1 : 0);
+        console.log('Setting certificate_enabled to:', certificateEnabled ? 1 : 0);
       }
       
       // Add updated_at to the SET clause
@@ -374,6 +380,9 @@ class MedicalRecordModel {
       
       if (setClause.length > 0) {
         params.push(id);
+        console.log('UPDATE query:', `UPDATE medical_records SET ${setClause.join(', ')} WHERE id = ?`);
+        console.log('UPDATE params:', params);
+        
         await connection.query(
           `UPDATE medical_records SET ${setClause.join(', ')} WHERE id = ?`,
           params
