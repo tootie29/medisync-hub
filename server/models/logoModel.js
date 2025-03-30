@@ -32,84 +32,93 @@ exports.getLogoByPosition = async (position) => {
   }
 };
 
-// Update a logo (replaces existing logo for that position)
+// Update a logo with better error handling and guaranteed update
 exports.updateLogo = async (logo) => {
+  console.log(`Model: Processing logo update for position: ${logo.position}`, logo);
+  
+  if (!logo.url || !logo.position) {
+    throw new Error('Logo URL and position are required');
+  }
+  
+  // Use a transaction for data integrity
+  const connection = await db.getConnection();
+  let logoId;
+  
   try {
-    console.log(`Model: Updating logo for position: ${logo.position}`, logo);
-    
-    if (!logo.url || !logo.position) {
-      throw new Error('Logo URL and position are required');
-    }
+    await connection.beginTransaction();
     
     // First check if a logo for this position already exists
-    const [existingLogos] = await db.query(
+    const [existingLogos] = await connection.query(
       'SELECT * FROM logos WHERE position = ?',
       [logo.position]
     );
     
     console.log(`Model: Check for existing ${logo.position} logo returned:`, existingLogos);
     
-    let logoId;
-    
     if (existingLogos.length > 0) {
-      // Update existing logo - explicitly set the URL to ensure update
+      // Update existing logo
       console.log(`Model: Updating existing logo for position ${logo.position}`);
-      const [result] = await db.query(
-        'UPDATE logos SET url = ? WHERE position = ?',
-        [logo.url, logo.position]
-      );
-      console.log(`Model: Updated logo with ID: ${existingLogos[0].id}, Result:`, result);
-      
       logoId = existingLogos[0].id;
       
-      // If no rows were affected, force an insert
+      const [result] = await connection.query(
+        'UPDATE logos SET url = ? WHERE id = ?',
+        [logo.url, logoId]
+      );
+      console.log(`Model: Updated logo with ID: ${logoId}, Affected rows:`, result.affectedRows);
+      
+      // If update fails, force an insert with the same ID
       if (result.affectedRows === 0) {
-        console.warn(`Model: Update failed for logo position ${logo.position}, forcing insert`);
-        logoId = uuidv4();
-        const [insertResult] = await db.query(
+        console.log(`Model: Update failed, forcing delete and insert for position ${logo.position}`);
+        
+        // Delete the potentially corrupted record
+        await connection.query('DELETE FROM logos WHERE position = ?', [logo.position]);
+        
+        // Insert with the same ID
+        const [insertResult] = await connection.query(
           'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
           [logoId, logo.url, logo.position]
         );
-        console.log(`Model: Forced insert with ID: ${logoId}, Result:`, insertResult);
+        console.log(`Model: Forced insert result:`, insertResult);
+        
+        if (insertResult.affectedRows === 0) {
+          throw new Error(`Failed to update logo for position ${logo.position}`);
+        }
       }
     } else {
       // Insert new logo
       console.log(`Model: Creating new logo for position ${logo.position}`);
       logoId = logo.id || uuidv4();
       
-      try {
-        const [result] = await db.query(
-          'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
-          [logoId, logo.url, logo.position]
-        );
-        console.log(`Model: Created new logo with ID: ${logoId}, Result:`, result);
-        
-        // Check if the insert was successful
-        if (result.affectedRows === 0) {
-          throw new Error('Insert operation failed - no rows affected');
-        }
-      } catch (insertError) {
-        console.error(`Model: Error inserting logo:`, insertError);
-        throw new Error(`Failed to insert logo: ${insertError.message}`);
+      const [result] = await connection.query(
+        'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
+        [logoId, logo.url, logo.position]
+      );
+      console.log(`Model: Created new logo with ID: ${logoId}, Result:`, result);
+      
+      if (result.affectedRows === 0) {
+        throw new Error(`Failed to insert logo for position ${logo.position}`);
       }
     }
     
-    // Verify the update/insert occurred
-    const [verifyRows] = await db.query(
+    // Verify the logo exists in database before committing
+    const [verifyRows] = await connection.query(
       'SELECT * FROM logos WHERE position = ?',
       [logo.position]
     );
     
     if (verifyRows.length === 0) {
-      console.error(`Model: Verification failed - no logo found for position ${logo.position} after update`);
-      throw new Error(`Failed to update logo in database: Verification failed`);
+      throw new Error(`Verification failed - no logo found for position ${logo.position} after update`);
     }
     
-    console.log(`Model: Verification successful - logo for position ${logo.position}:`, verifyRows[0]);
+    await connection.commit();
+    console.log(`Model: Transaction committed successfully for logo position ${logo.position}`);
     
     return logoId;
   } catch (error) {
     console.error('Database error in updateLogo:', error);
+    await connection.rollback();
     throw new Error(`Failed to update logo in database: ${error.message}`);
+  } finally {
+    connection.release();
   }
 };

@@ -4,33 +4,23 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
-// Ensure uploads directory exists with a professional path structure
+// Ensure uploads directory exists with proper structure
 const uploadsDir = path.join(__dirname, '..', 'uploads', 'assets', 'logos');
 try {
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
     console.log(`Created uploads directory: ${uploadsDir}`);
+  } else {
+    // Verify permissions
+    fs.accessSync(uploadsDir, fs.constants.W_OK);
+    console.log(`Uploads directory is writable: ${uploadsDir}`);
   }
 } catch (error) {
-  console.error('Error creating uploads directory:', error);
+  console.error('Error with uploads directory:', error);
 }
 
-// Default logo path to use when no logo is found
+// Default logo path
 const defaultLogoPath = '/uploads/assets/logos/default-logo.png';
-const defaultLogoFilePath = path.join(__dirname, '..', defaultLogoPath);
-
-// Ensure the default logo exists in the server uploads folder
-if (!fs.existsSync(defaultLogoFilePath)) {
-  try {
-    // Create a basic default logo if none exists
-    if (!fs.existsSync(path.dirname(defaultLogoFilePath))) {
-      fs.mkdirSync(path.dirname(defaultLogoFilePath), { recursive: true, mode: 0o755 });
-    }
-    console.log('Default logo not found, will use fallback paths');
-  } catch (error) {
-    console.error('Error setting up default logo:', error);
-  }
-}
 
 // Get all logos
 exports.getAllLogos = async (req, res) => {
@@ -91,92 +81,70 @@ exports.getLogoByPosition = async (req, res) => {
   }
 };
 
-// Upload new logos
+// Upload logos with improved reliability and validation
 exports.uploadLogos = async (req, res) => {
+  console.log('Processing logo upload request');
+  const files = req.files;
+  const results = [];
+  
   try {
-    console.log('Upload logos endpoint hit');
-    const files = req.files;
-    const results = [];
+    console.log('Files received for upload:', files ? Object.keys(files).length : 'none');
     
-    console.log('Files received for upload:', JSON.stringify(files, null, 2));
-    
-    if (!files || ((!files.primaryLogo || files.primaryLogo.length === 0) && 
-                  (!files.secondaryLogo || files.secondaryLogo.length === 0))) {
+    if (!files || Object.keys(files).length === 0) {
       console.error('No files were provided in the request');
       return res.status(400).json({ error: 'No files were uploaded' });
     }
     
-    // Verify the uploads directory exists one more time
     if (!fs.existsSync(uploadsDir)) {
-      try {
-        fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
-        console.log(`Created uploads directory for files in controller: ${uploadsDir}`);
-      } catch (dirError) {
-        console.error('Failed to create uploads directory in controller:', dirError);
-        return res.status(500).json({ error: 'Server error: Failed to create upload directory' });
-      }
-    }
-    
-    // Verify the uploads directory is writable
-    try {
-      fs.accessSync(uploadsDir, fs.constants.W_OK);
-      console.log(`Verified uploads directory is writable: ${uploadsDir}`);
-    } catch (accessError) {
-      console.error(`Uploads directory is not writable: ${uploadsDir}`, accessError);
-      return res.status(500).json({ error: 'Server error: Upload directory is not writable' });
+      fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
+      console.log(`Created uploads directory: ${uploadsDir}`);
     }
     
     // Get server base URL
     const baseUrl = `${req.protocol}://${req.get('host')}`;
 
-    // Process primary logo if uploaded
+    // Process primary logo
     if (files.primaryLogo && files.primaryLogo[0]) {
+      console.log('Processing primary logo');
       const primaryLogo = files.primaryLogo[0];
       const relativePath = `/uploads/assets/logos/${primaryLogo.filename}`;
-      const absolutePath = path.join(__dirname, '..', relativePath);
       
-      // Check if multer successfully saved the file
+      // Double-check file exists
       if (!fs.existsSync(primaryLogo.path)) {
-        console.error(`Primary logo file does not exist at the expected path: ${primaryLogo.path}`);
+        console.error(`Primary logo file not found at ${primaryLogo.path}`);
         results.push({
           position: 'primary',
-          error: 'File not saved to disk properly',
-          details: primaryLogo.path
+          error: 'File not saved correctly',
+          details: 'File upload failed'
         });
       } else {
-        console.log(`Primary logo file exists at path: ${primaryLogo.path}`);
+        console.log(`Primary logo saved at ${primaryLogo.path}`);
         
-        // Save to database
         try {
-          const updatedId = await logoModel.updateLogo({
-            id: uuidv4(),
+          // Add to database with transaction support
+          const id = uuidv4();
+          await logoModel.updateLogo({
+            id: id,
             url: relativePath,
             position: 'primary'
           });
           
-          console.log('Primary logo saved to database with ID:', updatedId);
-          
-          // Verify the database update worked by fetching the logo
+          // Verify update worked
           const verifiedLogo = await logoModel.getLogoByPosition('primary');
-          if (verifiedLogo && verifiedLogo.url === relativePath) {
-            console.log('Verified primary logo in database:', verifiedLogo);
-            
-            results.push({
-              position: 'primary',
-              filename: primaryLogo.filename,
-              path: `${baseUrl}${relativePath}`,
-              db_id: updatedId
-            });
-          } else {
-            console.error('Database verification failed for primary logo:', verifiedLogo);
-            results.push({
-              position: 'primary',
-              error: 'Database verification failed',
-              details: 'Logo was not properly stored in database'
-            });
+          if (!verifiedLogo || verifiedLogo.url !== relativePath) {
+            throw new Error('Logo verification failed after database update');
           }
+          
+          results.push({
+            position: 'primary',
+            filename: primaryLogo.filename,
+            path: `${baseUrl}${relativePath}`,
+            db_id: id
+          });
+          
+          console.log('Primary logo successfully updated');
         } catch (dbError) {
-          console.error('Database error saving primary logo:', dbError);
+          console.error('Database error for primary logo:', dbError);
           results.push({
             position: 'primary',
             error: 'Database update failed',
@@ -186,54 +154,48 @@ exports.uploadLogos = async (req, res) => {
       }
     }
 
-    // Process secondary logo if uploaded
+    // Process secondary logo
     if (files.secondaryLogo && files.secondaryLogo[0]) {
+      console.log('Processing secondary logo');
       const secondaryLogo = files.secondaryLogo[0];
       const relativePath = `/uploads/assets/logos/${secondaryLogo.filename}`;
-      const absolutePath = path.join(__dirname, '..', relativePath);
       
-      // Check if multer successfully saved the file
+      // Double-check file exists
       if (!fs.existsSync(secondaryLogo.path)) {
-        console.error(`Secondary logo file does not exist at the expected path: ${secondaryLogo.path}`);
+        console.error(`Secondary logo file not found at ${secondaryLogo.path}`);
         results.push({
           position: 'secondary',
-          error: 'File not saved to disk properly',
-          details: secondaryLogo.path
+          error: 'File not saved correctly',
+          details: 'File upload failed'
         });
       } else {
-        console.log(`Secondary logo file exists at path: ${secondaryLogo.path}`);
+        console.log(`Secondary logo saved at ${secondaryLogo.path}`);
         
-        // Save to database
         try {
-          const updatedId = await logoModel.updateLogo({
-            id: uuidv4(),
+          // Add to database with transaction support
+          const id = uuidv4();
+          await logoModel.updateLogo({
+            id: id,
             url: relativePath,
             position: 'secondary'
           });
           
-          console.log('Secondary logo saved to database with ID:', updatedId);
-          
-          // Verify the database update worked by fetching the logo
+          // Verify update worked
           const verifiedLogo = await logoModel.getLogoByPosition('secondary');
-          if (verifiedLogo && verifiedLogo.url === relativePath) {
-            console.log('Verified secondary logo in database:', verifiedLogo);
-            
-            results.push({
-              position: 'secondary',
-              filename: secondaryLogo.filename,
-              path: `${baseUrl}${relativePath}`,
-              db_id: updatedId
-            });
-          } else {
-            console.error('Database verification failed for secondary logo:', verifiedLogo);
-            results.push({
-              position: 'secondary',
-              error: 'Database verification failed',
-              details: 'Logo was not properly stored in database'
-            });
+          if (!verifiedLogo || verifiedLogo.url !== relativePath) {
+            throw new Error('Logo verification failed after database update');
           }
+          
+          results.push({
+            position: 'secondary',
+            filename: secondaryLogo.filename,
+            path: `${baseUrl}${relativePath}`,
+            db_id: id
+          });
+          
+          console.log('Secondary logo successfully updated');
         } catch (dbError) {
-          console.error('Database error saving secondary logo:', dbError);
+          console.error('Database error for secondary logo:', dbError);
           results.push({
             position: 'secondary',
             error: 'Database update failed',
@@ -245,28 +207,26 @@ exports.uploadLogos = async (req, res) => {
 
     console.log('Logo upload results:', results);
     
-    // Check if any uploads were successful
     if (results.length === 0) {
-      console.error('No logo uploads were successful');
       return res.status(500).json({ 
-        error: 'Failed to process logo uploads',
+        error: 'No logos were processed',
         details: 'No files were successfully processed'
       });
     }
     
-    // Check if any errors occurred
+    // Return results
     const hasErrors = results.some(result => result.error);
-    if (hasErrors) {
-      console.warn('Some logo uploads had errors:', results);
-    }
-    
-    res.status(200).json({ 
+    res.status(hasErrors ? 207 : 200).json({ 
       message: 'Logos processed',
       success: !hasErrors,
       uploads: results
     });
+    
   } catch (error) {
     console.error('Error uploading logos:', error);
-    res.status(500).json({ error: 'Failed to upload logos', details: error.message });
+    res.status(500).json({ 
+      error: 'Failed to upload logos', 
+      details: error.message 
+    });
   }
 };

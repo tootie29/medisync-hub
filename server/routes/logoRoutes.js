@@ -24,12 +24,12 @@ try {
   console.error(`ERROR with upload directory: ${uploadDir}`, error);
 }
 
-// Configure multer for file uploads with debugging
+// Configure multer for file uploads with enhanced reliability
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     console.log(`Starting file upload to: ${uploadDir}`);
     
-    // Double check directory exists before storing
+    // Ensure directory exists before storing
     if (!fs.existsSync(uploadDir)) {
       try {
         fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
@@ -62,13 +62,13 @@ const storage = multer.diskStorage({
   }
 });
 
+// Improve upload configuration for better reliability
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 2 * 1024 * 1024, // 2MB limit to avoid timeouts
   },
   fileFilter: (req, file, cb) => {
-    // Only accept image files
     if (file.mimetype.startsWith('image/')) {
       console.log(`Accepting file: ${file.originalname}, mimetype: ${file.mimetype}`);
       cb(null, true);
@@ -82,7 +82,7 @@ const upload = multer({
 // Get all logos
 router.get('/', logoController.getAllLogos);
 
-// Upload new logos - make sure multer is properly configured
+// Upload new logos with improved error handling
 router.post('/', upload.fields([
   { name: 'primaryLogo', maxCount: 1 },
   { name: 'secondaryLogo', maxCount: 1 }
@@ -132,7 +132,7 @@ router.post('/', upload.fields([
   next();
 }, logoController.uploadLogos);
 
-// Added route to get a single logo by position
+// Get a single logo by position
 router.get('/:position', logoController.getLogoByPosition);
 
 module.exports = router;

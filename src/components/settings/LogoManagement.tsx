@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Upload, RefreshCw, AlertCircle } from 'lucide-react';
-import { Logo, DEFAULT_LOGO_PATH, CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
+import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
 
 const LogoManagement = () => {
   const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
@@ -19,7 +18,6 @@ const LogoManagement = () => {
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
 
   useEffect(() => {
-    // Fetch the current logos from the database
     fetchLogos();
   }, [lastRefresh]);
 
@@ -28,16 +26,13 @@ const LogoManagement = () => {
     setError(null);
     try {
       console.log('LogoManagement: Fetching logos...');
-      // Add a timestamp to prevent caching
       const timestamp = Date.now();
       
-      // Fetch primary logo directly (more reliable than getting all logos)
       const primaryResponse = await axios.get(`/api/logos/primary?t=${timestamp}`);
       console.log('LogoManagement: Primary logo response:', primaryResponse.data);
       
       if (primaryResponse.data && primaryResponse.data.url) {
         console.log('LogoManagement: Primary logo URL:', primaryResponse.data.url);
-        // Add a timestamp to prevent browser caching
         const url = new URL(primaryResponse.data.url, window.location.origin);
         url.searchParams.append('t', timestamp.toString());
         setPrimaryLogoUrl(url.toString());
@@ -45,13 +40,11 @@ const LogoManagement = () => {
         setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
       
-      // Fetch secondary logo directly (more reliable than getting all logos)
       const secondaryResponse = await axios.get(`/api/logos/secondary?t=${timestamp}`);
       console.log('LogoManagement: Secondary logo response:', secondaryResponse.data);
       
       if (secondaryResponse.data && secondaryResponse.data.url) {
         console.log('LogoManagement: Secondary logo URL:', secondaryResponse.data.url);
-        // Add a timestamp to prevent browser caching
         const url = new URL(secondaryResponse.data.url, window.location.origin);
         url.searchParams.append('t', timestamp.toString());
         setSecondaryLogoUrl(url.toString());
@@ -63,7 +56,6 @@ const LogoManagement = () => {
       setError('Failed to load logos. Please try again.');
       toast.error('Failed to load logos');
       
-      // Fallback to placeholder if API fails
       const timestamp = Date.now();
       setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
@@ -75,9 +67,8 @@ const LogoManagement = () => {
   const handlePrimaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Validate file size before setting
-      if (file.size > 5 * 1024 * 1024) { // 5MB max
-        toast.error('Logo file is too large. Maximum size is 5MB.');
+      if (file.size > 2 * 1024 * 1024) { // 2MB max
+        toast.error('Logo file is too large. Maximum size is 2MB.');
         e.target.value = ''; // Reset input
         return;
       }
@@ -89,9 +80,8 @@ const LogoManagement = () => {
   const handleSecondaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Validate file size before setting
-      if (file.size > 5 * 1024 * 1024) { // 5MB max
-        toast.error('Logo file is too large. Maximum size is 5MB.');
+      if (file.size > 2 * 1024 * 1024) { // 2MB max
+        toast.error('Logo file is too large. Maximum size is 2MB.');
         e.target.value = ''; // Reset input
         return;
       }
@@ -126,7 +116,6 @@ const LogoManagement = () => {
         );
         
         // Debug formData
-        console.log('LogoManagement: FormData contents:');
         for (let [key, value] of formData.entries()) {
           if (value instanceof File) {
             console.log(`${key}: File ${value.name}, size: ${value.size}, type: ${value.type}`);
@@ -135,26 +124,28 @@ const LogoManagement = () => {
           }
         }
         
-        // Set a longer timeout for uploads and a longer response timeout
+        // Set reasonable timeouts and handle progress
         const response = await axios.post('/api/logos', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
-          timeout: 60000, // 60 seconds timeout
+          timeout: 30000, // 30 seconds timeout
           onUploadProgress: (progressEvent) => {
-            console.log('Upload progress:', progressEvent.loaded, '/', progressEvent.total);
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              console.log(`Upload progress: ${percentCompleted}%`);
+            }
           }
         });
         
         console.log('LogoManagement: Upload response:', response.data);
         
         if (response.data.uploads && response.data.uploads.length > 0) {
-          // Check for any errors in the uploads
-          const uploadErrors = response.data.uploads.filter(upload => upload.error);
+          const uploadErrors = response.data.uploads.filter((upload: any) => upload.error);
           
           if (uploadErrors.length > 0) {
-            const errorMsg = uploadErrors.map(err => 
-              `${err.position} logo: ${err.error} - ${err.details}`
+            const errorMsg = uploadErrors.map((err: any) => 
+              `${err.position} logo: ${err.error} - ${err.details || ''}`
             ).join('; ');
             
             setError(`Some logos failed to upload: ${errorMsg}`);
@@ -193,7 +184,7 @@ const LogoManagement = () => {
       console.error('LogoManagement: Error updating logos:', error);
       
       let errorMessage = 'Failed to upload logos. Please try again.';
-      if (error.name === 'CanceledError' || error.code === 'ECONNABORTED') {
+      if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError' || error.code === 'ECONNABORTED') {
         errorMessage = 'Upload timed out. Please try with a smaller image or check your connection.';
       } else if (error.response) {
         errorMessage = `Error: ${error.response.data.error || error.response.statusText}`;
