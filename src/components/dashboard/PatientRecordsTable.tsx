@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,41 +8,85 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Link } from 'react-router-dom';
 import { Search, ExternalLink } from 'lucide-react';
 import { formatDate } from '@/utils/helpers';
-import { SAMPLE_USERS } from '@/types';
+import { User, SAMPLE_USERS } from '@/types';
+import axios from 'axios';
 
 const PatientRecordsTable: React.FC = () => {
   const { medicalRecords } = useData();
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Get unique patient IDs from medical records
-  const patientIds = [...new Set(medicalRecords.map(record => record.patientId))];
-  
-  // Map patient IDs to user data
-  const patientData = patientIds
-    .map(id => {
-      const patient = SAMPLE_USERS.find(user => user.id === id);
-      if (!patient) return null;
+  // Function to fetch users from the API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoading(true);
+      const isPreviewMode = window.location.hostname.includes('lovableproject.com');
       
-      // Only include patients/students/staff
-      if (patient.role !== 'student' && patient.role !== 'staff') return null;
-      
-      // Count records for this patient
-      const recordCount = medicalRecords.filter(record => record.patientId === id).length;
-      
-      // Get latest record date
-      const latestRecord = medicalRecords
-        .filter(record => record.patientId === id)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-      
-      return {
-        id: patient.id,
-        name: patient.name,
-        role: patient.role,
-        recordCount,
-        latestRecordDate: latestRecord ? latestRecord.date : '',
-      };
-    })
-    .filter(Boolean); // Remove nulls
+      if (isPreviewMode) {
+        console.log('Running in preview mode - using sample data');
+        setUsers(SAMPLE_USERS);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Get API URL using the same logic as in DataContext
+        const getApiUrl = () => {
+          const hostname = window.location.hostname;
+          if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
+            return 'https://api.climasys.entrsolutions.com/api';
+          }
+          
+          const envApiUrl = import.meta.env.VITE_API_URL;
+          if (envApiUrl) {
+            return envApiUrl;
+          }
+          
+          return 'http://localhost:8080/api';
+        };
+        
+        const API_URL = getApiUrl();
+        console.log('Fetching users from API:', API_URL);
+        
+        const response = await axios.get(`${API_URL}/users`);
+        console.log('Users fetched successfully:', response.data.length);
+        setUsers(response.data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        // Fallback to sample data if API fails
+        setUsers(SAMPLE_USERS);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  // Filter users to only include patients (students and staff)
+  const patientUsers = users.filter(user => 
+    user && (user.role === 'student' || user.role === 'staff')
+  );
+
+  // Map patient data for display
+  const patientData = patientUsers.map(patient => {
+    // Count records for this patient
+    const patientRecords = medicalRecords.filter(record => record.patientId === patient.id);
+    const recordCount = patientRecords.length;
+    
+    // Get latest record date
+    const latestRecord = patientRecords
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    
+    return {
+      id: patient.id,
+      name: patient.name,
+      role: patient.role,
+      recordCount,
+      latestRecordDate: latestRecord ? latestRecord.date : '',
+    };
+  });
   
   // Filter patients based on search term
   const filteredPatients = searchTerm 
@@ -51,8 +95,7 @@ const PatientRecordsTable: React.FC = () => {
       )
     : patientData;
 
-  console.log("Available patients:", filteredPatients);
-  console.log("Routing to medical records with patient ID");
+  console.log("Available patients:", filteredPatients.length);
 
   return (
     <Card>
@@ -82,7 +125,13 @@ const PatientRecordsTable: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPatients.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    Loading patients...
+                  </TableCell>
+                </TableRow>
+              ) : filteredPatients.length > 0 ? (
                 filteredPatients.map(patient => (
                   <TableRow key={patient?.id}>
                     <TableCell className="font-medium">{patient?.name}</TableCell>

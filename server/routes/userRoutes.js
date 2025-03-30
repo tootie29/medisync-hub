@@ -6,11 +6,11 @@ const userController = require('../controllers/userController');
 // Get all users
 router.get('/', userController.getAllUsers);
 
+// Get users by role - this needs to come BEFORE the ID route
+router.get('/role/:role', userController.getUsersByRole);
+
 // Get user by ID
 router.get('/:id', userController.getUserById);
-
-// Get users by role
-router.get('/role/:role', userController.getUsersByRole);
 
 // Login user
 router.post('/login', userController.login);
