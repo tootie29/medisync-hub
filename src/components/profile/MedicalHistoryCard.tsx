@@ -14,11 +14,31 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
   userMedicalRecords, 
   getBMICategoryColor 
 }) => {
-  // Safe toFixed function to handle non-number BMI values
-  const safeToFixed = (value: any, digits: number = 1): string => {
-    if (typeof value === 'number' && !isNaN(value)) {
-      return value.toFixed(digits);
+  // Calculate BMI if it's 0 or invalid
+  const calculateBmi = (height: number, weight: number): number => {
+    if (height > 0 && weight > 0) {
+      const heightInMeters = height / 100;
+      return weight / (heightInMeters * heightInMeters);
     }
+    return 0;
+  };
+
+  // Safe toFixed function to handle non-number BMI values
+  const safeToFixed = (value: any, digits: number = 1, height?: number, weight?: number): string => {
+    if (typeof value === 'number' && !isNaN(value) && value > 0) {
+      return value.toFixed(digits);
+    } else if (typeof value === 'string' && !isNaN(parseFloat(value)) && parseFloat(value) > 0) {
+      return parseFloat(value).toFixed(digits);
+    }
+    
+    // If invalid, calculate from height and weight
+    if (height && weight && height > 0 && weight > 0) {
+      const calculatedBmi = calculateBmi(height, weight);
+      if (calculatedBmi > 0) {
+        return calculatedBmi.toFixed(digits);
+      }
+    }
+    
     return '0.0'; // Default value when bmi is not a valid number
   };
 
@@ -35,13 +55,25 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
             .slice(0, 5)
             .map(record => {
               const doctor = SAMPLE_USERS.find(u => u.id === record.doctorId);
-              // Make sure bmi is treated as a number
-              const bmi = typeof record.bmi === 'number' ? 
-                record.bmi : 
-                parseFloat(record.bmi) || 0;
+              
+              // Calculate and ensure BMI is properly displayed
+              const calculatedBmi = (() => {
+                if (record.bmi && record.bmi > 0) {
+                  return typeof record.bmi === 'number' ? 
+                    record.bmi : 
+                    parseFloat(record.bmi);
+                }
                 
+                if (record.height && record.weight && record.height > 0 && record.weight > 0) {
+                  const heightInMeters = record.height / 100;
+                  return record.weight / (heightInMeters * heightInMeters);
+                }
+                
+                return 0;
+              })();
+              
               // Check if certificate is enabled and BMI is in healthy range
-              const hasCertificate = record.certificateEnabled && bmi >= 18.5 && bmi < 25;
+              const hasCertificate = record.certificateEnabled && calculatedBmi >= 18.5 && calculatedBmi < 25;
                 
               return (
                 <div key={record.id} className="border rounded-lg p-4">
@@ -50,7 +82,7 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
                       <h3 className="font-medium flex items-center">
                         {record.diagnosis || 'General Checkup'}
                         {hasCertificate && (
-                          <Medal className="h-4 w-4 ml-2 text-green-600" />
+                          <Medal className="h-4 w-4 ml-2 text-green-600" title="Health Certificate Available" />
                         )}
                       </h3>
                       <p className="text-sm text-gray-500">
@@ -70,8 +102,8 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
                         <span className="text-gray-500">Weight:</span> {record.weight} kg
                       </p>
                       <p className="text-sm">
-                        <span className={getBMICategoryColor(bmi)}>
-                          BMI: {safeToFixed(bmi)}
+                        <span className={getBMICategoryColor(calculatedBmi)}>
+                          BMI: {safeToFixed(calculatedBmi, 1, record.height, record.weight)}
                         </span>
                       </p>
                     </div>

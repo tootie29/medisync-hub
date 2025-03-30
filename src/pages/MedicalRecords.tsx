@@ -52,7 +52,6 @@ const MedicalRecords: React.FC = () => {
   const isDoctor = user?.role === 'doctor' || user?.role === 'admin';
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   
-  // Debug logs to help identify issues
   console.log("MedicalRecords component rendering");
   console.log("User:", user);
   console.log("Patient ID from URL:", patientIdFromUrl);
@@ -69,7 +68,6 @@ const MedicalRecords: React.FC = () => {
     }
   }, [patientIdFromUrl, isPatient, user]);
   
-  // Define selectedPatient only once here
   const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
   console.log("Selected patient:", selectedPatient);
   
@@ -92,12 +90,29 @@ const MedicalRecords: React.FC = () => {
 
   console.log("Sorted medical records:", medicalRecords);
 
-  // Safe toFixed function to handle non-number BMI values
+  const calculateBmi = (height: number, weight: number): number => {
+    if (height > 0 && weight > 0) {
+      const heightInMeters = height / 100;
+      return weight / (heightInMeters * heightInMeters);
+    }
+    return 0;
+  };
+
   const safeToFixed = (value: any, digits: number = 1): string => {
     if (typeof value === 'number' && !isNaN(value)) {
       return value.toFixed(digits);
+    } else if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+      return parseFloat(value).toFixed(digits);
     }
-    return '0.0'; // Default value when value is not a valid number
+    
+    if (typeof arguments[2] === 'number' && typeof arguments[3] === 'number') {
+      const calculatedBmi = calculateBmi(arguments[2], arguments[3]);
+      if (calculatedBmi > 0) {
+        return calculatedBmi.toFixed(digits);
+      }
+    }
+    
+    return '0.0';
   };
 
   const handleChange = (
@@ -162,9 +177,15 @@ const MedicalRecords: React.FC = () => {
       return;
     }
     
+    const heightInMeters = formData.height as number / 100;
+    const calculatedBmi = (formData.weight as number) / (heightInMeters * heightInMeters);
+    
     try {
       if (editingRecordId) {
-        updateMedicalRecord(editingRecordId, formData);
+        updateMedicalRecord(editingRecordId, {
+          ...formData,
+          bmi: calculatedBmi
+        });
         setEditingRecordId(null);
       } else {
         const patientId = selectedPatientId as string;
@@ -174,12 +195,14 @@ const MedicalRecords: React.FC = () => {
           date: new Date().toISOString().split('T')[0],
           height: formData.height as number,
           weight: formData.weight as number,
+          bmi: calculatedBmi,
           bloodPressure: formData.bloodPressure,
           temperature: formData.temperature,
           diagnosis: formData.diagnosis,
           notes: formData.notes,
           medications: formData.medications,
           followUpDate: formData.followUpDate,
+          certificateEnabled: calculatedBmi >= 18.5 && calculatedBmi < 25,
           vitalSigns: {
             heartRate: formData.vitalSigns?.heartRate || 0,
             bloodGlucose: formData.vitalSigns?.bloodGlucose || 0
@@ -439,6 +462,23 @@ const MedicalRecords: React.FC = () => {
                   {medicalRecords.map(record => {
                     const doctor = getUserById(record.doctorId);
                     
+                    const displayBmi = (() => {
+                      if (record.bmi && record.bmi > 0) {
+                        return safeToFixed(record.bmi);
+                      }
+                      
+                      if (record.height && record.weight && record.height > 0 && record.weight > 0) {
+                        const heightInMeters = record.height / 100;
+                        const calculatedBmi = record.weight / (heightInMeters * heightInMeters);
+                        return safeToFixed(calculatedBmi);
+                      }
+                      
+                      return "0.0";
+                    })();
+                    
+                    const bmiValue = parseFloat(displayBmi);
+                    const isHealthyBmi = bmiValue >= 18.5 && bmiValue < 25;
+                    
                     return (
                       <Card key={record.id} className="overflow-hidden">
                         <CardHeader className="bg-gray-50">
@@ -487,8 +527,17 @@ const MedicalRecords: React.FC = () => {
                             </div>
                             <div>
                               <p className="text-sm text-gray-500">BMI</p>
-                              <p className="font-medium">{safeToFixed(record.bmi)}</p>
+                              <p className="font-medium">{displayBmi}</p>
                             </div>
+                            
+                            {isHealthyBmi && (
+                              <div>
+                                <p className="text-sm text-gray-500">Certificate</p>
+                                <p className="font-medium text-green-500">
+                                  {record.certificateEnabled ? "Available" : "Not enabled"}
+                                </p>
+                              </div>
+                            )}
                             
                             {(record.bloodPressure || record.vitalSigns?.bloodPressure) && (
                               <div>
@@ -560,49 +609,75 @@ const MedicalRecords: React.FC = () => {
                         <TableHead>Date</TableHead>
                         <TableHead>Doctor</TableHead>
                         <TableHead>BMI</TableHead>
+                        <TableHead>Certificate</TableHead>
                         <TableHead>Diagnosis</TableHead>
                         <TableHead>Follow-up</TableHead>
                         {isDoctor && <TableHead className="text-right">Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {medicalRecords.map(record => (
-                        <TableRow key={record.id}>
-                          <TableCell>{format(new Date(record.date), 'PPP')}</TableCell>
-                          <TableCell>{getDoctorName(record.doctorId)}</TableCell>
-                          <TableCell>{safeToFixed(record.bmi)}</TableCell>
-                          <TableCell>{record.diagnosis || 'N/A'}</TableCell>
-                          <TableCell>
-                            {record.followUpDate 
-                              ? format(new Date(record.followUpDate), 'PPP')
-                              : 'None'
-                            }
-                          </TableCell>
-                          {isDoctor && (
-                            <TableCell className="text-right">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="mr-2"
-                                onClick={() => {
-                                  resetForm(record);
-                                  setIsAddingRecord(true);
-                                }}
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-500 hover:text-red-700"
-                                onClick={() => handleDeleteRecord(record.id)}
-                              >
-                                Delete
-                              </Button>
+                      {medicalRecords.map(record => {
+                        const displayBmi = (() => {
+                          if (record.bmi && record.bmi > 0) {
+                            return safeToFixed(record.bmi);
+                          }
+                          
+                          if (record.height && record.weight && record.height > 0 && record.weight > 0) {
+                            const heightInMeters = record.height / 100;
+                            const calculatedBmi = record.weight / (heightInMeters * heightInMeters);
+                            return safeToFixed(calculatedBmi);
+                          }
+                          
+                          return "0.0";
+                        })();
+                        
+                        const bmiValue = parseFloat(displayBmi);
+                        const isHealthyBmi = bmiValue >= 18.5 && bmiValue < 25;
+                        
+                        return (
+                          <TableRow key={record.id}>
+                            <TableCell>{format(new Date(record.date), 'PPP')}</TableCell>
+                            <TableCell>{getDoctorName(record.doctorId)}</TableCell>
+                            <TableCell>{displayBmi}</TableCell>
+                            <TableCell>
+                              {isHealthyBmi && record.certificateEnabled 
+                                ? <span className="text-green-500">Available</span>
+                                : <span className="text-gray-400">N/A</span>
+                              }
                             </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
+                            <TableCell>{record.diagnosis || 'N/A'}</TableCell>
+                            <TableCell>
+                              {record.followUpDate 
+                                ? format(new Date(record.followUpDate), 'PPP')
+                                : 'None'
+                              }
+                            </TableCell>
+                            {isDoctor && (
+                              <TableCell className="text-right">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="mr-2"
+                                  onClick={() => {
+                                    resetForm(record);
+                                    setIsAddingRecord(true);
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={() => handleDeleteRecord(record.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </Card>

@@ -178,16 +178,28 @@ class MedicalRecordModel {
       
       // Calculate BMI if not provided or is zero
       let bmi = recordData.bmi;
-      if ((!bmi || bmi === 0) && recordData.height && recordData.weight) {
+      if ((!bmi || bmi === 0 || isNaN(bmi)) && recordData.height && recordData.weight) {
         const heightInMeters = recordData.height / 100;
         bmi = recordData.weight / (heightInMeters * heightInMeters);
         bmi = parseFloat(bmi.toFixed(2));
       }
       
-      // Make sure BMI is never 0
-      if (!bmi || bmi === 0) {
-        console.warn('BMI calculation failed or resulted in 0, using height and weight:', recordData.height, recordData.weight);
+      // Make sure BMI is never 0 if height and weight are available
+      if ((!bmi || bmi === 0 || isNaN(bmi)) && recordData.height && recordData.weight) {
+        console.warn('BMI calculation failed, retrying with height and weight:', recordData.height, recordData.weight);
+        try {
+          const heightInMeters = parseFloat(recordData.height) / 100;
+          bmi = parseFloat(recordData.weight) / (heightInMeters * heightInMeters);
+          bmi = parseFloat(bmi.toFixed(2));
+        } catch (calcError) {
+          console.error('BMI recalculation failed:', calcError);
+        }
       }
+      
+      // Auto-enable certificate for healthy BMI range (18.5-24.9)
+      const certificateEnabled = recordData.certificateEnabled !== undefined ? 
+        recordData.certificateEnabled : 
+        (bmi >= 18.5 && bmi < 25);
       
       // 1. Insert medical record
       await connection.query(
@@ -207,7 +219,7 @@ class MedicalRecordModel {
           recordData.diagnosis, 
           recordData.notes, 
           recordData.followUpDate,
-          recordData.certificateEnabled || false,
+          certificateEnabled,
           now,
           now
         ]
@@ -268,7 +280,7 @@ class MedicalRecordModel {
       
       // Recalculate BMI if height or weight has changed
       let bmi = recordData.bmi;
-      if ((recordData.height || recordData.weight) && (!recordData.bmi || recordData.bmi === 0)) {
+      if ((recordData.height || recordData.weight) && (!recordData.bmi || recordData.bmi === 0 || isNaN(recordData.bmi))) {
         // Get current record to use existing height/weight if not provided
         const [currentRecords] = await connection.query(
           'SELECT height, weight FROM medical_records WHERE id = ?',
@@ -285,6 +297,12 @@ class MedicalRecordModel {
             bmi = parseFloat(bmi.toFixed(2));
           }
         }
+      }
+      
+      // Auto-enable certificate for healthy BMI range if not specified
+      let certificateEnabled = recordData.certificateEnabled;
+      if (certificateEnabled === undefined && bmi) {
+        certificateEnabled = (bmi >= 18.5 && bmi < 25);
       }
       
       // 1. Update medical record
@@ -346,9 +364,9 @@ class MedicalRecordModel {
         params.push(recordData.followUpDate);
       }
       
-      if (recordData.certificateEnabled !== undefined) {
+      if (certificateEnabled !== undefined) {
         setClause.push('certificate_enabled = ?');
-        params.push(recordData.certificateEnabled);
+        params.push(certificateEnabled);
       }
       
       // Add updated_at to the SET clause
