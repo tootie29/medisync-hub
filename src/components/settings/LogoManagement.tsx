@@ -93,19 +93,30 @@ const LogoManagement = () => {
       
       if (primaryLogo) {
         formData.append('primaryLogo', primaryLogo);
+        console.log('LogoManagement: Added primaryLogo to formData:', primaryLogo.name);
       }
       
       if (secondaryLogo) {
         formData.append('secondaryLogo', secondaryLogo);
+        console.log('LogoManagement: Added secondaryLogo to formData:', secondaryLogo.name);
       }
       
       // Only proceed if at least one file is selected
       if (primaryLogo || secondaryLogo) {
-        console.log('LogoManagement: Uploading logos...', primaryLogo, secondaryLogo);
+        console.log('LogoManagement: Uploading logos...', 
+          primaryLogo ? primaryLogo.name : 'no primary', 
+          secondaryLogo ? secondaryLogo.name : 'no secondary'
+        );
         
         // Add a client-side timeout of 30 seconds for the upload
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        // Log formData before sending
+        console.log('LogoManagement: FormData entries:');
+        for (let pair of formData.entries()) {
+          console.log(pair[0], pair[1]);
+        }
         
         const response = await axios.post('/api/logos', formData, {
           headers: {

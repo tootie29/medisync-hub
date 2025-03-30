@@ -6,11 +6,15 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Create uploads directory if it doesn't exist
+// Create uploads directory with proper permissions
 const uploadDir = path.join(__dirname, '../uploads/assets/logos');
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-  console.log(`Created upload directory: ${uploadDir}`);
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
+    console.log(`Created upload directory: ${uploadDir}`);
+  } catch (error) {
+    console.error(`Failed to create upload directory: ${uploadDir}`, error);
+  }
 }
 
 // Configure multer for file uploads with professional path
@@ -18,7 +22,13 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Double check directory exists before storing
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+      try {
+        fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
+        console.log(`Created upload directory: ${uploadDir}`);
+      } catch (error) {
+        console.error(`Failed to create upload directory: ${uploadDir}`, error);
+        return cb(error, null);
+      }
     }
     console.log(`Storing file in: ${uploadDir}`);
     cb(null, uploadDir);
@@ -51,11 +61,17 @@ const upload = multer({
 // Get all logos
 router.get('/', logoController.getAllLogos);
 
-// Upload new logos
+// Upload new logos - make sure multer is properly configured
 router.post('/', upload.fields([
   { name: 'primaryLogo', maxCount: 1 },
   { name: 'secondaryLogo', maxCount: 1 }
-]), logoController.uploadLogos);
+]), (req, res, next) => {
+  console.log('Logo upload request received:', req.files);
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).json({ error: 'No files were uploaded' });
+  }
+  next();
+}, logoController.uploadLogos);
 
 // Added route to get a single logo by position
 router.get('/:position', logoController.getLogoByPosition);

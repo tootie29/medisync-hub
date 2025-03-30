@@ -44,23 +44,40 @@ exports.updateLogo = async (logo) => {
     );
     
     if (existingLogos.length > 0) {
-      // Update existing logo
+      // Update existing logo - explicitly set the URL to ensure update
       console.log(`Model: Updating existing logo for position ${logo.position}`);
       const [result] = await db.query(
         'UPDATE logos SET url = ? WHERE position = ?',
         [logo.url, logo.position]
       );
       console.log(`Model: Updated logo with ID: ${existingLogos[0].id}, Result:`, result);
+      
+      // Verify the update occurred
+      const [verifyRows] = await db.query(
+        'SELECT * FROM logos WHERE position = ?',
+        [logo.position]
+      );
+      console.log(`Model: Verification after update:`, verifyRows[0]);
+      
       return existingLogos[0].id;
     } else {
       // Insert new logo
       console.log(`Model: Creating new logo for position ${logo.position}`);
+      const logoId = uuidv4();
       const [result] = await db.query(
         'INSERT INTO logos (id, url, position, created_at) VALUES (?, ?, ?, NOW())',
-        [logo.id, logo.url, logo.position]
+        [logoId, logo.url, logo.position]
       );
-      console.log(`Model: Created new logo with ID: ${logo.id}, Result:`, result);
-      return logo.id;
+      console.log(`Model: Created new logo with ID: ${logoId}, Result:`, result);
+      
+      // Verify the insert occurred
+      const [verifyRows] = await db.query(
+        'SELECT * FROM logos WHERE id = ?',
+        [logoId]
+      );
+      console.log(`Model: Verification after insert:`, verifyRows[0]);
+      
+      return logoId;
     }
   } catch (error) {
     console.error('Database error in updateLogo:', error);
