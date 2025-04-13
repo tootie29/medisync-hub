@@ -155,7 +155,7 @@ const BMICalculator: React.FC = () => {
             patientId: user.id, // Ensure we pass the patient ID
             height,
             weight,
-            bmi,
+            bmi, // This should now be properly typed
             date: new Date().toISOString().split('T')[0],
             certificateEnabled: isHealthyBMI
           });
@@ -168,7 +168,7 @@ const BMICalculator: React.FC = () => {
             date: new Date().toISOString().split('T')[0],
             height,
             weight,
-            bmi,
+            bmi, // This should now be properly typed
             certificateEnabled: isHealthyBMI
           });
           toast.success('Medical record created successfully');

@@ -59,6 +59,7 @@ export interface CreateMedicalRecordInput {
   followUpDate?: string;
   vitalSigns?: VitalSigns;
   certificateEnabled?: boolean;
+  bmi?: number; // Added bmi property to match what we're sending
 }
 
 export interface Appointment {
