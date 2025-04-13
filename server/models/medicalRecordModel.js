@@ -301,14 +301,16 @@ class MedicalRecordModel {
         }
       }
       
-      // Handle certificate status explicitly - convert to boolean first
+      // Handle certificate status explicitly - ensure it's a boolean
       let certificateEnabled = recordData.certificateEnabled;
-      console.log('Certificate status type in update:', typeof certificateEnabled);
-      console.log('Certificate status value in update:', certificateEnabled);
+      console.log('Certificate status type in update before processing:', typeof certificateEnabled);
+      console.log('Certificate status value in update before processing:', certificateEnabled);
       
-      // Ensure it's a proper boolean
+      // Force it to be a strict boolean if it exists in the recordData
       if (certificateEnabled !== undefined) {
         certificateEnabled = Boolean(certificateEnabled);
+        console.log('Certificate status type after Boolean():', typeof certificateEnabled);
+        console.log('Certificate status value after Boolean():', certificateEnabled);
       }
       
       // Only auto-calculate if not explicitly provided
@@ -375,11 +377,13 @@ class MedicalRecordModel {
         params.push(recordData.followUpDate);
       }
       
+      // CRITICAL CHANGE: Always include certificate_enabled in the update if it's defined
       if (certificateEnabled !== undefined) {
         setClause.push('certificate_enabled = ?');
         // Store as 1 or 0 for MySQL
-        params.push(certificateEnabled ? 1 : 0);
-        console.log('Setting certificate_enabled to:', certificateEnabled ? 1 : 0);
+        const dbValue = certificateEnabled ? 1 : 0;
+        params.push(dbValue);
+        console.log(`Setting certificate_enabled to ${dbValue} (from boolean ${certificateEnabled})`);
       }
       
       // Add updated_at to the SET clause
@@ -387,13 +391,17 @@ class MedicalRecordModel {
       
       if (setClause.length > 0) {
         params.push(id);
-        console.log('UPDATE query:', `UPDATE medical_records SET ${setClause.join(', ')} WHERE id = ?`);
+        const updateQuery = `UPDATE medical_records SET ${setClause.join(', ')} WHERE id = ?`;
+        console.log('UPDATE query:', updateQuery);
         console.log('UPDATE params:', params);
         
-        await connection.query(
-          `UPDATE medical_records SET ${setClause.join(', ')} WHERE id = ?`,
-          params
-        );
+        const [result] = await connection.query(updateQuery, params);
+        console.log('Update result:', result);
+        
+        // Check if the update actually affected any rows
+        if (result.affectedRows === 0) {
+          console.warn(`No rows affected when updating medical record ${id}`);
+        }
       }
       
       // 2. Update medications if provided

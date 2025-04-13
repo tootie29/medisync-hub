@@ -6,11 +6,12 @@ const medicalRecordController = require('../controllers/medicalRecordController'
 // Get all medical records
 router.get('/', medicalRecordController.getAllMedicalRecords);
 
+// Get medical records by patient ID
+// This route must be placed before the /:id route to prevent conflicts
+router.get('/patient/:patientId', medicalRecordController.getMedicalRecordsByPatientId);
+
 // Get medical record by ID
 router.get('/:id', medicalRecordController.getMedicalRecordById);
-
-// Get medical records by patient ID
-router.get('/patient/:patientId', medicalRecordController.getMedicalRecordsByPatientId);
 
 // Create new medical record
 router.post('/', medicalRecordController.createMedicalRecord);

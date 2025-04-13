@@ -65,6 +65,9 @@ exports.updateMedicalRecord = async (req, res) => {
       console.log('Certificate status set to:', recordData.certificateEnabled);
     }
     
+    // Log the final data being sent to the model
+    console.log('Final update data being sent to model:', JSON.stringify(recordData));
+    
     const updatedRecord = await medicalRecordModel.update(recordId, recordData);
     
     if (!updatedRecord) {
