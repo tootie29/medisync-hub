@@ -11,7 +11,7 @@ import { AlertCircle, ArrowRight, Download, Medal, Lock } from 'lucide-react';
 import { toast } from "sonner";
 import { getBMICategory, getBMICategoryColor } from '@/utils/helpers';
 import BMICertificate from '@/components/bmi/BMICertificate';
-import axios from 'axios';
+import html2pdf from 'html2pdf.js';
 
 const safeToFixed = (value: any, digits: number = 1): string => {
   if (typeof value === 'number' && !isNaN(value) && value > 0) {
@@ -197,49 +197,30 @@ const BMICalculator: React.FC = () => {
       const element = document.getElementById('bmi-certificate');
       
       if (element) {
-        const certificateContent = element.innerHTML;
+        toast.info('Preparing your PDF certificate...');
         
-        const blob = new Blob([`
-          <html>
-            <head>
-              <title>Health Certificate for ${user.name}</title>
-              <style>
-                body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-                .certificate { padding: 40px; max-width: 800px; margin: 0 auto; text-align: center; }
-                .certificate-header { margin-bottom: 30px; }
-                .certificate-title { font-size: 36px; color: #22c55e; margin-bottom: 10px; }
-                .certificate-subtitle { font-size: 18px; color: #555; }
-                .certificate-body { margin: 30px 0; padding: 20px; border: 2px solid #22c55e; border-radius: 10px; }
-                .user-name { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
-                .bmi-result { font-size: 20px; margin-bottom: 10px; }
-                .bmi-value { font-weight: bold; color: #22c55e; }
-                .bmi-category { font-weight: bold; color: #22c55e; }
-                .certificate-date { margin-top: 20px; font-style: italic; color: #555; }
-                .certificate-footer { margin-top: 40px; }
-                .signature-line { width: 200px; height: 1px; background: #000; margin: 10px auto; }
-                .doctor-name { font-weight: bold; }
-              </style>
-            </head>
-            <body>
-              ${certificateContent}
-            </body>
-          </html>
-        `], { type: 'text/html' });
+        const opt = {
+          margin: [0, 0, 0, 0],
+          filename: `health_certificate_${user.name.replace(/\s+/g, '_')}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
         
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `health_certificate_${user.name.replace(/\s+/g, '_')}.html`;
-        
-        document.body.appendChild(a);
-        a.click();
-        
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        html2pdf().from(element).set(opt).save()
+          .then(() => {
+            toast.success('Certificate downloaded successfully');
+            setShowCertificate(false);
+          })
+          .catch(error => {
+            console.error('Error generating PDF:', error);
+            toast.error('Failed to generate PDF certificate');
+            setShowCertificate(false);
+          });
+      } else {
+        toast.error('Certificate element not found');
+        setShowCertificate(false);
       }
-      
-      setShowCertificate(false);
     }, 100);
   };
 
