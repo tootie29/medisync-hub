@@ -4,22 +4,18 @@ const { v4: uuidv4 } = require('uuid');
 class MedicalRecordModel {
   async getAll() {
     try {
-      // Get medical records with basic information
       const [records] = await pool.query(`
         SELECT * FROM medical_records
         ORDER BY date DESC
       `);
       
-      // For each record, get medications and vital signs
       for (const record of records) {
-        // Get medications
         const [medications] = await pool.query(
           'SELECT medication_name FROM medications WHERE medical_record_id = ?',
           [record.id]
         );
         record.medications = medications.map(med => med.medication_name);
         
-        // Get vital signs
         const [vitalSigns] = await pool.query(
           'SELECT heart_rate, blood_pressure, blood_glucose FROM vital_signs WHERE medical_record_id = ?',
           [record.id]
@@ -29,7 +25,6 @@ class MedicalRecordModel {
           record.vitalSigns = vitalSigns[0];
         }
 
-        // Convert snake_case to camelCase
         record.patientId = record.patient_id;
         record.doctorId = record.doctor_id;
         record.bloodPressure = record.blood_pressure;
@@ -38,7 +33,6 @@ class MedicalRecordModel {
         record.createdAt = record.created_at;
         record.updatedAt = record.updated_at;
         
-        // Remove snake_case properties
         delete record.patient_id;
         delete record.doctor_id;
         delete record.blood_pressure;
@@ -65,14 +59,12 @@ class MedicalRecordModel {
       
       const record = records[0];
       
-      // Get medications
       const [medications] = await pool.query(
         'SELECT medication_name FROM medications WHERE medical_record_id = ?',
         [id]
       );
       record.medications = medications.map(med => med.medication_name);
       
-      // Get vital signs
       const [vitalSigns] = await pool.query(
         'SELECT heart_rate, blood_pressure, blood_glucose FROM vital_signs WHERE medical_record_id = ?',
         [id]
@@ -86,7 +78,6 @@ class MedicalRecordModel {
         };
       }
 
-      // Convert snake_case to camelCase
       record.patientId = record.patient_id;
       record.doctorId = record.doctor_id;
       record.bloodPressure = record.blood_pressure;
@@ -95,7 +86,6 @@ class MedicalRecordModel {
       record.createdAt = record.created_at;
       record.updatedAt = record.updated_at;
       
-      // Remove snake_case properties
       delete record.patient_id;
       delete record.doctor_id;
       delete record.blood_pressure;
@@ -118,16 +108,13 @@ class MedicalRecordModel {
         [patientId]
       );
       
-      // For each record, get medications and vital signs
       for (const record of records) {
-        // Get medications
         const [medications] = await pool.query(
           'SELECT medication_name FROM medications WHERE medical_record_id = ?',
           [record.id]
         );
         record.medications = medications.map(med => med.medication_name);
         
-        // Get vital signs
         const [vitalSigns] = await pool.query(
           'SELECT heart_rate, blood_pressure, blood_glucose FROM vital_signs WHERE medical_record_id = ?',
           [record.id]
@@ -141,7 +128,6 @@ class MedicalRecordModel {
           };
         }
 
-        // Convert snake_case to camelCase
         record.patientId = record.patient_id;
         record.doctorId = record.doctor_id;
         record.bloodPressure = record.blood_pressure;
@@ -150,7 +136,6 @@ class MedicalRecordModel {
         record.createdAt = record.created_at;
         record.updatedAt = record.updated_at;
         
-        // Remove snake_case properties
         delete record.patient_id;
         delete record.doctor_id;
         delete record.blood_pressure;
@@ -176,7 +161,6 @@ class MedicalRecordModel {
       const id = recordData.id || uuidv4();
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       
-      // Calculate BMI if not provided or is zero
       let bmi = recordData.bmi;
       if ((!bmi || bmi === 0 || isNaN(bmi)) && recordData.height && recordData.weight) {
         const heightInMeters = recordData.height / 100;
@@ -184,7 +168,6 @@ class MedicalRecordModel {
         bmi = parseFloat(bmi.toFixed(2));
       }
       
-      // Make sure BMI is never 0 if height and weight are available
       if ((!bmi || bmi === 0 || isNaN(bmi)) && recordData.height && recordData.weight) {
         console.warn('BMI calculation failed, retrying with height and weight:', recordData.height, recordData.weight);
         try {
@@ -196,18 +179,16 @@ class MedicalRecordModel {
         }
       }
       
-      // Explicitly handle certificate status
       const certificateEnabled = recordData.certificateEnabled !== undefined ? 
         Boolean(recordData.certificateEnabled) : 
         (bmi >= 18.5 && bmi < 25);
       
       console.log('Creating record with certificate status:', certificateEnabled);
       
-      // 1. Insert medical record
       await connection.query(
         `INSERT INTO medical_records 
         (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, follow_up_date, certificate_enabled, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, 
           recordData.patientId, 
@@ -227,7 +208,6 @@ class MedicalRecordModel {
         ]
       );
       
-      // 2. Insert medications if provided
       if (recordData.medications && recordData.medications.length > 0) {
         for (const medication of recordData.medications) {
           await connection.query(
@@ -237,7 +217,6 @@ class MedicalRecordModel {
         }
       }
       
-      // 3. Insert vital signs if provided
       if (recordData.vitalSigns) {
         await connection.query(
           `INSERT INTO vital_signs 
@@ -279,15 +258,13 @@ class MedicalRecordModel {
     
     try {
       await connection.beginTransaction();
-      console.log('*******************************************');
-      console.log('STARTING UPDATE TRANSACTION FOR RECORD:', id);
-      console.log('Update data received:', JSON.stringify(recordData));
-      console.log('*******************************************');
+      console.log('************ UPDATING MEDICAL RECORD ************');
+      console.log('RECORD ID:', id);
+      console.log('UPDATE DATA RECEIVED:', JSON.stringify(recordData));
+      console.log('************************************************');
       
-      // Recalculate BMI if height or weight has changed
       let bmi = recordData.bmi;
       if ((recordData.height || recordData.weight) && (!recordData.bmi || recordData.bmi === 0 || isNaN(recordData.bmi))) {
-        // Get current record to use existing height/weight if not provided
         const [currentRecords] = await connection.query(
           'SELECT height, weight FROM medical_records WHERE id = ?',
           [id]
@@ -305,14 +282,11 @@ class MedicalRecordModel {
         }
       }
       
-      // Handle certificate status explicitly - ensure it's a boolean
       let certificateEnabled = recordData.certificateEnabled;
-      console.log('Certificate status type before processing:', typeof certificateEnabled);
-      console.log('Certificate status raw value:', certificateEnabled);
+      console.log('Certificate status in model (initial):', certificateEnabled);
+      console.log('Certificate status type:', typeof certificateEnabled);
       
-      // Force it to be a strict boolean if it exists in the recordData
       if (certificateEnabled !== undefined) {
-        // Convert string 'true'/'false' or number 1/0 to boolean
         if (typeof certificateEnabled === 'string') {
           certificateEnabled = certificateEnabled.toLowerCase() === 'true';
         } else if (typeof certificateEnabled === 'number') {
@@ -321,16 +295,13 @@ class MedicalRecordModel {
           certificateEnabled = Boolean(certificateEnabled);
         }
         
-        console.log('Certificate status type after conversion:', typeof certificateEnabled);
-        console.log('Certificate status value after conversion:', certificateEnabled);
+        console.log('Certificate status after conversion (boolean):', certificateEnabled);
       }
       
-      // Only auto-calculate if not explicitly provided
       if (certificateEnabled === undefined && bmi) {
         certificateEnabled = (bmi >= 18.5 && bmi < 25);
       }
       
-      // 1. Update medical record
       const setClause = [];
       const params = [];
       
@@ -389,48 +360,44 @@ class MedicalRecordModel {
         params.push(recordData.followUpDate);
       }
       
-      // CRITICAL CHANGE: Always include certificate_enabled in the update if it's defined
       if (certificateEnabled !== undefined) {
         setClause.push('certificate_enabled = ?');
-        // Store as 1 or 0 for MySQL
         const dbValue = certificateEnabled ? 1 : 0;
         params.push(dbValue);
-        console.log(`Setting certificate_enabled to ${dbValue} (from boolean ${certificateEnabled})`);
+        console.log(`Setting certificate_enabled in database to ${dbValue} (from boolean ${certificateEnabled})`);
       }
       
-      // Add updated_at to the SET clause
       setClause.push('updated_at = NOW()');
       
-      if (setClause.length > 0) {
-        params.push(id);
-        const updateQuery = `UPDATE medical_records SET ${setClause.join(', ')} WHERE id = ?`;
-        console.log('UPDATE QUERY:', updateQuery);
-        console.log('UPDATE PARAMS:', params);
-        
-        const [result] = await connection.query(updateQuery, params);
-        console.log('UPDATE RESULT:', result);
-        
-        // Check if the update actually affected any rows
-        if (result.affectedRows === 0) {
-          console.warn(`CRITICAL ERROR: No rows affected when updating medical record ${id}`);
-          // Verify the record exists
-          const [checkRecord] = await connection.query('SELECT id FROM medical_records WHERE id = ?', [id]);
-          console.log('Record exists check:', checkRecord);
-          if (checkRecord.length === 0) {
-            throw new Error(`Medical record with ID ${id} not found`);
-          }
+      if (setClause.length === 0) {
+        console.warn('No fields to update for record', id);
+        return await this.getById(id);
+      }
+      
+      params.push(id);
+      
+      const updateQuery = `UPDATE medical_records SET ${setClause.join(', ')} WHERE id = ?`;
+      console.log('UPDATE QUERY:', updateQuery);
+      console.log('UPDATE PARAMS:', params);
+      
+      const [result] = await connection.query(updateQuery, params);
+      console.log('UPDATE RESULT:', result);
+      
+      if (result.affectedRows === 0) {
+        console.error(`CRITICAL ERROR: No rows affected when updating medical record ${id}`);
+        const [checkRecord] = await connection.query('SELECT id FROM medical_records WHERE id = ?', [id]);
+        console.log('Record exists check:', checkRecord);
+        if (checkRecord.length === 0) {
+          throw new Error(`Medical record with ID ${id} not found`);
         }
       }
       
-      // 2. Update medications if provided
       if (recordData.medications) {
-        // Delete existing medications
         await connection.query(
           'DELETE FROM medications WHERE medical_record_id = ?',
           [id]
         );
         
-        // Insert new medications
         for (const medication of recordData.medications) {
           await connection.query(
             'INSERT INTO medications (id, medical_record_id, medication_name) VALUES (?, ?, ?)',
@@ -439,16 +406,13 @@ class MedicalRecordModel {
         }
       }
       
-      // 3. Update vital signs if provided
       if (recordData.vitalSigns) {
-        // Check if vital signs already exist
         const [existingVitalSigns] = await connection.query(
           'SELECT id FROM vital_signs WHERE medical_record_id = ?',
           [id]
         );
         
         if (existingVitalSigns.length > 0) {
-          // Update existing vital signs
           const vitalSignsUpdateClause = [];
           const vitalSignsParams = [];
           
@@ -480,7 +444,6 @@ class MedicalRecordModel {
             );
           }
         } else {
-          // Insert new vital signs
           await connection.query(
             `INSERT INTO vital_signs 
             (id, medical_record_id, heart_rate, blood_pressure, blood_glucose, created_at, updated_at) 
@@ -499,8 +462,9 @@ class MedicalRecordModel {
       await connection.commit();
       console.log('Transaction committed successfully');
       
-      // Get updated record
-      return await this.getById(id);
+      const updatedRecord = await this.getById(id);
+      console.log('UPDATED RECORD:', JSON.stringify(updatedRecord));
+      return updatedRecord;
     } catch (error) {
       await connection.rollback();
       console.error('Error updating medical record:', error);
@@ -516,19 +480,16 @@ class MedicalRecordModel {
     try {
       await connection.beginTransaction();
       
-      // Delete related medications
       await connection.query(
         'DELETE FROM medications WHERE medical_record_id = ?',
         [id]
       );
       
-      // Delete related vital signs
       await connection.query(
         'DELETE FROM vital_signs WHERE medical_record_id = ?',
         [id]
       );
       
-      // Delete medical record
       const [result] = await connection.query(
         'DELETE FROM medical_records WHERE id = ?',
         [id]

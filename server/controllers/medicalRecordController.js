@@ -42,6 +42,15 @@ exports.createMedicalRecord = async (req, res) => {
   try {
     const recordData = req.body;
     console.log('Creating medical record with data:', recordData);
+    
+    // ***** CRITICAL FIX: Handle certificateEnabled explicitly *****
+    if ('certificateEnabled' in recordData) {
+      recordData.certificateEnabled = recordData.certificateEnabled === true || 
+                                      recordData.certificateEnabled === 'true' || 
+                                      recordData.certificateEnabled === 1;
+      console.log('Certificate enabled status explicitly set to:', recordData.certificateEnabled);
+    }
+    
     const newRecord = await medicalRecordModel.create(recordData);
     console.log('Medical record created:', newRecord);
     res.status(201).json(newRecord);
@@ -56,14 +65,16 @@ exports.updateMedicalRecord = async (req, res) => {
     const recordId = req.params.id;
     const recordData = req.body;
     console.log('Updating medical record with ID:', recordId);
-    console.log('Update data:', recordData);
+    console.log('Update data RECEIVED FROM CLIENT:', JSON.stringify(recordData));
     
     // *** CRITICAL FIX: Handle certificateEnabled properly ***
     // Explicitly handle certificateEnabled as a boolean
     if ('certificateEnabled' in recordData) {
       // Convert any truthy/falsy value to a strict boolean
-      recordData.certificateEnabled = recordData.certificateEnabled === true || recordData.certificateEnabled === 'true' || recordData.certificateEnabled === 1;
-      console.log('Certificate status set to:', recordData.certificateEnabled);
+      recordData.certificateEnabled = recordData.certificateEnabled === true || 
+                                      recordData.certificateEnabled === 'true' || 
+                                      recordData.certificateEnabled === 1;
+      console.log('Certificate status explicitly set to:', recordData.certificateEnabled);
     }
     
     // Log the final data being sent to the model
@@ -75,7 +86,7 @@ exports.updateMedicalRecord = async (req, res) => {
       return res.status(404).json({ message: 'Medical record not found' });
     }
     
-    console.log('Medical record updated:', updatedRecord);
+    console.log('Medical record updated successfully:', updatedRecord);
     res.json(updatedRecord);
   } catch (error) {
     console.error('Error in updateMedicalRecord controller:', error);
