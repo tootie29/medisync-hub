@@ -164,24 +164,23 @@ const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
                 <span className="font-medium">{latestMedicalRecord.bloodPressure}</span>
               </div>
             )}
-            
-            {hasCertificate && (
-              <div className="flex justify-between items-center pt-1">
-                <span className="text-sm text-green-600 flex items-center">
-                  <Medal className="h-3 w-3 mr-1" />
-                  Health Certificate
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="p-1 h-auto text-green-600 hover:text-green-700 hover:bg-green-50"
-                  onClick={downloadCertificate}
-                >
-                  <Download className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
           </div>
+          
+          {/* Certificate Section */}
+          {hasCertificate && (
+            <div className="mt-4 border-t pt-4">
+              <Button 
+                onClick={downloadCertificate}
+                className="w-full bg-green-600 hover:bg-green-700 flex items-center justify-center"
+              >
+                <Medal className="w-4 h-4 mr-2" />
+                Download Health Certificate
+              </Button>
+              <p className="text-xs text-center text-green-600 mt-1">
+                A health certificate has been enabled by your doctor
+              </p>
+            </div>
+          )}
           
           <div className="pt-2">
             <Button 

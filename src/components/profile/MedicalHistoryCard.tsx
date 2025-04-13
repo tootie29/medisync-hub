@@ -194,19 +194,6 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
                           BMI: {safeToFixed(calculatedBmi, 1, record.height, record.weight)}
                         </span>
                       </p>
-                      
-                      {/* Add download certificate button */}
-                      {hasCertificate && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="mt-1 p-0 h-auto text-green-600 hover:text-green-700 hover:bg-green-50"
-                          onClick={() => downloadCertificate(record)}
-                        >
-                          <Download className="h-3 w-3 mr-1" />
-                          <span className="text-xs">Certificate</span>
-                        </Button>
-                      )}
                     </div>
                   </div>
                   
@@ -237,6 +224,20 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
                   {record.notes && (
                     <div className="mt-2 pt-2 border-t">
                       <p className="text-sm text-gray-700">{record.notes}</p>
+                    </div>
+                  )}
+                  
+                  {/* Add prominent certificate download button */}
+                  {hasCertificate && (
+                    <div className="mt-3 pt-3 border-t">
+                      <Button 
+                        variant="outline" 
+                        className="w-full text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 flex items-center justify-center"
+                        onClick={() => downloadCertificate(record)}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Health Certificate
+                      </Button>
                     </div>
                   )}
                 </div>
