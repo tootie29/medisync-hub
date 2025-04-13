@@ -58,10 +58,11 @@ exports.updateMedicalRecord = async (req, res) => {
     console.log('Updating medical record with ID:', recordId);
     console.log('Update data:', recordData);
     
+    // *** CRITICAL FIX: Handle certificateEnabled properly ***
     // Explicitly handle certificateEnabled as a boolean
-    if (recordData.certificateEnabled !== undefined) {
+    if ('certificateEnabled' in recordData) {
       // Convert any truthy/falsy value to a strict boolean
-      recordData.certificateEnabled = Boolean(recordData.certificateEnabled);
+      recordData.certificateEnabled = recordData.certificateEnabled === true || recordData.certificateEnabled === 'true' || recordData.certificateEnabled === 1;
       console.log('Certificate status set to:', recordData.certificateEnabled);
     }
     

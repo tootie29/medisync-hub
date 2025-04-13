@@ -279,6 +279,10 @@ class MedicalRecordModel {
     
     try {
       await connection.beginTransaction();
+      console.log('*******************************************');
+      console.log('STARTING UPDATE TRANSACTION FOR RECORD:', id);
+      console.log('Update data received:', JSON.stringify(recordData));
+      console.log('*******************************************');
       
       // Recalculate BMI if height or weight has changed
       let bmi = recordData.bmi;
@@ -303,14 +307,22 @@ class MedicalRecordModel {
       
       // Handle certificate status explicitly - ensure it's a boolean
       let certificateEnabled = recordData.certificateEnabled;
-      console.log('Certificate status type in update before processing:', typeof certificateEnabled);
-      console.log('Certificate status value in update before processing:', certificateEnabled);
+      console.log('Certificate status type before processing:', typeof certificateEnabled);
+      console.log('Certificate status raw value:', certificateEnabled);
       
       // Force it to be a strict boolean if it exists in the recordData
       if (certificateEnabled !== undefined) {
-        certificateEnabled = Boolean(certificateEnabled);
-        console.log('Certificate status type after Boolean():', typeof certificateEnabled);
-        console.log('Certificate status value after Boolean():', certificateEnabled);
+        // Convert string 'true'/'false' or number 1/0 to boolean
+        if (typeof certificateEnabled === 'string') {
+          certificateEnabled = certificateEnabled.toLowerCase() === 'true';
+        } else if (typeof certificateEnabled === 'number') {
+          certificateEnabled = certificateEnabled === 1;
+        } else {
+          certificateEnabled = Boolean(certificateEnabled);
+        }
+        
+        console.log('Certificate status type after conversion:', typeof certificateEnabled);
+        console.log('Certificate status value after conversion:', certificateEnabled);
       }
       
       // Only auto-calculate if not explicitly provided
@@ -392,15 +404,21 @@ class MedicalRecordModel {
       if (setClause.length > 0) {
         params.push(id);
         const updateQuery = `UPDATE medical_records SET ${setClause.join(', ')} WHERE id = ?`;
-        console.log('UPDATE query:', updateQuery);
-        console.log('UPDATE params:', params);
+        console.log('UPDATE QUERY:', updateQuery);
+        console.log('UPDATE PARAMS:', params);
         
         const [result] = await connection.query(updateQuery, params);
-        console.log('Update result:', result);
+        console.log('UPDATE RESULT:', result);
         
         // Check if the update actually affected any rows
         if (result.affectedRows === 0) {
-          console.warn(`No rows affected when updating medical record ${id}`);
+          console.warn(`CRITICAL ERROR: No rows affected when updating medical record ${id}`);
+          // Verify the record exists
+          const [checkRecord] = await connection.query('SELECT id FROM medical_records WHERE id = ?', [id]);
+          console.log('Record exists check:', checkRecord);
+          if (checkRecord.length === 0) {
+            throw new Error(`Medical record with ID ${id} not found`);
+          }
         }
       }
       
@@ -479,6 +497,7 @@ class MedicalRecordModel {
       }
       
       await connection.commit();
+      console.log('Transaction committed successfully');
       
       // Get updated record
       return await this.getById(id);
