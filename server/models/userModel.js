@@ -15,7 +15,13 @@ class UserModel {
 
   async getById(id) {
     try {
-      const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+      // Handle both formats (with or without 'user-' prefix)
+      let userId = id;
+      if (id && id.startsWith('user-')) {
+        console.log(`Looking up user with prefixed ID: ${id}`);
+      }
+      
+      const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
       return rows[0];
     } catch (error) {
       console.error('Error fetching user by ID:', error);
@@ -34,6 +40,7 @@ class UserModel {
 
       // Log the password to verify it's being passed correctly
       console.log('Creating user with password:', password ? 'Password provided' : 'No password provided');
+      console.log('Faculty/College value:', faculty || 'Not provided');
 
       const [result] = await pool.query(
         `INSERT INTO users (

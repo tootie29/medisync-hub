@@ -49,9 +49,14 @@ exports.getMedicalRecordsByPatientId = async (req, res) => {
 exports.createMedicalRecord = async (req, res) => {
   try {
     const recordData = req.body;
-    console.log('Creating medical record with data:', recordData);
+    console.log('Creating medical record with data:', JSON.stringify(recordData));
     
-    // ***** CRITICAL FIX: Handle certificateEnabled explicitly *****
+    // ***** CRITICAL FIX: Validate and sanitize input data *****
+    if (!recordData.patientId) {
+      return res.status(400).json({ message: 'Patient ID is required' });
+    }
+    
+    // Handle certificateEnabled explicitly
     if ('certificateEnabled' in recordData) {
       recordData.certificateEnabled = recordData.certificateEnabled === true || 
                                       recordData.certificateEnabled === 'true' || 
@@ -63,6 +68,24 @@ exports.createMedicalRecord = async (req, res) => {
     if (recordData.patientId) {
       console.log('Original patientId from client:', recordData.patientId);
       // Keep the patientId as is to maintain the same format sent by the client
+    }
+    
+    // Check for required numeric fields
+    recordData.height = parseFloat(recordData.height) || 0;
+    recordData.weight = parseFloat(recordData.weight) || 0;
+    
+    if (!recordData.height || !recordData.weight) {
+      return res.status(400).json({ message: 'Valid height and weight are required' });
+    }
+    
+    // Ensure date is present
+    if (!recordData.date) {
+      recordData.date = new Date().toISOString().split('T')[0];
+    }
+    
+    // Ensure doctorId is present
+    if (!recordData.doctorId) {
+      recordData.doctorId = 'self-recorded';
     }
     
     const newRecord = await medicalRecordModel.create(recordData);

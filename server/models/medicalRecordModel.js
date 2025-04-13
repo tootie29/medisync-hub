@@ -1,3 +1,4 @@
+
 const { pool } = require('../db/config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -153,6 +154,7 @@ class MedicalRecordModel {
   }
 
   async create(recordData) {
+    console.log('Creating medical record with data:', JSON.stringify(recordData));
     const connection = await pool.getConnection();
     
     try {
@@ -161,24 +163,26 @@ class MedicalRecordModel {
       const id = recordData.id || uuidv4();
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       
-      let bmi = recordData.bmi;
-      if ((!bmi || bmi === 0 || isNaN(bmi)) && recordData.height && recordData.weight) {
-        const heightInMeters = recordData.height / 100;
-        bmi = recordData.weight / (heightInMeters * heightInMeters);
-        bmi = parseFloat(bmi.toFixed(2));
+      // Validate essential fields
+      if (!recordData.patientId) {
+        throw new Error('Patient ID is required');
       }
       
+      // Calculate BMI if not provided or if height and weight are available
+      let bmi = recordData.bmi;
       if ((!bmi || bmi === 0 || isNaN(bmi)) && recordData.height && recordData.weight) {
-        console.warn('BMI calculation failed, retrying with height and weight:', recordData.height, recordData.weight);
         try {
           const heightInMeters = parseFloat(recordData.height) / 100;
           bmi = parseFloat(recordData.weight) / (heightInMeters * heightInMeters);
           bmi = parseFloat(bmi.toFixed(2));
+          console.log('Calculated BMI:', bmi, 'from height:', recordData.height, 'and weight:', recordData.weight);
         } catch (calcError) {
-          console.error('BMI recalculation failed:', calcError);
+          console.error('BMI calculation error:', calcError);
+          bmi = 0; // Default to 0 if calculation fails
         }
       }
       
+      // Handle certificate enabled status (default based on healthy BMI range if not explicitly set)
       const certificateEnabled = recordData.certificateEnabled !== undefined ? 
         Boolean(recordData.certificateEnabled) : 
         (bmi >= 18.5 && bmi < 25);
@@ -187,6 +191,7 @@ class MedicalRecordModel {
       console.log('Certificate status type:', typeof certificateEnabled);
       console.log('Patient ID being used for record:', recordData.patientId);
       
+      // Insert record with explicit type handling
       await connection.query(
         `INSERT INTO medical_records 
         (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, follow_up_date, certificate_enabled, created_at, updated_at) 
@@ -194,22 +199,23 @@ class MedicalRecordModel {
         [
           id, 
           recordData.patientId, 
-          recordData.doctorId, 
-          recordData.date, 
-          recordData.height, 
-          recordData.weight, 
-          bmi, 
-          recordData.bloodPressure, 
-          recordData.temperature, 
-          recordData.diagnosis, 
-          recordData.notes, 
-          recordData.followUpDate,
+          recordData.doctorId || 'self-recorded', 
+          recordData.date || new Date().toISOString().split('T')[0], 
+          parseFloat(recordData.height) || 0, 
+          parseFloat(recordData.weight) || 0, 
+          bmi || 0, 
+          recordData.bloodPressure || null, 
+          recordData.temperature || null, 
+          recordData.diagnosis || null, 
+          recordData.notes || null, 
+          recordData.followUpDate || null,
           certificateEnabled ? 1 : 0,
           now,
           now
         ]
       );
       
+      // Handle medications if provided
       if (recordData.medications && recordData.medications.length > 0) {
         for (const medication of recordData.medications) {
           await connection.query(
@@ -219,6 +225,7 @@ class MedicalRecordModel {
         }
       }
       
+      // Handle vital signs if provided
       if (recordData.vitalSigns) {
         await connection.query(
           `INSERT INTO vital_signs 
@@ -227,9 +234,9 @@ class MedicalRecordModel {
           [
             uuidv4(),
             id,
-            recordData.vitalSigns.heartRate,
-            recordData.vitalSigns.bloodPressure || recordData.bloodPressure,
-            recordData.vitalSigns.bloodGlucose,
+            recordData.vitalSigns.heartRate || null,
+            recordData.vitalSigns.bloodPressure || recordData.bloodPressure || null,
+            recordData.vitalSigns.bloodGlucose || null,
             now,
             now
           ]

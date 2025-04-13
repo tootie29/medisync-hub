@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -149,7 +150,9 @@ const BMICalculator: React.FC = () => {
         const isHealthyBMI = bmi >= 18.5 && bmi < 25;
         
         if (lastRecord) {
+          // Update existing record
           await updateMedicalRecord(lastRecord.id, {
+            patientId: user.id, // Ensure we pass the patient ID
             height,
             weight,
             bmi,
@@ -158,17 +161,20 @@ const BMICalculator: React.FC = () => {
           });
           toast.success('Medical record updated successfully');
         } else {
+          // Create new record - ensure all required fields are present
           await addMedicalRecord({
             patientId: user.id,
             doctorId: 'self-recorded',
             date: new Date().toISOString().split('T')[0],
             height,
             weight,
+            bmi,
             certificateEnabled: isHealthyBMI
           });
           toast.success('Medical record created successfully');
         }
         
+        // Refresh records after saving
         const records = getMedicalRecordsByPatientId(user.id);
         if (records.length > 0) {
           const latest = records.sort(
