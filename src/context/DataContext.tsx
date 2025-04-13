@@ -182,10 +182,62 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getUserById = (id: string): User | undefined => {
+    console.log('Looking up user by ID:', id);
+    
+    if (id && id.includes('-')) {
+      console.log('ID contains prefix, checking sample users with or without prefix');
+      
+      const exactMatch = SAMPLE_USERS.find(user => user.id === id);
+      if (exactMatch) {
+        console.log('Found exact match with prefixed ID:', exactMatch);
+        return exactMatch;
+      }
+      
+      if (id.startsWith('user-')) {
+        const numericId = id.replace('user-', '');
+        const matchingUser = SAMPLE_USERS.find(user => user.id === numericId);
+        
+        if (matchingUser) {
+          console.log('Found matching user by numeric ID part:', matchingUser);
+          return matchingUser;
+        }
+        
+        if (isPreviewMode) {
+          const fallbackUser = SAMPLE_USERS.find(u => u.role === 'student' || u.role === 'staff');
+          if (fallbackUser) {
+            console.log('Using fallback user for preview mode:', fallbackUser);
+            return fallbackUser;
+          }
+        }
+      }
+    }
+    
     return SAMPLE_USERS.find(user => user.id === id);
   };
 
   const getMedicalRecordsByPatientId = (patientId: string): MedicalRecord[] => {
+    console.log('Getting medical records for patient ID:', patientId);
+    
+    if (isPreviewMode && patientId && patientId.startsWith('user-')) {
+      const recordsWithPrefix = medicalRecords.filter(record => record.patientId === patientId);
+      
+      if (recordsWithPrefix.length > 0) {
+        console.log('Found records with prefixed patient ID');
+        return recordsWithPrefix;
+      }
+      
+      const numericId = patientId.replace('user-', '');
+      const recordsWithNumericId = medicalRecords.filter(record => record.patientId === numericId);
+      
+      if (recordsWithNumericId.length > 0) {
+        console.log('Found records with numeric patient ID');
+        return recordsWithNumericId;
+      }
+      
+      console.log('No records found for patient ID with any format');
+      return [];
+    }
+    
     return medicalRecords.filter(record => record.patientId === patientId);
   };
 
@@ -211,17 +263,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
       
-      // Set certificateEnabled automatically based on BMI if not set
       const isHealthyBMI = bmi >= 18.5 && bmi < 25;
       const certificateEnabled = record.certificateEnabled !== undefined ? 
         record.certificateEnabled : isHealthyBMI;
       
+      let finalPatientId = record.patientId;
+      
+      if (isPreviewMode && record.patientId.startsWith('user-')) {
+        console.log('Using prefixed patient ID in preview mode:', finalPatientId);
+      }
+      
       const recordToCreate = {
         ...record,
+        patientId: finalPatientId,
         bmi,
         certificateEnabled,
         vitalSigns: Object.keys(updatedVitalSigns).length > 0 ? updatedVitalSigns : undefined
       };
+      
+      console.log('Record to create with final patientId:', finalPatientId);
       
       if (isPreviewMode) {
         const mockRecord: MedicalRecord = {
@@ -233,6 +293,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           certificateEnabled
         };
         
+        console.log('Created mock record with certificate status:', mockRecord.certificateEnabled);
         setMedicalRecords(prev => [...prev, mockRecord]);
         toast.success('Medical record added successfully (preview mode)');
         
@@ -254,8 +315,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateMedicalRecord = async (id: string, record: Partial<MedicalRecord>): Promise<MedicalRecord> => {
+    console.log('Updating medical record:', id);
+    console.log('With data:', record);
+    console.log('Certificate enabled value:', record.certificateEnabled);
+    
     try {
-      // Calculate BMI if height or weight changes
       if (record.height !== undefined || record.weight !== undefined) {
         const currentRecord = getMedicalRecordById(id);
         if (currentRecord) {
@@ -269,20 +333,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         record.vitalSigns.bloodPressure = record.bloodPressure;
       }
       
-      // Handle certificate updates in preview mode
       if (isPreviewMode) {
+        console.log('Updating record in preview mode with certificate:', record.certificateEnabled);
+        
         const index = medicalRecords.findIndex(r => r.id === id);
         if (index !== -1) {
           const updatedRecord = {
             ...medicalRecords[index],
             ...record,
+            certificateEnabled: record.certificateEnabled !== undefined ? record.certificateEnabled : medicalRecords[index].certificateEnabled,
             updatedAt: new Date().toISOString()
           };
+          
+          console.log('Preview mode updated record with certificate:', updatedRecord.certificateEnabled);
           
           const newRecords = [...medicalRecords];
           newRecords[index] = updatedRecord;
           
           setMedicalRecords(newRecords);
+          toast.success('Medical record updated successfully (preview mode)');
           return updatedRecord;
         }
         throw new Error('Record not found');

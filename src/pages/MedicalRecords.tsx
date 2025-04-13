@@ -63,18 +63,7 @@ const MedicalRecords: React.FC = () => {
   useEffect(() => {
     if (patientIdFromUrl) {
       console.log("Attempting to set patient ID from URL:", patientIdFromUrl);
-      
-      let processedId = patientIdFromUrl;
-      if (patientIdFromUrl.startsWith('user-')) {
-        const users = SAMPLE_USERS;
-        const matchingUser = users.find(u => u.role === 'student' || u.role === 'staff');
-        if (matchingUser) {
-          processedId = matchingUser.id;
-          console.log("Found matching user with ID:", processedId);
-        }
-      }
-      
-      setSelectedPatientId(processedId);
+      setSelectedPatientId(patientIdFromUrl);
     } else if (isPatient && user) {
       console.log("Setting selected patient ID from user:", user.id);
       setSelectedPatientId(user.id);
