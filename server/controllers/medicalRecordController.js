@@ -1,4 +1,3 @@
-
 const medicalRecordModel = require('../models/medicalRecordModel');
 
 exports.getAllMedicalRecords = async (req, res) => {
@@ -29,7 +28,15 @@ exports.getMedicalRecordById = async (req, res) => {
 
 exports.getMedicalRecordsByPatientId = async (req, res) => {
   try {
-    const patientId = req.params.patientId;
+    let patientId = req.params.patientId;
+    console.log('Original patientId parameter:', patientId);
+    
+    // Handle both formats of patient ID (with or without prefix)
+    if (patientId.startsWith('user-')) {
+      console.log('Patient ID has user- prefix, will handle appropriately');
+      // We'll keep the ID as is for consistent lookups
+    }
+    
     console.log('Looking up records for patient ID:', patientId);
     const records = await medicalRecordModel.getByPatientId(patientId);
     res.json(records);
@@ -52,13 +59,10 @@ exports.createMedicalRecord = async (req, res) => {
       console.log('Certificate enabled status explicitly set to:', recordData.certificateEnabled);
     }
     
-    // Handle patientId format - ensure we can handle both formats (with or without prefix)
+    // Handle patientId format - preserve format from client to ensure consistent lookups
     if (recordData.patientId) {
       console.log('Original patientId from client:', recordData.patientId);
-      // If using the preview user IDs with prefix, extract the numeric part for DB storage
-      if (recordData.patientId.startsWith('user-')) {
-        console.log('Patient ID has user- prefix, will handle it appropriately');
-      }
+      // Keep the patientId as is to maintain the same format sent by the client
     }
     
     const newRecord = await medicalRecordModel.create(recordData);
