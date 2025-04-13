@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -272,7 +271,8 @@ const BMICalculator: React.FC = () => {
                     Calculate BMI
                   </Button>
                   
-                  {isPatient && (
+                  {/* Removed 'Save to Medical Record' button for patients */}
+                  {isDoctor && (
                     <Button 
                       className="flex-1"
                       variant="outline"
