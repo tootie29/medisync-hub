@@ -1,3 +1,4 @@
+
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
 
@@ -52,6 +53,7 @@ exports.createUser = async (req, res) => {
       department: userData.department,
       staffId: userData.staff_id || userData.staffId,
       position: userData.position,
+      faculty: userData.faculty,
       password: userData.password
     };
     
@@ -87,6 +89,7 @@ exports.updateUser = async (req, res) => {
       department: userData.department,
       staffId: userData.staff_id || userData.staffId,
       position: userData.position,
+      faculty: userData.faculty,
       password: userData.password
     };
     

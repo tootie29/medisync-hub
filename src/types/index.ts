@@ -1,4 +1,3 @@
-
 export type UserRole = 'student' | 'staff' | 'doctor' | 'admin';
 
 export interface User {
@@ -15,6 +14,7 @@ export interface User {
   department?: string;
   staffId?: string;
   position?: string;
+  faculty?: string;
   createdAt: string;
   updatedAt: string;
 }

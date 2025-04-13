@@ -1,31 +1,25 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
 import axios from 'axios';
 
-// Define the API URL with improved environment detection
 const getApiUrl = () => {
-  // For production environments
   const hostname = window.location.hostname;
   if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
     return 'https://api.climasys.entrsolutions.com/api';
   }
   
-  // Environment variable (if set)
   const envApiUrl = import.meta.env.VITE_API_URL;
   if (envApiUrl) {
     return envApiUrl;
   }
   
-  // Local development fallback
   return 'http://localhost:8080/api';
 };
 
 const API_URL = getApiUrl();
 console.log('Using API URL in AuthContext:', API_URL);
 
-// Create API client
 const apiClient = axios.create({
   baseURL: API_URL,
   timeout: 15000,
@@ -46,7 +40,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create a user storage to keep track of registered users in preview mode
 interface RegisteredUser extends User {
   password: string;
 }
@@ -57,7 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isRegistering, setIsRegistering] = useState(false);
   const isPreviewMode = window.location.hostname.includes('lovableproject.com');
   
-  // Retrieve registered users from localStorage
   const getRegisteredUsers = (): RegisteredUser[] => {
     const storedUsers = localStorage.getItem('medisyncRegisteredUsers');
     if (storedUsers) {
@@ -71,13 +63,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return [];
   };
   
-  // Save registered users to localStorage
   const saveRegisteredUsers = (users: RegisteredUser[]) => {
     localStorage.setItem('medisyncRegisteredUsers', JSON.stringify(users));
   };
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
     const storedUser = localStorage.getItem('medisyncUser');
     if (storedUser) {
       try {
@@ -93,7 +83,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // In preview mode, check registered users first
       if (isPreviewMode) {
         console.log('Login in preview mode - checking registered users first');
         const registeredUsers = getRegisteredUsers();
@@ -102,7 +91,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         
         if (foundRegisteredUser) {
-          // Found in registered users, login successful
           const { password: _, ...userWithoutPassword } = foundRegisteredUser;
           setUser(userWithoutPassword);
           localStorage.setItem('medisyncUser', JSON.stringify(userWithoutPassword));
@@ -111,11 +99,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
         
-        // If not found in registered users, check sample users
         const foundSampleUser = SAMPLE_USERS.find(u => u.email === email);
         
         if (foundSampleUser) {
-          // For sample users, we don't check password in demo
           setUser(foundSampleUser);
           localStorage.setItem('medisyncUser', JSON.stringify(foundSampleUser));
           toast.success(`Welcome, ${foundSampleUser.name}!`);
@@ -123,19 +109,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
         
-        // Not found in either registered or sample users
         throw new Error('Invalid email or password');
       }
       
-      // Production mode - call API
       try {
-        // Call the login API endpoint
         const response = await apiClient.post('/users/login', { 
           email, 
           password 
         });
         
-        // Transform the API response to match our User type
         const loggedInUser: User = {
           id: response.data.id,
           email: response.data.email,
@@ -164,7 +146,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('Login API error:', error);
         
-        // Fallback to legacy login logic if API call fails
         const foundUser = SAMPLE_USERS.find(u => u.email === email);
         
         if (!foundUser) {
@@ -196,7 +177,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Registering user with data:', userData);
       
-      // Format the data for the API
       const formattedData = {
         id: userData.id || `user-${Date.now()}`,
         email: userData.email,
@@ -211,12 +191,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         department: userData.department,
         staff_id: userData.staffId,
         position: userData.position,
-        password: password // Add password to the data sent to API
+        faculty: userData.faculty,
+        password: password
       };
       
       if (isPreviewMode) {
         console.log('Running in preview mode - using mock user registration');
-        // Create a mock user based on sample data structure
         const newUser: User = {
           id: formattedData.id,
           email: userData.email || '',
@@ -227,6 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           gender: userData.gender as 'male' | 'female' | 'other',
           address: userData.address || '',
           emergencyContact: userData.emergencyContact || '',
+          faculty: userData.faculty || '',
           ...(userData.role === 'student' && {
             studentId: userData.studentId || '',
             department: userData.department || '',
@@ -239,33 +220,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           updatedAt: new Date().toISOString(),
         };
         
-        // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Save registered user with password
         const registeredUser: RegisteredUser = {
           ...newUser,
           password: password
         };
         
-        // Add to registered users list
         const currentUsers = getRegisteredUsers();
         currentUsers.push(registeredUser);
         saveRegisteredUsers(currentUsers);
         console.log('Saved registered user:', registeredUser.email);
         
-        // Set the user in state and localStorage
         setUser(newUser);
         localStorage.setItem('medisyncUser', JSON.stringify(newUser));
         toast.success('Registration successful!');
         return;
       }
       
-      // Create user through API
       const response = await apiClient.post('/users', formattedData);
       console.log('Registration API response:', response.data);
       
-      // Transform the API response to match our User type
       const newUser: User = {
         id: response.data.id,
         email: response.data.email,
@@ -276,6 +251,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         gender: response.data.gender as 'male' | 'female' | 'other',
         address: response.data.address || '',
         emergencyContact: response.data.emergency_contact || '',
+        faculty: response.data.faculty || '',
         ...(response.data.role === 'student' && {
           studentId: response.data.student_id || '',
           department: response.data.department || '',
@@ -288,11 +264,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedAt: response.data.updated_at,
       };
       
-      // Set the user in state and localStorage
       setUser(newUser);
       localStorage.setItem('medisyncUser', JSON.stringify(newUser));
       toast.success('Registration successful!');
-      
     } catch (error) {
       console.error('Registration error:', error);
       let errorMessage = 'Registration failed';
@@ -319,18 +293,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       if (isPreviewMode) {
-        // In preview mode, just update locally
         const updatedUser = {
           ...user,
           ...userData,
           updatedAt: new Date().toISOString()
         };
 
-        // Update user in state and localStorage
         setUser(updatedUser);
         localStorage.setItem('medisyncUser', JSON.stringify(updatedUser));
         
-        // Also update in registered users if it exists there
         const registeredUsers = getRegisteredUsers();
         const updatedRegisteredUsers = registeredUsers.map(ru => {
           if (ru.id === user.id) {
@@ -344,7 +315,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Format the data for the API
       const formattedData = {
         name: userData.name,
         email: userData.email,
@@ -363,17 +333,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }),
       };
       
-      // Update user through API
       const response = await apiClient.put(`/users/${user.id}`, formattedData);
       
-      // Transform the API response to match our User type
       const updatedUser: User = {
         ...user,
         ...userData,
         updatedAt: new Date().toISOString()
       };
 
-      // Update user in state and localStorage
       setUser(updatedUser);
       localStorage.setItem('medisyncUser', JSON.stringify(updatedUser));
       toast.success('Profile updated successfully!');

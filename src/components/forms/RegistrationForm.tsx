@@ -14,12 +14,21 @@ import {
 } from '@/components/ui/select';
 import { UserRole } from '@/types';
 import { toast } from "sonner";
-import { UserPlus, User, Loader2 } from 'lucide-react';
+import { UserPlus, User, Loader2, BookOpen } from 'lucide-react';
 
 interface RegistrationFormProps {
   role: 'student' | 'staff';
   onSuccess?: () => void;
 }
+
+const FACULTY_OPTIONS = [
+  'Radiology', 'Nursing', 'Business', 'Information Technology', 
+  'Tourism Management', 'Communication', 'Education', 'Psychology', 
+  'Criminology', 'Accountancy', 'Hospitality Management', 'Customs Administration',
+  'IBED', 'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12', 
+  'DPRO', 'PERSONNELS', 'Cafeteria', 'Technicians', 'Maintenance', 
+  'TEACHING', 'College', 'Elementary', 'ALS', 'TESDA'
+];
 
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) => {
   const { register, isRegistering } = useAuth();
@@ -40,6 +49,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
     department: '',
     staffId: '',
     position: '',
+    faculty: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,6 +92,11 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
       return false;
     }
 
+    if (!formData.faculty) {
+      toast.error('Please select your Faculty/College');
+      return false;
+    }
+
     return true;
   };
 
@@ -101,6 +116,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
           gender: formData.gender as 'male' | 'female' | 'other',
           address: formData.address,
           emergencyContact: formData.emergencyContact,
+          faculty: formData.faculty,
           ...(role === 'student' && {
             studentId: formData.studentId,
             department: formData.department,
@@ -187,6 +203,30 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               className="auth-input mt-1"
             />
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium flex items-center gap-2 text-medical-primary">
+          <BookOpen className="h-5 w-5" />
+          Faculty/College *
+        </h3>
+        <div>
+          <Select 
+            value={formData.faculty} 
+            onValueChange={(value) => handleSelectChange('faculty', value)}
+          >
+            <SelectTrigger className="mt-1 border-2 border-medical-primary">
+              <SelectValue placeholder="Select your faculty or college" />
+            </SelectTrigger>
+            <SelectContent>
+              {FACULTY_OPTIONS.map((faculty) => (
+                <SelectItem key={faculty} value={faculty}>
+                  {faculty}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

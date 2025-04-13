@@ -29,7 +29,7 @@ class UserModel {
       const { 
         email, name, role, phone, dateOfBirth, gender, 
         address, emergencyContact, studentId, department, 
-        staffId, position, password 
+        staffId, position, faculty, password 
       } = userData;
 
       // Log the password to verify it's being passed correctly
@@ -38,11 +38,11 @@ class UserModel {
       const [result] = await pool.query(
         `INSERT INTO users (
           id, email, name, role, phone, date_of_birth, gender, 
-          address, emergency_contact, student_id, department, staff_id, position, password
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          address, emergency_contact, student_id, department, staff_id, position, faculty, password
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, email, name, role, phone, dateOfBirth, gender, 
-          address, emergencyContact, studentId, department, staffId, position, password
+          address, emergencyContact, studentId, department, staffId, position, faculty, password
         ]
       );
 
@@ -58,7 +58,7 @@ class UserModel {
       const { 
         email, name, role, phone, dateOfBirth, gender, 
         address, emergencyContact, studentId, department, 
-        staffId, position, password
+        staffId, position, faculty, password
       } = userData;
 
       const [result] = await pool.query(
@@ -75,12 +75,13 @@ class UserModel {
           department = IFNULL(?, department), 
           staff_id = IFNULL(?, staff_id), 
           position = IFNULL(?, position),
+          faculty = IFNULL(?, faculty),
           password = IFNULL(?, password)
         WHERE id = ?`,
         [
           email, name, role, phone, dateOfBirth, gender, 
           address, emergencyContact, studentId, department, 
-          staffId, position, password, id
+          staffId, position, faculty, password, id
         ]
       );
 
