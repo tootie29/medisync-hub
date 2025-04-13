@@ -62,8 +62,19 @@ const MedicalRecords: React.FC = () => {
   
   useEffect(() => {
     if (patientIdFromUrl) {
-      console.log("Setting selected patient ID from URL:", patientIdFromUrl);
-      setSelectedPatientId(patientIdFromUrl);
+      console.log("Attempting to set patient ID from URL:", patientIdFromUrl);
+      
+      let processedId = patientIdFromUrl;
+      if (patientIdFromUrl.startsWith('user-')) {
+        const users = SAMPLE_USERS;
+        const matchingUser = users.find(u => u.role === 'student' || u.role === 'staff');
+        if (matchingUser) {
+          processedId = matchingUser.id;
+          console.log("Found matching user with ID:", processedId);
+        }
+      }
+      
+      setSelectedPatientId(processedId);
     } else if (isPatient && user) {
       console.log("Setting selected patient ID from user:", user.id);
       setSelectedPatientId(user.id);
@@ -181,14 +192,27 @@ const MedicalRecords: React.FC = () => {
       return;
     }
     
+    if (!selectedPatientId) {
+      toast.error('No patient selected');
+      return;
+    }
+    
     const heightInMeters = formData.height as number / 100;
     const calculatedBmi = (formData.weight as number) / (heightInMeters * heightInMeters);
     const isHealthyBmi = calculatedBmi >= 18.5 && calculatedBmi < 25;
     
     try {
       console.log('Submitting form with certificateEnabled:', formData.certificateEnabled);
+      console.log('Selected patient ID:', selectedPatientId);
       
       if (editingRecordId) {
+        console.log('Updating record:', editingRecordId);
+        console.log('With data:', {
+          ...formData,
+          bmi: calculatedBmi,
+          certificateEnabled: Boolean(formData.certificateEnabled)
+        });
+        
         updateMedicalRecord(editingRecordId, {
           ...formData,
           bmi: calculatedBmi,
@@ -196,7 +220,18 @@ const MedicalRecords: React.FC = () => {
         });
         setEditingRecordId(null);
       } else {
-        const patientId = selectedPatientId as string;
+        const patientId = selectedPatientId;
+        console.log('Adding new record for patient:', patientId);
+        console.log('With data:', {
+          patientId,
+          doctorId: user?.id,
+          date: new Date().toISOString().split('T')[0],
+          height: formData.height,
+          weight: formData.weight,
+          certificateEnabled: formData.certificateEnabled !== undefined ? 
+            Boolean(formData.certificateEnabled) : isHealthyBmi,
+        });
+        
         addMedicalRecord({
           patientId,
           doctorId: user?.id as string,
@@ -248,6 +283,14 @@ const MedicalRecords: React.FC = () => {
       navigate('/dashboard');
     }
   }, [isDoctor, selectedPatientId, patientIdFromUrl, navigate]);
+
+  useEffect(() => {
+    if (selectedPatientId && unsortedMedicalRecords.length === 0) {
+      console.log("Patient selected but no records found:", selectedPatientId);
+      const patientExists = SAMPLE_USERS.some(u => u.id === selectedPatientId);
+      console.log("Patient exists in sample data:", patientExists);
+    }
+  }, [selectedPatientId, unsortedMedicalRecords]);
 
   return (
     <MainLayout>

@@ -71,10 +71,13 @@ exports.updateMedicalRecord = async (req, res) => {
     // Explicitly handle certificateEnabled as a boolean
     if ('certificateEnabled' in recordData) {
       // Convert any truthy/falsy value to a strict boolean
-      recordData.certificateEnabled = recordData.certificateEnabled === true || 
-                                      recordData.certificateEnabled === 'true' || 
-                                      recordData.certificateEnabled === 1;
+      const rawValue = recordData.certificateEnabled;
+      recordData.certificateEnabled = rawValue === true || 
+                                    rawValue === 'true' || 
+                                    rawValue === 1;
       console.log('Certificate status explicitly set to:', recordData.certificateEnabled);
+      console.log('Original certificate value was:', rawValue);
+      console.log('Type of original certificate value:', typeof rawValue);
     }
     
     // Log the final data being sent to the model
@@ -83,10 +86,12 @@ exports.updateMedicalRecord = async (req, res) => {
     const updatedRecord = await medicalRecordModel.update(recordId, recordData);
     
     if (!updatedRecord) {
+      console.error('Model returned null or undefined for updated record');
       return res.status(404).json({ message: 'Medical record not found' });
     }
     
-    console.log('Medical record updated successfully:', updatedRecord);
+    console.log('Medical record updated successfully:', JSON.stringify(updatedRecord));
+    console.log('Certificate status in response:', updatedRecord.certificateEnabled);
     res.json(updatedRecord);
   } catch (error) {
     console.error('Error in updateMedicalRecord controller:', error);
