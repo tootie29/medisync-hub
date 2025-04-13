@@ -37,105 +37,278 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
         padding: '40px',
         maxWidth: '800px',
         margin: '0 auto',
-        textAlign: 'center'
+        textAlign: 'center',
+        fontFamily: 'Arial, sans-serif',
+        backgroundColor: '#fff',
+        borderRadius: '12px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.05)',
+        border: '1px solid #eaeaea',
+        position: 'relative',
+        overflow: 'hidden'
       }}
     >
-      <div className="certificate-header">
-        <h1 
-          className="certificate-title"
-          style={{
-            fontSize: '36px',
-            color: '#22c55e',
-            marginBottom: '10px'
-          }}
-        >
-          Health Certificate
-        </h1>
-        <h2 
-          className="certificate-subtitle"
-          style={{
-            fontSize: '18px',
-            color: '#555'
-          }}
-        >
-          Body Mass Index (BMI) - Healthy Status
-        </h2>
-      </div>
+      {/* Background Pattern */}
+      <div style={{
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        right: '0',
+        bottom: '0',
+        opacity: '0.05',
+        backgroundImage: 'repeating-radial-gradient(circle at 0 0, transparent 0, #e5e7eb 10px), repeating-linear-gradient(#22c55e55, #22c55e55)',
+        zIndex: '1'
+      }}></div>
       
-      <div 
-        className="certificate-body"
-        style={{
-          margin: '30px 0',
-          padding: '20px',
-          border: '2px solid #22c55e',
-          borderRadius: '10px'
-        }}
-      >
-        <div 
-          className="user-name"
-          style={{
-            fontSize: '24px',
-            fontWeight: 'bold',
+      {/* Certificate Content */}
+      <div style={{ position: 'relative', zIndex: '2' }}>
+        {/* Logo/Header */}
+        <div className="certificate-header" style={{ marginBottom: '30px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
             marginBottom: '20px'
-          }}
-        >
-          This is to certify that
-          <br />
-          <span style={{ display: 'block', margin: '10px 0', fontSize: '28px', color: '#333' }}>{userName}</span>
-        </div>
-        
-        <div
-          className="bmi-result"
-          style={{
-            fontSize: '20px',
-            marginBottom: '10px'
-          }}
-        >
-          has a BMI of <span className="bmi-value" style={{ fontWeight: 'bold', color: '#22c55e' }}>{displayBmi}</span>
-        </div>
-        
-        <div
-          className="bmi-details"
-          style={{
-            marginBottom: '20px'
-          }}
-        >
-          Height: {height} cm | Weight: {weight} kg
-        </div>
-        
-        <div className="bmi-category-result">
-          This BMI falls within the <span className="bmi-category" style={{ fontWeight: 'bold', color: '#22c55e' }}>{getBMICategory(calculatedBmi)}</span> range.
+          }}>
+            <div style={{ 
+              width: '60px', 
+              height: '60px', 
+              borderRadius: '50%', 
+              backgroundColor: '#22c55e', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              marginRight: '15px'
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 4V4C14.2091 4 16 5.79086 16 8H8C8 5.79086 9.79086 4 12 4Z" fill="white"/>
+                <path d="M18 8H6C4.89543 8 4 8.89543 4 10V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V10C20 8.89543 19.1046 8 18 8Z" fill="white"/>
+                <path d="M12 12V16M12 12L9 14M12 12L15 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h1 style={{
+                fontSize: '28px',
+                fontWeight: 'bold',
+                color: '#22c55e',
+                margin: '0',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>
+                Health Certificate
+              </h1>
+              <p style={{
+                fontSize: '14px',
+                color: '#666',
+                margin: '0',
+                fontStyle: 'italic'
+              }}>
+                Body Mass Index (BMI) - Healthy Status
+              </p>
+            </div>
+          </div>
+          
+          <div style={{
+            height: '4px',
+            background: 'linear-gradient(to right, #22c55e, #4ade80, #22c55e)',
+            borderRadius: '2px',
+            margin: '0 auto 10px auto',
+            width: '80%'
+          }}></div>
         </div>
         
         <div 
-          className="certificate-date"
+          className="certificate-body"
           style={{
-            marginTop: '20px',
-            fontStyle: 'italic',
-            color: '#555'
+            margin: '30px auto',
+            padding: '30px',
+            border: '2px solid #22c55e',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(240, 253, 244, 0.5)',
+            maxWidth: '90%',
+            position: 'relative'
           }}
         >
-          Issued on: {date}
+          {/* Certificate corners */}
+          <div style={{
+            position: 'absolute',
+            top: '-3px',
+            left: '-3px',
+            width: '20px',
+            height: '20px',
+            borderTop: '3px solid #22c55e',
+            borderLeft: '3px solid #22c55e'
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            top: '-3px',
+            right: '-3px',
+            width: '20px',
+            height: '20px',
+            borderTop: '3px solid #22c55e',
+            borderRight: '3px solid #22c55e'
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            bottom: '-3px',
+            left: '-3px',
+            width: '20px',
+            height: '20px',
+            borderBottom: '3px solid #22c55e',
+            borderLeft: '3px solid #22c55e'
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            bottom: '-3px',
+            right: '-3px',
+            width: '20px',
+            height: '20px',
+            borderBottom: '3px solid #22c55e',
+            borderRight: '3px solid #22c55e'
+          }}></div>
+          
+          <div style={{
+            fontSize: '16px',
+            fontWeight: 'normal',
+            marginBottom: '25px',
+            color: '#333'
+          }}>
+            This is to certify that
+          </div>
+          
+          <div 
+            className="user-name"
+            style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              marginBottom: '25px',
+              color: '#111',
+              padding: '10px 20px',
+              borderBottom: '1px solid #22c55e',
+              borderTop: '1px solid #22c55e',
+              display: 'inline-block'
+            }}
+          >
+            {userName}
+          </div>
+          
+          <div style={{ margin: '25px 0' }}>
+            <div
+              className="bmi-result"
+              style={{
+                fontSize: '20px',
+                marginBottom: '15px',
+                color: '#333'
+              }}
+            >
+              has a BMI of <span style={{ fontWeight: 'bold', color: '#22c55e' }}>{displayBmi}</span>
+            </div>
+            
+            <div
+              className="bmi-details"
+              style={{
+                marginBottom: '20px',
+                color: '#444',
+                fontSize: '16px'
+              }}
+            >
+              Height: <span style={{ fontWeight: 'bold' }}>{height} cm</span> | Weight: <span style={{ fontWeight: 'bold' }}>{weight} kg</span>
+            </div>
+            
+            <div className="bmi-category-result" style={{ fontSize: '18px', color: '#333' }}>
+              This BMI falls within the <span style={{ fontWeight: 'bold', color: '#22c55e' }}>{getBMICategory(calculatedBmi)}</span> range.
+            </div>
+          </div>
+          
+          <div 
+            className="certificate-date"
+            style={{
+              marginTop: '25px',
+              fontStyle: 'italic',
+              color: '#666',
+              fontSize: '14px'
+            }}
+          >
+            Issued on: {date}
+          </div>
         </div>
-      </div>
-      
-      <div 
-        className="certificate-footer"
-        style={{
-          marginTop: '40px'
-        }}
-      >
+        
         <div 
-          className="signature-line"
+          className="certificate-footer"
           style={{
-            width: '200px',
-            height: '1px',
-            background: '#000',
-            margin: '10px auto'
+            marginTop: '40px',
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'flex-end'
           }}
-        ></div>
-        <div className="doctor-name" style={{ fontWeight: 'bold' }}>
-          Medical Clinic Authority
+        >
+          <div style={{ textAlign: 'center', flex: '1' }}>
+            <div 
+              className="signature-line"
+              style={{
+                width: '180px',
+                height: '1px',
+                background: '#000',
+                margin: '10px auto'
+              }}
+            ></div>
+            <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+              Medical Officer
+            </div>
+          </div>
+          
+          <div style={{ 
+            width: '100px', 
+            height: '100px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              border: '1px solid #22c55e',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#22c55e',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                fontStyle: 'italic'
+              }}>SEAL</div>
+            </div>
+          </div>
+          
+          <div style={{ textAlign: 'center', flex: '1' }}>
+            <div 
+              className="signature-line"
+              style={{
+                width: '180px',
+                height: '1px',
+                background: '#000',
+                margin: '10px auto'
+              }}
+            ></div>
+            <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+              Medical Clinic Authority
+            </div>
+          </div>
+        </div>
+        
+        {/* Certificate ID and validation note */}
+        <div style={{ marginTop: '30px', fontSize: '10px', color: '#888', textAlign: 'center' }}>
+          <p>Certificate ID: HC-{Math.random().toString(36).substring(2, 10).toUpperCase()}</p>
+          <p>This certificate is valid as of the issue date and can be verified online.</p>
         </div>
       </div>
     </div>
