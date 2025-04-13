@@ -184,11 +184,13 @@ class MedicalRecordModel {
         (bmi >= 18.5 && bmi < 25);
       
       console.log('Creating record with certificate status:', certificateEnabled);
+      console.log('Certificate status type:', typeof certificateEnabled);
+      console.log('Patient ID being used for record:', recordData.patientId);
       
       await connection.query(
         `INSERT INTO medical_records 
         (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, follow_up_date, certificate_enabled, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, 
           recordData.patientId, 
@@ -202,7 +204,7 @@ class MedicalRecordModel {
           recordData.diagnosis, 
           recordData.notes, 
           recordData.followUpDate,
-          certificateEnabled,
+          certificateEnabled ? 1 : 0,
           now,
           now
         ]
@@ -464,6 +466,8 @@ class MedicalRecordModel {
       
       const updatedRecord = await this.getById(id);
       console.log('UPDATED RECORD:', JSON.stringify(updatedRecord));
+      console.log('Certificate status in updated record:', updatedRecord.certificateEnabled);
+      console.log('Patient ID in updated record:', updatedRecord.patientId);
       return updatedRecord;
     } catch (error) {
       await connection.rollback();

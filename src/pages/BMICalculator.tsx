@@ -104,11 +104,13 @@ const BMICalculator: React.FC = () => {
       setLoading(true);
       console.log('Toggling certificate access from', certificateEnabled, 'to', !certificateEnabled);
       console.log('Record ID:', lastRecord.id);
+      console.log('Patient ID:', lastRecord.patientId);
       
       const newCertificateValue = !certificateEnabled;
       console.log('New certificate value (before API call):', newCertificateValue);
       
       const updatedRecord = await updateMedicalRecord(lastRecord.id, {
+        patientId: lastRecord.patientId,
         certificateEnabled: newCertificateValue
       });
       

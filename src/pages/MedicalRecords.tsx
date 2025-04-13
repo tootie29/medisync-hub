@@ -72,6 +72,7 @@ const MedicalRecords: React.FC = () => {
   
   const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
   console.log("Selected patient:", selectedPatient);
+  console.log("Selected patient ID:", selectedPatientId);
   
   const unsortedMedicalRecords = selectedPatientId 
     ? getMedicalRecordsByPatientId(selectedPatientId)
@@ -198,12 +199,14 @@ const MedicalRecords: React.FC = () => {
         console.log('Updating record:', editingRecordId);
         console.log('With data:', {
           ...formData,
+          patientId: selectedPatientId,
           bmi: calculatedBmi,
           certificateEnabled: Boolean(formData.certificateEnabled)
         });
         
         updateMedicalRecord(editingRecordId, {
           ...formData,
+          patientId: selectedPatientId,
           bmi: calculatedBmi,
           certificateEnabled: Boolean(formData.certificateEnabled)
         });
