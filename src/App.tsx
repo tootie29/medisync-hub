@@ -25,6 +25,7 @@ import Profile from "@/pages/Profile";
 import HealthMonitoring from "@/pages/HealthMonitoring";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
+import CertificatePage from "@/pages/Certificate";
 
 const getApiBaseUrl = () => {
   const hostname = window.location.hostname;
@@ -425,6 +426,8 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/health-monitoring" element={<HealthMonitoring />} />
                 <Route path="/settings" element={<Settings />} />
+                
+                <Route path="/certificate" element={<CertificatePage />} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
