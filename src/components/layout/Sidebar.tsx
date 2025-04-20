@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useData } from "@/context/DataContext";
 import {
   Calendar,
   ChevronLeft,
@@ -14,14 +15,27 @@ import {
   Settings,
   UserCircle,
   Activity,
+  // We add a certificate icon from lucide-react allowed icons
+  BadgeCheck,
 } from "lucide-react";
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   const { user } = useAuth();
+  const { getMedicalRecordsByPatientId } = useData();
   
   // Determine if user can access inventory (admin or doctor only)
   const canAccessInventory = user && (user.role === "admin" || user.role === "doctor");
-  
+
+  // Determine if user is patient
+  const isPatient = user && (user.role === "student" || user.role === "staff");
+
+  // Check if any certificate-enabled medical record exists for this patient
+  let patientHasCertificate = false;
+  if (isPatient) {
+    const records = getMedicalRecordsByPatientId(user.id);
+    patientHasCertificate = records.some(record => record.certificateEnabled);
+  }
+
   const routes = [
     {
       path: "/",
@@ -54,6 +68,12 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       name: "Inventory",
       icon: Package,
     }] : []),
+    // Show certificate menu only to patients who have enabled certificate medical records
+    ...(isPatient && patientHasCertificate ? [{
+      path: "/certificate",
+      name: "Certificate",
+      icon: BadgeCheck,
+    }] : [])
   ];
 
   return (
