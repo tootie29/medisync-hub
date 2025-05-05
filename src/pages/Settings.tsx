@@ -21,6 +21,12 @@ const Settings = () => {
     toast.success('Settings saved successfully');
   };
 
+  // Add event handler for logo updates
+  const handleLogosUpdated = () => {
+    console.log('Logos updated, refreshing UI');
+    window.dispatchEvent(new CustomEvent('refreshLogos'));
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto py-6">

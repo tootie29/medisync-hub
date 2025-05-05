@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const logoController = require('../controllers/logoController');
@@ -107,7 +106,10 @@ router.get('/', logoController.getAllLogos);
 // New diagnostic endpoint
 router.get('/diagnostics', logoController.getUploadDiagnostics);
 
-// Upload new logos with improved error handling
+// Add a new route for base64 logo uploads
+router.post('/base64', logoController.uploadBase64Logos);
+
+// Keep the original route for file uploads
 router.post('/', upload.fields([
   { name: 'primaryLogo', maxCount: 1 },
   { name: 'secondaryLogo', maxCount: 1 }

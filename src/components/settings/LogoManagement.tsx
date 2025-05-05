@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -23,6 +22,8 @@ const LogoManagement = () => {
   const [diagnosticInfo, setDiagnosticInfo] = useState<any>(null);
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
+  const [primaryBase64, setPrimaryBase64] = useState<string | null>(null);
+  const [secondaryBase64, setSecondaryBase64] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLogos();
@@ -82,6 +83,16 @@ const LogoManagement = () => {
     }
   };
 
+  // New function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const fetchDiagnostics = async () => {
     try {
       setShowDiagnostics(true);
@@ -95,7 +106,7 @@ const LogoManagement = () => {
     }
   };
 
-  const handlePrimaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePrimaryLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > 1 * 1024 * 1024) { // 1MB max
@@ -105,10 +116,20 @@ const LogoManagement = () => {
       }
       console.log('Selected primary logo file:', file.name, file.type, file.size);
       setPrimaryLogo(file);
+      
+      // Convert to base64
+      try {
+        const base64 = await fileToBase64(file);
+        setPrimaryBase64(base64);
+        console.log('Primary logo converted to base64');
+      } catch (error) {
+        console.error('Error converting primary logo to base64:', error);
+        toast.error('Failed to process the image');
+      }
     }
   };
 
-  const handleSecondaryLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSecondaryLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > 1 * 1024 * 1024) { // 1MB max
@@ -118,6 +139,16 @@ const LogoManagement = () => {
       }
       console.log('Selected secondary logo file:', file.name, file.type, file.size);
       setSecondaryLogo(file);
+      
+      // Convert to base64
+      try {
+        const base64 = await fileToBase64(file);
+        setSecondaryBase64(base64);
+        console.log('Secondary logo converted to base64');
+      } catch (error) {
+        console.error('Error converting secondary logo to base64:', error);
+        toast.error('Failed to process the image');
+      }
     }
   };
 
@@ -130,50 +161,26 @@ const LogoManagement = () => {
     setUploadSuccess(false);
     
     try {
-      const formData = new FormData();
+      // Instead of using FormData with files, send the base64 strings directly
+      const logoData: { primaryLogo?: string; secondaryLogo?: string } = {};
       
-      if (primaryLogo) {
-        formData.append('primaryLogo', primaryLogo);
-        console.log('LogoManagement: Added primaryLogo to formData:', primaryLogo.name);
+      if (primaryBase64) {
+        logoData.primaryLogo = primaryBase64;
+        console.log('LogoManagement: Added primaryLogo base64 to payload');
       }
       
-      if (secondaryLogo) {
-        formData.append('secondaryLogo', secondaryLogo);
-        console.log('LogoManagement: Added secondaryLogo to formData:', secondaryLogo.name);
+      if (secondaryBase64) {
+        logoData.secondaryLogo = secondaryBase64;
+        console.log('LogoManagement: Added secondaryLogo base64 to payload');
       }
       
       // Only proceed if at least one file is selected
-      if (primaryLogo || secondaryLogo) {
-        console.log('LogoManagement: Uploading logos...', 
-          primaryLogo ? `primary: ${primaryLogo.name}` : 'no primary', 
-          secondaryLogo ? `secondary: ${secondaryLogo.name}` : 'no secondary'
-        );
+      if (Object.keys(logoData).length > 0) {
+        console.log('LogoManagement: Uploading logos as base64...');
         
-        // Debug formData
-        for (let [key, value] of formData.entries()) {
-          if (value instanceof File) {
-            console.log(`${key}: File ${value.name}, size: ${value.size}, type: ${value.type}`);
-          } else {
-            console.log(`${key}: ${value}`);
-          }
-        }
-        
-        // Create cancellation token
-        const source = axios.CancelToken.source();
-        
-        // Set timeout to cancel if it takes too long
-        const timeoutId = setTimeout(() => {
-          source.cancel('Upload took too long');
-          console.log('Upload canceled due to timeout');
-        }, 60000); // 60 seconds timeout
-        
-        // Set reasonable timeouts and handle progress
-        const response = await axios.post('/api/logos', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          },
+        // Set reasonable timeouts
+        const response = await axios.post('/api/logos/base64', logoData, {
           timeout: 60000, // 60 seconds timeout
-          cancelToken: source.token,
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
               const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -183,64 +190,40 @@ const LogoManagement = () => {
           }
         });
         
-        // Clear timeout since request completed
-        clearTimeout(timeoutId);
-        
         console.log('LogoManagement: Upload response:', response.data);
         
-        if (response.data.uploads && response.data.uploads.length > 0) {
-          const uploadErrors = response.data.uploads.filter((upload: any) => upload.error);
+        if (response.data.success) {
+          setUploadSuccess(true);
+          toast.success('Logos updated successfully');
           
-          if (uploadErrors.length > 0) {
-            const errorMsg = uploadErrors.map((err: any) => 
-              `${err.position} logo: ${err.error} - ${err.details || ''}`
-            ).join('; ');
-            
-            setError(`Some logos failed to upload: ${errorMsg}`);
-            toast.error('Some logos failed to upload');
-            
-            // Automatically fetch diagnostics if there's an error
-            await fetchDiagnostics();
-          } else {
-            // Success!
-            setUploadSuccess(true);
-            toast.success('Logos updated successfully');
-            
-            // Reset file inputs
-            setPrimaryLogo(null);
-            setSecondaryLogo(null);
-            
-            // Clear file input fields by resetting the form
-            const fileInputs = document.querySelectorAll('input[type="file"]');
-            fileInputs.forEach((input: any) => {
-              input.value = '';
-            });
-            
-            // Force refresh the logos
-            setLastRefresh(Date.now());
-            
-            // Verify database update by checking the server again
-            setTimeout(() => {
-              fetchLogos();
-            }, 1000);
-            
-            // Trigger a refresh of the authentication layout
-            setTimeout(() => {
-              window.dispatchEvent(new CustomEvent('refreshLogos'));
-              console.log('LogoManagement: Dispatched refreshLogos event');
-            }, 500);
-          }
+          // Reset state
+          setPrimaryLogo(null);
+          setSecondaryLogo(null);
+          setPrimaryBase64(null);
+          setSecondaryBase64(null);
+          
+          // Clear file input fields by resetting the form
+          const fileInputs = document.querySelectorAll('input[type="file"]');
+          fileInputs.forEach((input: any) => {
+            input.value = '';
+          });
+          
+          // Force refresh the logos
+          setLastRefresh(Date.now());
+          
+          // Verify database update by checking the server again
+          setTimeout(() => {
+            fetchLogos();
+          }, 1000);
+          
+          // Trigger a refresh of the authentication layout
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('refreshLogos'));
+            console.log('LogoManagement: Dispatched refreshLogos event');
+          }, 500);
         } else {
-          console.error('Server returned no upload results:', response.data);
-          
-          if (response.data.message) {
-            setServerInfo(response.data.message);
-          }
-          
-          toast.error('No logos were updated. Please check server logs.');
-          setError('Upload completed but no logos were updated by the server. This might be a file permission issue on the server.');
-          
-          // Automatically fetch diagnostics if there's an error
+          setError('Failed to update logos: ' + (response.data.error || 'Unknown error'));
+          toast.error('Failed to update logos');
           await fetchDiagnostics();
         }
       } else {
@@ -250,13 +233,8 @@ const LogoManagement = () => {
       console.error('LogoManagement: Error updating logos:', error);
       
       let errorMessage = 'Failed to upload logos. Please try again.';
-      if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError' || error.code === 'ECONNABORTED') {
-        errorMessage = 'Upload timed out. Please try with a smaller image or check your connection.';
-      } else if (error.response) {
+      if (error.response) {
         errorMessage = `Error: ${error.response.data.error || error.response.statusText}`;
-        if (error.response.data.details) {
-          errorMessage += ` - ${error.response.data.details}`;
-        }
       }
       
       setError(errorMessage);
@@ -565,7 +543,7 @@ const LogoManagement = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <Button
           onClick={handleSubmit}
-          disabled={isLoading || (!primaryLogo && !secondaryLogo)}
+          disabled={isLoading || (!primaryBase64 && !secondaryBase64)}
           className="bg-medical-primary hover:bg-medical-secondary text-white w-full sm:w-auto"
         >
           {isLoading ? (

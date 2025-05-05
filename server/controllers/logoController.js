@@ -1,4 +1,3 @@
-
 const logoModel = require('../models/logoModel');
 const { v4: uuidv4 } = require('uuid');
 const fileUtils = require('../utils/fileUtils');
@@ -18,14 +17,9 @@ exports.getAllLogos = async (req, res) => {
       return res.status(500).json({ error: 'Invalid data format from database' });
     }
     
-    // Add absolute URLs to the logos
-    const logosWithUrls = logos.map(logo => ({
-      ...logo,
-      url: fileUtils.getAbsoluteUrl(req, logo.url)
-    }));
-    
-    console.log('Returning logos with URLs:', logosWithUrls);
-    res.status(200).json(logosWithUrls);
+    // Return the logos directly since they're now base64 strings
+    console.log('Returning logos:', logos.length);
+    res.status(200).json(logos);
   } catch (error) {
     console.error('Error fetching logos:', error);
     res.status(500).json({ error: 'Failed to fetch logos' });
@@ -41,15 +35,14 @@ exports.getLogoByPosition = async (req, res) => {
     console.log(`Fetching logo for position: ${position}`);
     
     const logo = await logoModel.getLogoByPosition(position);
-    console.log(`Logo found for position ${position}:`, logo);
+    console.log(`Logo found for position ${position}:`, logo ? 'Found' : 'Not found');
     
     if (!logo) {
       return getDefaultLogo(req, res, position);
     }
     
-    // Add absolute URL to the logo
-    logo.url = fileUtils.getAbsoluteUrl(req, logo.url);
-    console.log(`Returning logo for ${position} with URL:`, logo.url);
+    // Return the logo directly (it's already base64)
+    console.log(`Returning logo for ${position}`);
     
     res.status(200).json(logo);
   } catch (error) {
@@ -142,7 +135,105 @@ exports.getUploadDiagnostics = async (req, res) => {
 };
 
 /**
- * Upload logos
+ * Upload base64 logos
+ */
+exports.uploadBase64Logos = async (req, res) => {
+  console.log('Processing base64 logo upload request');
+  const results = [];
+  
+  try {
+    const { primaryLogo, secondaryLogo } = req.body;
+    
+    console.log('Base64 data received:',
+      primaryLogo ? 'Primary logo present' : 'No primary logo',
+      secondaryLogo ? 'Secondary logo present' : 'No secondary logo'
+    );
+    
+    // Process logos if provided
+    if (primaryLogo) {
+      const primaryResult = await processBase64Logo(primaryLogo, 'primary');
+      results.push(primaryResult);
+    }
+
+    if (secondaryLogo) {
+      const secondaryResult = await processBase64Logo(secondaryLogo, 'secondary');
+      results.push(secondaryResult);
+    }
+
+    console.log('Logo upload results:', results);
+    
+    if (results.length === 0) {
+      return res.status(400).json({ 
+        error: 'No logos were processed',
+        details: 'No base64 data was provided'
+      });
+    }
+    
+    // Return results
+    const hasErrors = results.some(result => result.error);
+    res.status(hasErrors ? 207 : 200).json({ 
+      message: 'Logos processed',
+      success: !hasErrors,
+      uploads: results
+    });
+    
+  } catch (error) {
+    console.error('Error uploading base64 logos:', error);
+    res.status(500).json({ 
+      error: 'Failed to process logo uploads', 
+      details: error.message 
+    });
+  }
+};
+
+/**
+ * Process base64 logo
+ */
+const processBase64Logo = async (base64Data, position) => {
+  console.log(`Processing ${position} logo as base64`);
+  
+  try {
+    // Validate base64 format
+    if (!base64Data.startsWith('data:image/')) {
+      return {
+        position,
+        error: 'Invalid base64 format',
+        details: 'The data must be a valid base64-encoded image'
+      };
+    }
+    
+    // Add to database with transaction support
+    const id = uuidv4();
+    await logoModel.updateLogo({
+      id: id,
+      url: base64Data, // Store the base64 string directly
+      position: position
+    });
+    
+    // Verify update worked
+    const verifiedLogo = await logoModel.getLogoByPosition(position);
+    if (!verifiedLogo) {
+      throw new Error('Logo verification failed after database update');
+    }
+    
+    return {
+      position: position,
+      success: true,
+      db_id: id
+    };
+    
+  } catch (error) {
+    console.error(`Error processing ${position} logo:`, error);
+    return {
+      position: position,
+      error: 'Processing failed',
+      details: error.message
+    };
+  }
+};
+
+/**
+ * Upload logos (file upload method - keeping this for backwards compatibility)
  */
 exports.uploadLogos = async (req, res) => {
   console.log('Processing logo upload request');
@@ -217,7 +308,7 @@ exports.uploadLogos = async (req, res) => {
 };
 
 /**
- * Process individual logo upload
+ * Process individual logo upload (legacy file method)
  */
 const processLogoUpload = async (req, logoFile, position, baseUrl) => {
   console.log(`Processing ${position} logo`);

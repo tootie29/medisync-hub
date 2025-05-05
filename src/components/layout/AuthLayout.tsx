@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -56,14 +55,20 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
       // Fetch primary logo directly with a cache-busting query parameter
       const timestamp = Date.now();
       const primaryResponse = await axios.get(`/api/logos/primary?t=${timestamp}`);
-      console.log('AuthLayout: Primary logo response:', primaryResponse.data);
+      console.log('AuthLayout: Primary logo response received');
       
       if (primaryResponse.data && primaryResponse.data.url) {
-        console.log('AuthLayout: Primary logo URL:', primaryResponse.data.url);
-        // Add cache-busting parameter to the image URL
-        const url = new URL(primaryResponse.data.url, window.location.origin);
-        url.searchParams.append('t', timestamp.toString());
-        setPrimaryLogoUrl(url.toString());
+        console.log('AuthLayout: Setting primary logo URL');
+        // Check if it's a base64 string or a file path
+        if (primaryResponse.data.url.startsWith('data:image/')) {
+          // It's already a base64 string
+          setPrimaryLogoUrl(primaryResponse.data.url);
+        } else {
+          // It's a file path, add cache-busting parameter
+          const url = new URL(primaryResponse.data.url, window.location.origin);
+          url.searchParams.append('t', timestamp.toString());
+          setPrimaryLogoUrl(url.toString());
+        }
       } else {
         // Ensure fallback is used if no logo found
         setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
@@ -71,14 +76,20 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
       
       // Fetch secondary logo directly with a cache-busting query parameter
       const secondaryResponse = await axios.get(`/api/logos/secondary?t=${timestamp}`);
-      console.log('AuthLayout: Secondary logo response:', secondaryResponse.data);
+      console.log('AuthLayout: Secondary logo response received');
       
       if (secondaryResponse.data && secondaryResponse.data.url) {
-        console.log('AuthLayout: Secondary logo URL:', secondaryResponse.data.url);
-        // Add cache-busting parameter to the image URL
-        const url = new URL(secondaryResponse.data.url, window.location.origin);
-        url.searchParams.append('t', timestamp.toString());
-        setSecondaryLogoUrl(url.toString());
+        console.log('AuthLayout: Setting secondary logo URL');
+        // Check if it's a base64 string or a file path
+        if (secondaryResponse.data.url.startsWith('data:image/')) {
+          // It's already a base64 string
+          setSecondaryLogoUrl(secondaryResponse.data.url);
+        } else {
+          // It's a file path, add cache-busting parameter
+          const url = new URL(secondaryResponse.data.url, window.location.origin);
+          url.searchParams.append('t', timestamp.toString());
+          setSecondaryLogoUrl(url.toString());
+        }
       } else {
         // Ensure fallback is used if no logo found
         setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
