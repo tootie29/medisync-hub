@@ -22,6 +22,7 @@ const LogoManagement = () => {
   const [serverDetails, setServerDetails] = useState<any>(null);
   const [diagnosticInfo, setDiagnosticInfo] = useState<any>(null);
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
+  const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
 
   useEffect(() => {
     fetchLogos();
@@ -66,6 +67,8 @@ const LogoManagement = () => {
       } else {
         setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
+      
+      setUploadSuccess(false);
     } catch (error) {
       console.error('LogoManagement: Error fetching logos:', error);
       setError('Failed to load logos. Please try again.');
@@ -124,6 +127,7 @@ const LogoManagement = () => {
     setError(null);
     setServerInfo(null);
     setUploadProgress(0);
+    setUploadSuccess(false);
     
     try {
       const formData = new FormData();
@@ -198,6 +202,8 @@ const LogoManagement = () => {
             // Automatically fetch diagnostics if there's an error
             await fetchDiagnostics();
           } else {
+            // Success!
+            setUploadSuccess(true);
             toast.success('Logos updated successfully');
             
             // Reset file inputs
@@ -212,6 +218,11 @@ const LogoManagement = () => {
             
             // Force refresh the logos
             setLastRefresh(Date.now());
+            
+            // Verify database update by checking the server again
+            setTimeout(() => {
+              fetchLogos();
+            }, 1000);
             
             // Trigger a refresh of the authentication layout
             setTimeout(() => {
@@ -279,6 +290,18 @@ const LogoManagement = () => {
 
   return (
     <div className="space-y-6">
+      {uploadSuccess && (
+        <div className="bg-green-100 p-4 rounded-md mb-4 flex items-start gap-3">
+          <div className="h-5 w-5 text-green-600 mt-0.5">✓</div>
+          <div>
+            <p className="text-green-600 font-medium">Logo upload successful!</p>
+            <p className="text-green-600/80 text-sm mt-1">
+              The logos have been successfully uploaded and saved to the database.
+            </p>
+          </div>
+        </div>
+      )}
+      
       {serverDetails && (
         <div className="bg-blue-100 p-4 rounded-md mb-4 flex items-start gap-3">
           <Server className="h-5 w-5 text-blue-600 mt-0.5" />
