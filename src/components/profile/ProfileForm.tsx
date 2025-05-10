@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +18,8 @@ import ProfileHeader from './ProfileHeader';
 
 const ProfileForm: React.FC = () => {
   const { user, updateProfile } = useAuth();
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [formData, setFormData] = React.useState<Partial<User>>({
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<Partial<User>>({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
@@ -28,12 +28,41 @@ const ProfileForm: React.FC = () => {
     address: user?.address || '',
     emergencyContact: user?.emergencyContact || '',
   });
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  const validateName = (name: string): boolean => {
+    // Regex to check if name contains only letters, spaces, and some special characters used in names
+    const nameRegex = /^[A-Za-z\s.\-']+$/;
+    return nameRegex.test(name);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    // Regex to check if phone contains only numbers
+    const phoneRegex = /^[0-9]+$/;
+    return phoneRegex.test(phone);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    
+    // Reset any previous errors
+    if (name === 'name') setNameError(null);
+    if (name === 'phone') setPhoneError(null);
+    
+    // Name validation - don't allow numbers
+    if (name === 'name' && value && !validateName(value)) {
+      setNameError('Name should only contain letters (no numbers)');
+    }
+    
+    // Phone validation - don't allow letters
+    if (name === 'phone' && value && !validatePhone(value)) {
+      setPhoneError('Phone number should only contain numbers');
+    }
+    
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -46,6 +75,16 @@ const ProfileForm: React.FC = () => {
     
     if (!formData.name || !formData.email) {
       toast.error('Name and email are required');
+      return;
+    }
+    
+    if (formData.name && !validateName(formData.name)) {
+      setNameError('Name should only contain letters (no numbers)');
+      return;
+    }
+    
+    if (formData.phone && !validatePhone(formData.phone)) {
+      setPhoneError('Phone number should only contain numbers');
       return;
     }
     
@@ -77,7 +116,11 @@ const ProfileForm: React.FC = () => {
               onChange={handleChange}
               disabled={!isEditing}
               required
+              className={nameError ? 'border-red-500' : ''}
             />
+            {nameError && isEditing && (
+              <p className="text-red-500 text-sm mt-1">{nameError}</p>
+            )}
           </div>
 
           <div className="form-group">
@@ -101,7 +144,11 @@ const ProfileForm: React.FC = () => {
               value={formData.phone}
               onChange={handleChange}
               disabled={!isEditing}
+              className={phoneError ? 'border-red-500' : ''}
             />
+            {phoneError && isEditing && (
+              <p className="text-red-500 text-sm mt-1">{phoneError}</p>
+            )}
           </div>
 
           <div className="form-group">
@@ -177,6 +224,8 @@ const ProfileForm: React.FC = () => {
                     address: user?.address || '',
                     emergencyContact: user?.emergencyContact || '',
                   });
+                  setNameError(null);
+                  setPhoneError(null);
                 }}
               >
                 Cancel
@@ -184,7 +233,7 @@ const ProfileForm: React.FC = () => {
               <Button 
                 type="submit" 
                 className="bg-medical-primary hover:bg-medical-secondary"
-                disabled={isLoading}
+                disabled={isLoading || !!nameError || !!phoneError}
               >
                 {isLoading ? 'Saving...' : 'Save Changes'}
               </Button>

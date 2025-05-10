@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +35,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -61,8 +64,36 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
     setShowConfirmPassword(!showConfirmPassword);
   };
 
+  const validateName = (name: string): boolean => {
+    // Regex to check if name contains only letters, spaces, and some special characters used in names
+    const nameRegex = /^[A-Za-z\s.\-']+$/;
+    return nameRegex.test(name);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    // Regex to check if phone contains only numbers
+    const phoneRegex = /^[0-9]+$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    // Reset any previous errors
+    if (name === 'name') setNameError(null);
+    if (name === 'phone') setPhoneError(null);
+    
+    // Name validation - don't allow numbers
+    if (name === 'name' && value && !validateName(value)) {
+      setNameError('Name should only contain letters (no numbers)');
+    }
+    
+    // Phone validation - don't allow letters
+    if (name === 'phone' && value && !validatePhone(value)) {
+      setPhoneError('Phone number should only contain numbers');
+    }
+    
+    // Always update the field value so users can see what they're typing
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -71,42 +102,58 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
   };
 
   const validateForm = () => {
+    let isValid = true;
+    
+    // Reset error states
+    setNameError(null);
+    setPhoneError(null);
+    
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       toast.error('Please fill in all required fields');
-      return false;
+      isValid = false;
+    }
+    
+    if (formData.name && !validateName(formData.name)) {
+      setNameError('Name should only contain letters (no numbers)');
+      isValid = false;
+    }
+    
+    if (formData.phone && !validatePhone(formData.phone)) {
+      setPhoneError('Phone number should only contain numbers');
+      isValid = false;
     }
     
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
-      return false;
+      isValid = false;
     }
     
     if (formData.password.length < 6) {
       toast.error('Password must be at least 6 characters');
-      return false;
+      isValid = false;
     }
     
     if (!formData.phone || !formData.dateOfBirth || !formData.gender) {
       toast.error('Please fill in all personal information fields');
-      return false;
+      isValid = false;
     }
     
     if (role === 'student' && !formData.studentId) {
       toast.error('Please enter your Student ID');
-      return false;
+      isValid = false;
     }
     
     if (role === 'staff' && !formData.staffId) {
       toast.error('Please enter your Staff ID');
-      return false;
+      isValid = false;
     }
 
     if (!formData.faculty) {
       toast.error('Please select your Faculty/College');
-      return false;
+      isValid = false;
     }
 
-    return true;
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -173,8 +220,9 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               onChange={handleChange}
               required
               autoComplete="name"
-              className="auth-input mt-1"
+              className={`auth-input mt-1 ${nameError ? 'border-red-500' : ''}`}
             />
+            {nameError && <p className="text-red-500 text-sm mt-1">{nameError}</p>}
           </div>
 
           <div>
@@ -277,8 +325,9 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               value={formData.phone}
               onChange={handleChange}
               required
-              className="auth-input mt-1"
+              className={`auth-input mt-1 ${phoneError ? 'border-red-500' : ''}`}
             />
+            {phoneError && <p className="text-red-500 text-sm mt-1">{phoneError}</p>}
           </div>
 
           <div>
@@ -406,7 +455,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
         <Button
           type="submit"
           className="w-full bg-medical-secondary hover:bg-medical-primary text-white font-bold py-3 px-4 rounded-md"
-          disabled={isRegistering}
+          disabled={isRegistering || !!nameError || !!phoneError}
         >
           {isRegistering ? (
             <div className="flex items-center justify-center">
