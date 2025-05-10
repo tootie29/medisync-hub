@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -96,8 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         
         if (foundRegisteredUser) {
-          // Check if email is verified in preview mode
-          if (foundRegisteredUser.emailVerified === false) {
+          // Check if email is verified in preview mode, but skip for demo accounts
+          const isDemoAccount = SAMPLE_USERS.some(demo => demo.email === email);
+          
+          if (foundRegisteredUser.emailVerified === false && !isDemoAccount) {
             setVerificationEmail(email);
             setIsLoading(false);
             throw new Error('Email not verified. Please check your email for the verification link or request a new one.');
@@ -159,8 +162,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error: any) {
         console.error('Login API error:', error);
         
-        // Check if this is a verification required error
-        if (error.response?.status === 403 && error.response?.data?.requiresVerification) {
+        // Check if this is a verification required error, but skip for demo accounts
+        const isDemoAccount = SAMPLE_USERS.some(demo => demo.email === email);
+        
+        if (error.response?.status === 403 && error.response?.data?.requiresVerification && !isDemoAccount) {
           setVerificationEmail(email);
           throw new Error('Email not verified. Please check your email for the verification link or request a new one.');
         }
