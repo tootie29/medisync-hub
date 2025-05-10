@@ -106,7 +106,7 @@ router.get('/', logoController.getAllLogos);
 // New diagnostic endpoint
 router.get('/diagnostics', logoController.getUploadDiagnostics);
 
-// Add a new route for client-side stored logos
+// Add a new route for client-side stored logos that can handle both path and base64
 router.post('/client', logoController.uploadClientLogos);
 
 // Add a route for base64 logo uploads

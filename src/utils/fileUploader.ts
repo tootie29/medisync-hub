@@ -9,29 +9,42 @@ export const generateUniqueFilename = (originalName: string): string => {
   return `logo-${timestamp}-${random}.${ext}`;
 };
 
+// Convert file to base64
+export const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 // Save file to public folder and return the path
 export const saveFileToPublic = async (file: File): Promise<string> => {
   try {
-    console.log('FileUploader: Saving file to public folder', file.name);
+    console.log('FileUploader: Processing file', file.name, file.type, file.size);
+    
+    // Convert the file to base64 first
+    const base64Data = await fileToBase64(file);
+    console.log('FileUploader: Converted file to base64');
     
     // Create a unique filename
     const uniqueFilename = generateUniqueFilename(file.name);
+    console.log('FileUploader: Generated unique filename:', uniqueFilename);
     
-    // Define the path where the file will be saved
-    // This will be in the public folder which is accessible via URL
+    // Define the path where the file will be saved in the lovable-uploads folder
     const savePath = `/lovable-uploads/${uniqueFilename}`;
+    console.log('FileUploader: Save path:', savePath);
     
-    // Create a Blob URL for the file
-    const blobUrl = URL.createObjectURL(file);
-    
-    // Create an image element to load the file
+    // Create an image element from the base64 data
     const img = new Image();
-    
-    // Wait for the image to load
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = blobUrl;
+      img.onerror = (e) => {
+        console.error('FileUploader: Error loading image:', e);
+        reject(new Error('Failed to load image'));
+      };
+      img.src = base64Data;
     });
     
     // Create a canvas to draw the image
@@ -61,6 +74,7 @@ export const saveFileToPublic = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', blob, uniqueFilename);
     
+    console.log('FileUploader: Uploading to /api/upload endpoint');
     // Upload to lovable's upload endpoint
     const response = await axios.post('/api/upload', formData);
     
@@ -68,13 +82,19 @@ export const saveFileToPublic = async (file: File): Promise<string> => {
       throw new Error('Invalid response from server');
     }
     
-    // Release the blob URL
-    URL.revokeObjectURL(blobUrl);
-    
-    console.log('FileUploader: File saved successfully:', response.data.url);
-    return response.data.url;
+    const fullUrl = response.data.url;
+    console.log('FileUploader: File saved successfully:', fullUrl);
+    return fullUrl;
   } catch (error) {
     console.error('FileUploader: Error saving file:', error);
-    throw error;
+    // Return base64 data as fallback if upload to public folder fails
+    try {
+      console.log('FileUploader: Attempting to use base64 data as fallback');
+      const base64Data = await fileToBase64(file);
+      return base64Data;
+    } catch (innerError) {
+      console.error('FileUploader: Fallback also failed:', innerError);
+      throw error;
+    }
   }
 };

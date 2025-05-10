@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -6,7 +7,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive, Terminal, Bug } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
-import { saveFileToPublic } from '@/utils/fileUploader';
+import { saveFileToPublic, fileToBase64 } from '@/utils/fileUploader';
 
 const LogoManagement = () => {
   const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
@@ -104,6 +105,15 @@ const LogoManagement = () => {
       console.log('Selected primary logo file:', file.name, file.type, file.size);
       setPrimaryLogo(file);
       setPrimaryClientPath(null); // Clear any previous client path
+      
+      // Preview the image immediately
+      try {
+        const base64Preview = await fileToBase64(file);
+        console.log('Generated preview for primary logo');
+        setPrimaryLogoUrl(base64Preview);
+      } catch (error) {
+        console.error('Error generating preview:', error);
+      }
     }
   };
 
@@ -118,6 +128,15 @@ const LogoManagement = () => {
       console.log('Selected secondary logo file:', file.name, file.type, file.size);
       setSecondaryLogo(file);
       setSecondaryClientPath(null); // Clear any previous client path
+      
+      // Preview the image immediately
+      try {
+        const base64Preview = await fileToBase64(file);
+        console.log('Generated preview for secondary logo');
+        setSecondaryLogoUrl(base64Preview);
+      } catch (error) {
+        console.error('Error generating preview:', error);
+      }
     }
   };
 
@@ -135,38 +154,79 @@ const LogoManagement = () => {
       
       if (primaryLogo) {
         try {
+          console.log('Saving primary logo to client...');
+          toast.loading('Uploading primary logo...');
           const primaryPath = await saveFileToPublic(primaryLogo);
           setPrimaryClientPath(primaryPath);
           logoData.primaryLogo = primaryPath;
           console.log('LogoManagement: Saved primary logo to client:', primaryPath);
+          toast.dismiss();
+          toast.success('Primary logo uploaded successfully');
         } catch (error) {
           console.error('Error saving primary logo to client:', error);
-          toast.error('Failed to save primary logo');
-          setIsLoading(false);
-          return;
+          toast.dismiss();
+          toast.error('Failed to save primary logo. Using base64 fallback.');
+          
+          // Fallback to base64 if client-side save fails
+          try {
+            const base64Data = await fileToBase64(primaryLogo);
+            logoData.primaryLogo = base64Data;
+            console.log('Using base64 fallback for primary logo');
+          } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            setIsLoading(false);
+            setError('Failed to save logo in any format. Please try again.');
+            return;
+          }
         }
       }
       
       if (secondaryLogo) {
         try {
+          console.log('Saving secondary logo to client...');
+          toast.loading('Uploading secondary logo...');
           const secondaryPath = await saveFileToPublic(secondaryLogo);
           setSecondaryClientPath(secondaryPath);
           logoData.secondaryLogo = secondaryPath;
           console.log('LogoManagement: Saved secondary logo to client:', secondaryPath);
+          toast.dismiss();
+          toast.success('Secondary logo uploaded successfully');
         } catch (error) {
           console.error('Error saving secondary logo to client:', error);
-          toast.error('Failed to save secondary logo');
-          setIsLoading(false);
-          return;
+          toast.dismiss();
+          toast.error('Failed to save secondary logo. Using base64 fallback.');
+          
+          // Fallback to base64 if client-side save fails
+          try {
+            const base64Data = await fileToBase64(secondaryLogo);
+            logoData.secondaryLogo = base64Data;
+            console.log('Using base64 fallback for secondary logo');
+          } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            setIsLoading(false);
+            setError('Failed to save logo in any format. Please try again.');
+            return;
+          }
         }
       }
       
       // Only proceed if at least one file is saved
       if (Object.keys(logoData).length > 0) {
-        console.log('LogoManagement: Uploading logo paths to database...');
+        console.log('LogoManagement: Uploading logo data to database...');
+        toast.loading('Updating database...');
         
-        // Send the paths to the server to save in the database
-        const response = await axios.post('/api/logos/client', logoData, {
+        // Determine which endpoint to use based on whether we're using base64 or file paths
+        const isPrimaryBase64 = logoData.primaryLogo?.startsWith('data:');
+        const isSecondaryBase64 = logoData.secondaryLogo?.startsWith('data:');
+        
+        let endpoint = '/api/logos/client';
+        if (isPrimaryBase64 || isSecondaryBase64) {
+          console.log('Using base64 endpoint for at least one logo');
+          endpoint = '/api/logos/base64';
+        }
+        
+        // Send the paths or base64 data to the server to save in the database
+        const response = await axios.post(endpoint, logoData, {
           timeout: 60000, // 60 seconds timeout
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
@@ -178,6 +238,7 @@ const LogoManagement = () => {
         });
         
         console.log('LogoManagement: Upload response:', response.data);
+        toast.dismiss();
         
         if (response.data.success) {
           setUploadSuccess(true);
@@ -209,7 +270,7 @@ const LogoManagement = () => {
         } else {
           console.error('Upload failed:', response.data);
           setError('Failed to update logos: ' + (response.data.error || 'Unknown error'));
-          toast.error('Failed to update logos');
+          toast.error('Failed to update logos in database');
           await fetchDiagnostics();
         }
       } else {
@@ -217,6 +278,7 @@ const LogoManagement = () => {
       }
     } catch (error: any) {
       console.error('LogoManagement: Error updating logos:', error);
+      toast.dismiss();
       
       let errorMessage = 'Failed to upload logos. Please try again.';
       if (error.response) {

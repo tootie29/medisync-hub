@@ -149,6 +149,16 @@ exports.uploadClientLogos = async (req, res) => {
       secondaryLogo ? 'Secondary logo path present' : 'No secondary logo'
     );
     
+    // Support both file paths and base64 data
+    // Check if we're dealing with base64 data
+    const isPrimaryBase64 = primaryLogo && primaryLogo.startsWith('data:image/');
+    const isSecondaryBase64 = secondaryLogo && secondaryLogo.startsWith('data:image/');
+    
+    if (isPrimaryBase64 || isSecondaryBase64) {
+      console.log('Detected base64 data, forwarding to base64 handler');
+      return exports.uploadBase64Logos(req, res);
+    }
+    
     // Process logos if provided
     if (primaryLogo) {
       const primaryResult = await processClientLogo(primaryLogo, 'primary');
@@ -193,6 +203,11 @@ const processClientLogo = async (logoPath, position) => {
   console.log(`Processing ${position} logo path:`, logoPath);
   
   try {
+    // Verify the path format
+    if (!logoPath || typeof logoPath !== 'string') {
+      throw new Error(`Invalid logo path format for ${position} logo`);
+    }
+    
     // Add to database with transaction support
     const id = uuidv4();
     await logoModel.updateLogo({
