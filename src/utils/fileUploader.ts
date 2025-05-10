@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 // Function to generate a unique filename
@@ -47,7 +48,7 @@ export const saveFileToPublic = async (file: File): Promise<string> => {
   }
 };
 
-// Simplified approach to upload logo files directly
+// Completely rewritten uploadLogo function with robust error handling
 export const uploadLogo = async (
   file: File,
   position: 'primary' | 'secondary'
@@ -57,45 +58,64 @@ export const uploadLogo = async (
     
     // Create FormData object with the file
     const formData = new FormData();
-    formData.append(position + 'Logo', file);
+    formData.append('file', file);
+    formData.append('position', position);
     
-    console.log(`FileUploader: Sending ${position} logo to endpoint: /api/logos`);
+    // Use the most direct API endpoint possible
+    const endpoint = `/api/upload-logo/${position}`;
+    console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
     
-    const response = await axios.post('/api/logos', formData, {
+    // Add debug info for this request
+    console.log(`File size: ${file.size} bytes, type: ${file.type}`);
+    
+    // Set explicit content type header and timeout
+    const response = await axios.post(endpoint, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'multipart/form-data',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      timeout: 30000, // 30 seconds timeout
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total!);
+        console.log(`FileUploader: Upload progress: ${percentCompleted}%`);
       }
     });
     
-    console.log('FileUploader: Server response:', response);
+    console.log('FileUploader: Response status:', response.status);
+    console.log('FileUploader: Response content-type:', response.headers['content-type']);
     
-    if (!response.data) {
-      console.error('FileUploader: Empty response from server');
-      throw new Error('Empty server response');
+    // Validate response format first
+    if (!response.data || typeof response.data !== 'object') {
+      console.error('FileUploader: Invalid response format:', response.data);
+      throw new Error('Invalid response format from server');
     }
     
-    if (response.data.error) {
-      console.error('FileUploader: Server returned error:', response.data.error);
-      throw new Error(response.data.error || 'Server error');
+    // Check for success and file path in the response
+    if (response.data.success && response.data.filePath) {
+      console.log(`FileUploader: Upload successful, file path: ${response.data.filePath}`);
+      return response.data.filePath;
+    } else if (response.data.error) {
+      console.error(`FileUploader: Server returned error:`, response.data.error);
+      throw new Error(response.data.error);
+    } else {
+      console.error('FileUploader: No file path in response:', response.data);
+      throw new Error('No file path returned from server');
     }
-    
-    const uploadResults = response.data.uploads || [];
-    const thisUpload = uploadResults.find((u: any) => u.position === position);
-    
-    if (!thisUpload || !thisUpload.path) {
-      console.error(`FileUploader: No path returned for ${position} logo`);
-      throw new Error('No logo path returned from server');
-    }
-    
-    return thisUpload.path;
   } catch (error: any) {
+    // Enhanced error logging
     console.error(`FileUploader: Error uploading ${position} logo:`, error);
     
-    // Include response data in error for better debugging
+    // Check if it's an Axios error with response
     if (error.response) {
-      console.error('FileUploader: Response status:', error.response.status);
-      console.error('FileUploader: Response data:', error.response.data);
-      console.error('FileUploader: Response headers:', error.response.headers);
+      console.error('FileUploader: Server response status:', error.response.status);
+      console.error('FileUploader: Server response data:', error.response.data);
+      console.error('FileUploader: Server response headers:', error.response.headers);
+      
+      // If we got HTML instead of JSON, this is a clear indication something's wrong
+      if (typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE html>')) {
+        console.error('FileUploader: Received HTML instead of JSON - API endpoint issue');
+        throw new Error('API routing issue - received HTML instead of JSON');
+      }
     }
     
     throw error;
@@ -115,24 +135,29 @@ export const uploadBase64ToDatabase = async (
       [position + 'Logo']: base64Data
     };
     
-    // Use relative paths for API endpoints
-    const endpoint = '/api/logos/base64';
+    // Use simpler endpoint
+    const endpoint = `/api/upload-base64-logo/${position}`;
     console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
     
     const response = await axios.post(endpoint, payload, {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       }
     });
     
-    console.log('FileUploader: Server response:', response);
+    console.log('FileUploader: Server response:', response.status, response.data);
     
-    if (!response.data) {
-      throw new Error('Empty server response');
+    if (!response.data || typeof response.data !== 'object') {
+      throw new Error('Invalid response format from server');
     }
     
     if (response.data.error) {
-      throw new Error(response.data.error || 'Server error');
+      throw new Error(response.data.error);
+    }
+    
+    if (!response.data.success) {
+      throw new Error('Upload failed without specific error message');
     }
     
     return base64Data;

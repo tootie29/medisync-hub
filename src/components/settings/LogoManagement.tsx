@@ -110,7 +110,7 @@ const LogoManagement = () => {
     }
   };
 
-  // Updated approach using direct file uploads
+  // Updated approach using direct upload endpoint
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -126,32 +126,80 @@ const LogoManagement = () => {
         return;
       }
       
-      // Use separate uploads for each logo
-      const uploads = [];
-      
+      // Use direct upload for each logo
       if (primaryLogo) {
         try {
           console.log('LogoManagement: Uploading primary logo');
-          await uploadLogo(primaryLogo, 'primary');
-          uploadedLogos++;
-          uploads.push('primary');
+          
+          // Create form data directly for manual control
+          const formData = new FormData();
+          formData.append('file', primaryLogo);
+          
+          // Use simpler, more direct endpoint
+          const endpoint = `/api/upload-logo/primary`;
+          console.log(`Sending primary logo to endpoint: ${endpoint}`);
+          
+          const response = await axios.post(endpoint, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            withCredentials: true
+          });
+          
+          console.log('Primary logo upload response:', response.data);
+          
+          if (response.data && response.data.success) {
+            uploadedLogos++;
+            console.log('Primary logo uploaded successfully');
+          } else {
+            throw new Error(response.data?.error || 'Upload failed');
+          }
         } catch (error: any) {
           console.error('Error uploading primary logo:', error);
           const errorMsg = error.message || 'Failed to upload primary logo';
           toast.error(errorMsg);
+          setError(`Primary logo: ${errorMsg}`);
         }
       }
       
       if (secondaryLogo) {
         try {
           console.log('LogoManagement: Uploading secondary logo');
-          await uploadLogo(secondaryLogo, 'secondary');
-          uploadedLogos++;
-          uploads.push('secondary');
+          
+          // Create form data directly for manual control
+          const formData = new FormData();
+          formData.append('file', secondaryLogo);
+          
+          // Use simpler, more direct endpoint
+          const endpoint = `/api/upload-logo/secondary`;
+          console.log(`Sending secondary logo to endpoint: ${endpoint}`);
+          
+          const response = await axios.post(endpoint, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            withCredentials: true
+          });
+          
+          console.log('Secondary logo upload response:', response.data);
+          
+          if (response.data && response.data.success) {
+            uploadedLogos++;
+            console.log('Secondary logo uploaded successfully');
+          } else {
+            throw new Error(response.data?.error || 'Upload failed');
+          }
         } catch (error: any) {
           console.error('Error uploading secondary logo:', error);
           const errorMsg = error.message || 'Failed to upload secondary logo';
           toast.error(errorMsg);
+          if (setError) {
+            setError(prev => 
+              prev ? `${prev}, Secondary logo: ${errorMsg}` : `Secondary logo: ${errorMsg}`
+            );
+          }
         }
       }
       
@@ -175,7 +223,7 @@ const LogoManagement = () => {
           setLastRefresh(Date.now());
           window.dispatchEvent(new CustomEvent('refreshLogos'));
         }, 2000);
-      } else {
+      } else if (!error) { // Only show this if we don't have a more specific error
         toast.error('No logos were uploaded successfully');
       }
       

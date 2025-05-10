@@ -599,3 +599,157 @@ const processLogoUpload = async (req, logoFile, position, baseUrl) => {
     };
   }
 };
+
+/**
+ * New simplified controller method for single logo upload
+ */
+exports.uploadSingleLogo = async (req, res) => {
+  // Always ensure proper JSON content type
+  res.setHeader('Content-Type', 'application/json');
+  
+  if (!req.file) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'No file was uploaded' 
+    });
+  }
+  
+  const position = req.params.position;
+  if (!position || !['primary', 'secondary'].includes(position)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Invalid logo position. Must be "primary" or "secondary"' 
+    });
+  }
+  
+  try {
+    console.log(`Logo upload for ${position} received:`, req.file.originalname);
+    
+    // Process the uploaded file
+    const baseDir = process.env.UPLOAD_BASE_DIR || 
+                   (process.env.NODE_ENV === 'production' ? 
+                    '/home/entrsolu/api.climasys.entrsolutions.com' : 
+                    path.join(__dirname, '../'));
+                    
+    // Define URLs properly
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    
+    // Get the relative path to the file
+    let relativePath;
+    if (req.file.path.startsWith(baseDir)) {
+      relativePath = req.file.path.substring(baseDir.length);
+      if (!relativePath.startsWith('/')) {
+        relativePath = '/' + relativePath;
+      }
+    } else {
+      // Default path construction
+      relativePath = `/uploads/assets/logos/${req.file.filename}`;
+    }
+    
+    // Verify file exists
+    if (!fs.existsSync(req.file.path)) {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'File saved but not accessible',
+        details: { path: req.file.path }
+      });
+    }
+    
+    const filePath = `${baseUrl}${relativePath}`;
+    console.log(`File accessible at: ${filePath}`);
+    
+    // Update database with transaction
+    const logoId = uuidv4();
+    await logoModel.updateLogo({
+      id: logoId,
+      url: relativePath, // Store the relative path
+      position: position
+    });
+    
+    // Verify update was successful
+    const savedLogo = await logoModel.getLogoByPosition(position);
+    if (!savedLogo || savedLogo.url !== relativePath) {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Database update verification failed',
+        savedLogo 
+      });
+    }
+    
+    // Return success with file path
+    return res.status(200).json({
+      success: true,
+      message: `${position} logo uploaded successfully`,
+      logoId: logoId,
+      filePath: filePath,
+      relativePath: relativePath
+    });
+    
+  } catch (error) {
+    console.error(`Error processing ${position} logo upload:`, error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Server error processing file upload' 
+    });
+  }
+};
+
+/**
+ * New simplified controller method for single base64 upload
+ */
+exports.uploadSingleBase64Logo = async (req, res) => {
+  // Always ensure proper JSON content type
+  res.setHeader('Content-Type', 'application/json');
+  
+  const position = req.params.position;
+  if (!position || !['primary', 'secondary'].includes(position)) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Invalid logo position. Must be "primary" or "secondary"' 
+    });
+  }
+  
+  try {
+    // Get base64 data from the appropriate field
+    const base64Data = req.body[position + 'Logo'] || req.body.data;
+    if (!base64Data || !base64Data.startsWith('data:image/')) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid or missing base64 image data' 
+      });
+    }
+    
+    console.log(`Processing ${position} logo base64 upload, data length: ${base64Data.length}`);
+    
+    // Generate ID and update database
+    const logoId = uuidv4();
+    await logoModel.updateLogo({
+      id: logoId,
+      url: base64Data,
+      position: position
+    });
+    
+    // Verify update was successful
+    const savedLogo = await logoModel.getLogoByPosition(position);
+    if (!savedLogo) {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Database update verification failed' 
+      });
+    }
+    
+    // Return success
+    return res.status(200).json({
+      success: true,
+      message: `${position} logo saved successfully`,
+      logoId: logoId
+    });
+    
+  } catch (error) {
+    console.error(`Error processing ${position} base64 logo:`, error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Server error processing base64 upload' 
+    });
+  }
+};

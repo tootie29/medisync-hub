@@ -102,7 +102,7 @@ const upload = multer({
 
 // Ensure proper response types for all routes
 router.use((req, res, next) => {
-  // Ensure JSON response content type
+  // Explicitly set Content-Type for JSON responses
   res.setHeader('Content-Type', 'application/json');
   
   // Add CORS headers for all responses
@@ -131,7 +131,11 @@ router.post('/client', logoController.uploadClientLogos);
 // Simplified base64 upload route
 router.post('/base64', logoController.uploadBase64Logos);
 
-// Route for file uploads
+// Add direct upload endpoints for better reliability
+router.post('/upload-logo/:position', upload.single('file'), logoController.uploadSingleLogo);
+router.post('/upload-base64-logo/:position', logoController.uploadSingleBase64Logo);
+
+// Route for file uploads (original method - keeping for backward compatibility)
 router.post('/', upload.fields([
   { name: 'primaryLogo', maxCount: 1 },
   { name: 'secondaryLogo', maxCount: 1 }
