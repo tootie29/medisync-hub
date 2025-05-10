@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Link } from 'react-router-dom';
-import { Search, ExternalLink } from 'lucide-react';
+import { Search, ExternalLink, AlertCircle, RefreshCw } from 'lucide-react';
 import { formatDate } from '@/utils/helpers';
 import { User, SAMPLE_USERS } from '@/types';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 const PatientRecordsTable: React.FC = () => {
   const { medicalRecords } = useData();
@@ -17,6 +18,7 @@ const PatientRecordsTable: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
+  const [lastFetchAttempt, setLastFetchAttempt] = useState(Date.now());
 
   // Function to fetch users from the API
   useEffect(() => {
@@ -78,9 +80,14 @@ const PatientRecordsTable: React.FC = () => {
         
         console.log('Users fetched successfully:', response.data.length);
         setUsers(response.data);
+        setConnectionError(false);
       } catch (error) {
         console.error('Error fetching users:', error);
         setConnectionError(true);
+        
+        // Show toast notification for API error
+        toast.error('Unable to connect to the API server. Using sample data instead.');
+        
         // Fallback to sample data if API fails
         setUsers(SAMPLE_USERS);
       } finally {
@@ -89,7 +96,13 @@ const PatientRecordsTable: React.FC = () => {
     };
 
     fetchUsers();
-  }, []);
+  }, [lastFetchAttempt]);
+
+  // Function to retry API connection
+  const handleRetry = () => {
+    setLastFetchAttempt(Date.now());
+    toast.info('Attempting to reconnect to the API server...');
+  };
 
   // Filter users to only include patients (students and staff)
   const patientUsers = users.filter(user => 
@@ -141,11 +154,26 @@ const PatientRecordsTable: React.FC = () => {
         </div>
         
         {connectionError && (
-          <div className="bg-destructive/15 p-3 rounded-md mb-4">
-            <p className="text-sm text-destructive">
-              Unable to connect to the API server. Using sample data instead.
-              Please ensure the API server is running and CORS is properly configured.
-            </p>
+          <div className="bg-destructive/15 p-3 rounded-md mb-4 flex justify-between items-center">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-destructive">API Connection Error</p>
+                <p className="text-sm text-destructive/80">
+                  Unable to connect to the API server. Using sample data instead.
+                  The server may be down or experiencing issues.
+                </p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRetry} 
+              className="flex items-center gap-1"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </Button>
           </div>
         )}
         
