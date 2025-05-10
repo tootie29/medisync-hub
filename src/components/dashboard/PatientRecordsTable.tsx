@@ -25,7 +25,14 @@ const PatientRecordsTable: React.FC = () => {
       
       if (isPreviewMode) {
         console.log('Running in preview mode - using sample data');
-        setUsers(SAMPLE_USERS);
+        // Filter out demo accounts
+        const filteredUsers = SAMPLE_USERS.filter(user => 
+          user.email !== 'admin@example.com' &&
+          user.email !== 'doctor@example.com' &&
+          user.email !== 'student@example.com' &&
+          user.email !== 'staff@example.com'
+        );
+        setUsers(filteredUsers);
         setIsLoading(false);
         return;
       }
