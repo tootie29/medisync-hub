@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Mail, Loader2, Info, CheckCircle } from 'lucide-react';
+import { Mail, Loader2, Info, CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface EmailVerificationProps {
   email: string | null;
@@ -20,6 +20,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
   const [verificationInfo, setVerificationInfo] = useState<string | null>(null);
   const [autoVerified, setAutoVerified] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [emailDetails, setEmailDetails] = useState<{previewUrl?: string; success: boolean} | null>(null);
   
   const isPreviewMode = window.location.hostname.includes('lovableproject.com');
 
@@ -56,9 +57,21 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
       // For preview mode, show the verification link directly
       if (isPreviewMode && result.verificationLink) {
         setVerificationInfo(`Since this is a preview environment, your account will be automatically verified in a few seconds. If not, you can visit this verification link: ${result.verificationLink}`);
+      } else if (result.emailSent) {
+        // For production mode with real email sending
+        setEmailDetails({
+          success: true,
+          previewUrl: result.emailPreviewUrl
+        });
+      } else {
+        // Email sending failed
+        setEmailDetails({
+          success: false
+        });
       }
     } catch (error) {
       console.error('Failed to resend verification:', error);
+      toast.error('Failed to resend verification email. Please try again.');
     } finally {
       setIsResending(false);
     }
@@ -93,6 +106,28 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           </div>
         )}
         
+        {!isPreviewMode && (
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-2" />
+              <div className="text-sm text-amber-700">
+                <p>
+                  <strong>Email Configuration Required:</strong> For email verification to work properly, 
+                  the server needs to be configured with SMTP settings in the .env file:
+                </p>
+                <pre className="mt-1 p-2 bg-amber-100 rounded text-xs overflow-x-auto">
+                  SMTP_HOST=your-smtp-server.com<br />
+                  SMTP_PORT=587<br />
+                  SMTP_USER=your-username<br />
+                  SMTP_PASS=your-password<br />
+                  SMTP_SECURE=false<br />
+                  SMTP_FROM=noreply@yourcompany.com
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {autoVerified && (
           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
             <div className="flex items-start">
@@ -100,6 +135,41 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
               <p className="text-sm text-green-700">
                 <strong>Auto-verification complete!</strong> You can now login with your credentials.
               </p>
+            </div>
+          </div>
+        )}
+        
+        {emailDetails && (
+          <div className={`mt-4 p-3 ${emailDetails.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'} rounded-md`}>
+            <div className="flex items-start">
+              {emailDetails.success ? (
+                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-2" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 mr-2" />
+              )}
+              <div className="text-sm text-gray-700">
+                {emailDetails.success ? (
+                  <>
+                    <p className="font-medium text-green-700">Email sent successfully!</p>
+                    <p>Please check your inbox and spam folders for the verification link.</p>
+                    {emailDetails.previewUrl && (
+                      <>
+                        <p className="mt-2">Using test email service. View the email at:</p>
+                        <a 
+                          href={emailDetails.previewUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline break-all"
+                        >
+                          {emailDetails.previewUrl}
+                        </a>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-red-700">Failed to send verification email. Please try again or contact support if the issue persists.</p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -133,7 +203,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           )}
         </Button>
 
-        {resent && !verificationInfo && !autoVerified && (
+        {resent && !verificationInfo && !autoVerified && !emailDetails && (
           <div className="rounded-md bg-green-50 p-4 mt-4">
             <div className="flex">
               <div className="ml-3">
