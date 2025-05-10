@@ -35,7 +35,7 @@ export const saveFileToPublic = async (file: File): Promise<string> => {
   }
 };
 
-// Upload base64 image directly to database - FIX: add proper headers and credentials
+// Upload base64 image directly to database - FIXED: separate uploads and better error handling
 export const uploadBase64ToDatabase = async (
   base64Data: string, 
   position: 'primary' | 'secondary'
@@ -44,19 +44,21 @@ export const uploadBase64ToDatabase = async (
     console.log(`FileUploader: Saving ${position} logo directly to database as base64`);
     console.log(`FileUploader: Base64 data length: ${base64Data.length}`);
     
-    // Create payload with just the base64 data
+    // CRITICAL FIX: Send each logo in a separate request with proper Content-Type
+    // Create payload with just the base64 data for this specific logo
     const payload: Record<string, string> = {};
     payload[`${position}Logo`] = base64Data;
     
-    // Debug the request
     console.log(`FileUploader: Sending ${position} logo to endpoint: /api/logos/base64`);
     console.log(`FileUploader: Payload size: ${JSON.stringify(payload).length} bytes`);
     
-    // FIX: Ensure proper Content-Type and withCredentials for authentication
+    // CRITICAL FIX: Ensure we're using proper Content-Type and withCredentials for session cookies
     const response = await axios.post('/api/logos/base64', payload, {
       withCredentials: true,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest', // Add this to ensure proper CORS handling
+        'Cache-Control': 'no-cache' // Prevent caching
       },
       // Track upload progress for debugging
       onUploadProgress: (progressEvent) => {
@@ -69,16 +71,16 @@ export const uploadBase64ToDatabase = async (
     
     console.log('FileUploader: Server response:', response.data);
     
-    if (!response || !response.data) {
-      console.error('FileUploader: Received invalid response from server');
-      throw new Error('Invalid response from server: empty response');
+    if (!response || !response.data || !response.data.uploads || !response.data.uploads[0]?.success) {
+      console.error('FileUploader: Received invalid or error response from server', response?.data);
+      throw new Error(response?.data?.error || 'Invalid response from server');
     }
     
     console.log(`FileUploader: ${position} logo saved to database, response:`, response.data);
     return base64Data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('FileUploader: Error saving to database:', error);
-    console.error('FileUploader: Error details:', JSON.stringify(error));
+    console.error('FileUploader: Error details:', error.response?.data || error.message || 'Unknown error');
     throw error;
   }
 };

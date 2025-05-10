@@ -33,7 +33,7 @@ exports.getLogoByPosition = async (position) => {
   }
 };
 
-// Update a logo with simplified transaction handling
+// CRITICAL FIX: Update a logo with improved transaction handling and debugging
 exports.updateLogo = async (logo) => {
   if (!logo.url || !logo.position) {
     throw new Error('Logo URL and position are required');
@@ -41,6 +41,7 @@ exports.updateLogo = async (logo) => {
   
   const position = logo.position;
   console.log(`Model: Processing logo update for position: ${position}`);
+  console.log(`Model: Logo URL length: ${logo.url.length} characters`);
   
   let connection;
   let logoId = logo.id || uuidv4();
@@ -61,29 +62,49 @@ exports.updateLogo = async (logo) => {
     
     console.log(`Model: Check for existing ${position} logo returned:`, existingLogos.length);
     
-    // Use a simplified approach - delete and insert
-    // This reduces complexity and potential for errors
-    
-    // Delete existing logo for this position if it exists
-    await connection.query('DELETE FROM logos WHERE position = ?', [position]);
-    console.log(`Model: Deleted any existing logos for position ${position}`);
-    
-    // Insert the new logo (path to the file stored in the url field)
-    const [insertResult] = await connection.query(
-      'INSERT INTO logos (id, url, position, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
-      [logoId, logo.url, position]
-    );
-    
-    console.log(`Model: Inserted new logo with ID: ${logoId}, Result:`, insertResult.affectedRows);
-    
-    // Check if the insert actually worked
-    if (insertResult.affectedRows === 0) {
-      throw new Error(`Failed to insert logo for position ${position}`);
+    // CRITICAL FIX: Explicitly handle the update as a two-step operation with better error logging
+    try {
+      // First delete existing logo
+      const [deleteResult] = await connection.query(
+        'DELETE FROM logos WHERE position = ?', 
+        [position]
+      );
+      console.log(`Model: Deleted existing logos for position ${position}:`, deleteResult.affectedRows);
+      
+      // Then insert the new logo with explicit column listing
+      const [insertResult] = await connection.query(
+        'INSERT INTO logos (id, url, position, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
+        [logoId, logo.url, position]
+      );
+      
+      console.log(`Model: Inserted new logo with ID: ${logoId}, Result:`, 
+        insertResult.affectedRows > 0 ? 'Success' : 'Failed');
+      
+      // Check if the insert actually worked
+      if (insertResult.affectedRows === 0) {
+        throw new Error(`Failed to insert logo for position ${position}`);
+      }
+    } catch (sqlError) {
+      console.error(`SQL error in updateLogo for ${position}:`, sqlError);
+      throw sqlError; // Let the outer catch handle the rollback
     }
     
     // Commit the transaction
     await connection.commit();
     console.log(`Model: Transaction committed successfully for logo position ${position}`);
+    
+    // Double check the logo was actually saved
+    const verifyRows = await executeQuery(
+      'SELECT * FROM logos WHERE position = ?',
+      [position]
+    );
+    
+    if (verifyRows.length === 0) {
+      console.error(`Model: Verification failed - logo not found after commit for position ${position}`);
+      throw new Error('Logo verification failed after commit');
+    }
+    
+    console.log(`Model: Verified logo saved for position ${position} with ID ${logoId}`);
     
     return logoId;
   } catch (error) {

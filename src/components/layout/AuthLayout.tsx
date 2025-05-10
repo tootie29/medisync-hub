@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -38,11 +37,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
     // Listen for refresh events from the logo management component
     const refreshHandler = () => {
       console.log('AuthLayout: Received logo refresh event');
-      // FIX: Add a longer delay to ensure database update completes
+      // CRITICAL FIX: Add a longer delay to ensure database update completes
       setTimeout(() => {
         console.log('AuthLayout: Executing delayed logo fetch after refresh event');
         fetchLogos();
-      }, 3000);
+      }, 5000); // CRITICAL FIX: Increased from 3000 to 5000ms
     };
     
     window.addEventListener('refreshLogos', refreshHandler);
@@ -58,20 +57,24 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
       setIsLoadingLogos(true);
       setFetchError(false);
       
-      // FIX: Use stronger cache busting to force browser to get fresh data
+      // CRITICAL FIX: Use stronger cache busting to force browser to get fresh data
       const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 100000);
-      const cacheBuster = `?t=${timestamp}&random=${random}`;
+      const random = Math.floor(Math.random() * 1000000); // Increased randomness
+      const cacheBuster = `?t=${timestamp}&r=${random}`;
       
-      // FIX: Include withCredentials and better error handling
+      // CRITICAL FIX: Include withCredentials and better error handling
       console.log('AuthLayout: Fetching primary logo...');
       const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`, {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          'Cache-Control': 'no-cache, no-store', // Force fresh data
+          'Pragma': 'no-cache'
+        }
       });
       
       console.log('AuthLayout: Primary logo response:', primaryResponse.data);
       
-      // FIX: Log more details about the response
+      // CRITICAL FIX: Log more details about the response
       if (primaryResponse.data && primaryResponse.data.url) {
         const url = primaryResponse.data.url;
         console.log('AuthLayout: Primary logo URL:', url.substring(0, 50) + '...');
@@ -79,7 +82,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
         // Check if it's a base64 string or a file path
         if (url.startsWith('data:image/')) {
           console.log('AuthLayout: Primary logo is a base64 image, length:', url.length);
-          setPrimaryLogoUrl(url);
+          // CRITICAL FIX: Force refresh by appending a dummy query param
+          setPrimaryLogoUrl(`${url}#${timestamp}`);
         } else {
           console.log('AuthLayout: Primary logo is a file path');
           // Add cache busting to file path
@@ -91,10 +95,14 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
         setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}${cacheBuster}`);
       }
       
-      // FIX: Same improvements for secondary logo
+      // CRITICAL FIX: Same improvements for secondary logo
       console.log('AuthLayout: Fetching secondary logo...');
       const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`, {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          'Cache-Control': 'no-cache, no-store', // Force fresh data
+          'Pragma': 'no-cache'
+        }
       });
       
       console.log('AuthLayout: Secondary logo response:', secondaryResponse.data);
@@ -105,7 +113,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
         
         if (url.startsWith('data:image/')) {
           console.log('AuthLayout: Secondary logo is a base64 image, length:', url.length);
-          setSecondaryLogoUrl(url);
+          // CRITICAL FIX: Force refresh by appending a dummy query param
+          setSecondaryLogoUrl(`${url}#${timestamp}`);
         } else {
           console.log('AuthLayout: Secondary logo is a file path');
           const fullUrl = `${url}${url.includes('?') ? '&' : '?'}t=${timestamp}`;

@@ -147,6 +147,7 @@ const LogoManagement = () => {
     }
   };
 
+  // CRITICAL FIX: Enhance the submit handler to process logos individually
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -157,27 +158,40 @@ const LogoManagement = () => {
     
     try {
       console.log('LogoManagement: Starting logo upload process');
-      const logoData: { primaryLogo?: string; secondaryLogo?: string } = {};
+      let uploadedLogos = 0;
+      let totalLogos = 0;
       
+      // Count how many logos we need to upload
+      if (primaryLogo) totalLogos++;
+      if (secondaryLogo) totalLogos++;
+      
+      if (totalLogos === 0) {
+        toast.error('Please select at least one logo to upload');
+        setIsLoading(false);
+        return;
+      }
+      
+      // CRITICAL FIX: Process each logo separately for more reliable uploads
       // Process primary logo if selected
       if (primaryLogo) {
         try {
           console.log('Processing primary logo...', primaryLogo.name, primaryLogo.size, 'bytes');
           toast.loading('Processing primary logo...');
           
-          // FIX: Use the uploadBase64ToDatabase function directly
           const primaryBase64 = await fileToBase64(primaryLogo);
           console.log('Primary logo converted to base64, length:', primaryBase64.length);
           
-          // Store in the payload
-          logoData.primaryLogo = primaryBase64;
+          // CRITICAL FIX: Send to server with better error handling
+          console.log('Uploading primary logo to database...');
+          await uploadBase64ToDatabase(primaryBase64, 'primary');
+          console.log('Primary logo uploaded successfully');
+          uploadedLogos++;
           toast.dismiss();
+          toast.success('Primary logo uploaded successfully');
         } catch (error: any) {
           console.error('Error processing primary logo:', error);
           toast.dismiss();
-          toast.error('Failed to process primary logo: ' + (error.message || 'Unknown error'));
-          setIsLoading(false);
-          return;
+          toast.error('Failed to upload primary logo: ' + (error.message || 'Unknown error'));
         }
       }
       
@@ -187,92 +201,51 @@ const LogoManagement = () => {
           console.log('Processing secondary logo...', secondaryLogo.name, secondaryLogo.size, 'bytes');
           toast.loading('Processing secondary logo...');
           
-          // FIX: Use the uploadBase64ToDatabase function directly
           const secondaryBase64 = await fileToBase64(secondaryLogo);
           console.log('Secondary logo converted to base64, length:', secondaryBase64.length);
           
-          // Store in the payload
-          logoData.secondaryLogo = secondaryBase64;
+          // CRITICAL FIX: Send to server with better error handling
+          console.log('Uploading secondary logo to database...');
+          await uploadBase64ToDatabase(secondaryBase64, 'secondary');
+          console.log('Secondary logo uploaded successfully');
+          uploadedLogos++;
           toast.dismiss();
+          toast.success('Secondary logo uploaded successfully');
         } catch (error: any) {
           console.error('Error processing secondary logo:', error);
           toast.dismiss();
-          toast.error('Failed to process secondary logo: ' + (error.message || 'Unknown error'));
-          setIsLoading(false);
-          return;
+          toast.error('Failed to upload secondary logo: ' + (error.message || 'Unknown error'));
         }
       }
       
-      // Only proceed if at least one file is processed
-      if (Object.keys(logoData).length > 0) {
-        console.log('Uploading logo data to database...');
-        toast.loading('Saving logos to database...');
+      // Check if any logos were successfully uploaded
+      if (uploadedLogos > 0) {
+        setUploadSuccess(true);
+        toast.success(`${uploadedLogos} logo(s) updated successfully`);
         
-        // Log the payload size for debugging
-        console.log('Payload summary:');
-        for (const [key, value] of Object.entries(logoData)) {
-          console.log(`${key} data length:`, value.length);
-        }
+        // Reset state
+        setPrimaryLogo(null);
+        setSecondaryLogo(null);
         
-        // FIX: Send the logos one by one to avoid payload size issues
-        let uploadSuccess = true;
-        let errorMessage = '';
+        // Clear file input fields
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach((input: any) => {
+          input.value = '';
+        });
         
-        // Upload primary logo if present
-        if (logoData.primaryLogo) {
-          try {
-            console.log('Uploading primary logo to database...');
-            await uploadBase64ToDatabase(logoData.primaryLogo, 'primary');
-            console.log('Primary logo uploaded successfully');
-          } catch (error: any) {
-            console.error('Failed to upload primary logo:', error);
-            uploadSuccess = false;
-            errorMessage = 'Failed to upload primary logo: ' + (error.message || 'Unknown error');
-          }
-        }
-        
-        // Upload secondary logo if present
-        if (logoData.secondaryLogo) {
-          try {
-            console.log('Uploading secondary logo to database...');
-            await uploadBase64ToDatabase(logoData.secondaryLogo, 'secondary');
-            console.log('Secondary logo uploaded successfully');
-          } catch (error: any) {
-            console.error('Failed to upload secondary logo:', error);
-            uploadSuccess = false;
-            errorMessage = errorMessage || 'Failed to upload secondary logo: ' + (error.message || 'Unknown error');
-          }
-        }
-        
-        toast.dismiss();
-        
-        if (uploadSuccess) {
-          setUploadSuccess(true);
-          toast.success('Logos updated successfully');
-          
-          // Reset state
-          setPrimaryLogo(null);
-          setSecondaryLogo(null);
-          
-          // Clear file input fields
-          const fileInputs = document.querySelectorAll('input[type="file"]');
-          fileInputs.forEach((input: any) => {
-            input.value = '';
-          });
-          
-          // FIX: Add longer delay to ensure database update completes
-          console.log('Dispatching refreshLogos event with delay for database propagation');
+        // CRITICAL FIX: Add longer delay to ensure database update completes
+        console.log('Dispatching refreshLogos event with delay for database propagation');
+        setTimeout(() => {
+          setLastRefresh(Date.now());
+          window.dispatchEvent(new CustomEvent('refreshLogos'));
+          // Force a hard refresh after a delay
           setTimeout(() => {
-            setLastRefresh(Date.now());
-            window.dispatchEvent(new CustomEvent('refreshLogos'));
-            fetchLogos();
-          }, 3000); // Increased delay for database update
-        } else {
-          setError(errorMessage || 'Failed to update logos');
-          toast.error(errorMessage || 'Failed to update logos');
-        }
+            fetchLogos(); 
+          }, 1000); // Additional delay for UI update
+        }, 5000); // CRITICAL FIX: Increased delay for database update from 3000 to 5000
       } else {
-        toast.error('Please select at least one logo to update');
+        setError('Failed to update any logos');
+        toast.error('Failed to update logos');
       }
     } catch (error: any) {
       console.error('Error updating logos:', error);
