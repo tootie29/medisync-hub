@@ -66,23 +66,25 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
       const formData = new FormData();
       formData.append('file', logo);
       
-      // Use absolute path to explicitly hit the API server
-      const endpoint = `/api/logos/upload-logo/${logoType}`;
+      // Get the API URL from window.location to ensure we hit the right server
+      // This is critical for deployment environments where frontend and API might be on different domains
+      const apiBaseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://api.climasys.entrsolutions.com'  // Production API server
+        : window.location.origin;                    // Development API server (same as frontend)
+      
+      const endpoint = `${apiBaseUrl}/api/logos/upload-logo/${logoType}`;
       console.log(`LogoUploader: Using endpoint ${endpoint}`);
       
       const response = await axios.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          // Add X-Requested-With header to help identify AJAX requests
           'X-Requested-With': 'XMLHttpRequest'
         },
-        timeout: 30000, // 30 seconds timeout
-        // Don't transform the response - critical for proper error detection
+        timeout: 30000,
         transformResponse: [(data) => {
           try {
             return JSON.parse(data);
           } catch (e) {
-            // If it's not JSON, return as-is
             return data;
           }
         }],
@@ -97,7 +99,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
       // Check if we got HTML instead of JSON
       if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
         console.error('LogoUploader: Received HTML instead of JSON - API routing issue');
-        throw new Error('API routing issue - received HTML instead of JSON');
+        throw new Error('API routing issue - received HTML instead of JSON. The request may be going to the wrong server.');
       }
       
       if (response.data && response.data.success) {

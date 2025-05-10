@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 // Function to generate a unique filename
@@ -59,8 +60,13 @@ export const uploadLogo = async (
     const formData = new FormData();
     formData.append('file', file);
     
-    // CRITICAL FIX: Use absolute path to explicitly hit the API server
-    const endpoint = `/api/logos/upload-logo/${position}`;
+    // Get the API URL from window.location to ensure we hit the right server
+    // This is critical for deployment environments where frontend and API might be on different domains
+    const apiBaseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://api.climasys.entrsolutions.com'  // Production API server
+      : window.location.origin;                   // Development API server (same as frontend)
+    
+    const endpoint = `${apiBaseUrl}/api/logos/upload-logo/${position}`;
     console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
     
     // Add debug info for this request
@@ -159,13 +165,18 @@ export const uploadBase64ToDatabase = async (
   try {
     console.log(`FileUploader: Uploading ${position} logo using base64`);
     
+    // Get the API URL from window.location to ensure we hit the right server
+    const apiBaseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://api.climasys.entrsolutions.com'  // Production API server
+      : window.location.origin;                   // Development API server (same as frontend)
+    
     // Create payload with the file path for this specific logo position
     const payload = {
       [position + 'Logo']: base64Data
     };
     
     // Use simpler endpoint
-    const endpoint = `/api/logos/upload-base64-logo/${position}`;
+    const endpoint = `${apiBaseUrl}/api/logos/upload-base64-logo/${position}`;
     console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
     
     const response = await axios.post(endpoint, payload, {
