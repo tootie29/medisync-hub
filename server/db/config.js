@@ -11,9 +11,8 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 3,  // Reduce connection limit to avoid overwhelming the server
   queueLimit: 5,       // Queue at most 5 connection requests
-  connectTimeout: 60000, // 60 seconds timeout - more time for slow connections
-  acquireTimeout: 60000, // 60 seconds timeout for acquiring connection
-  timeout: 60000,      // 60 seconds for idle connections
+  connectTimeout: 60000, // 60 seconds timeout for connection
+  // Removed invalid options: acquireTimeout and timeout
   // Add enhanced retry strategy
   enableKeepAlive: true,
   keepAliveInitialDelay: 30000, // 30 seconds
