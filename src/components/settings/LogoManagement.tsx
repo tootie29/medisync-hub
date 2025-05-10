@@ -7,6 +7,7 @@ import axios from 'axios';
 import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive, Terminal, Bug } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
 import { fileToBase64, uploadBase64ToDatabase } from '@/utils/fileUploader';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const LogoManagement = () => {
   const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
@@ -23,6 +24,7 @@ const LogoManagement = () => {
   const [diagnosticInfo, setDiagnosticInfo] = useState<Record<string, any>>({});  // Initialize as empty object
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
+  const [uploadAttempts, setUploadAttempts] = useState<number>(0);
 
   useEffect(() => {
     fetchLogos();
@@ -42,35 +44,43 @@ const LogoManagement = () => {
     setError(null);
     try {
       console.log('LogoManagement: Fetching logos...');
-      setIsLoadingLogos(true);
-      setError(null);
       
       // Add stronger cache busting to force refresh
       const timestamp = Date.now();
-      const cacheBuster = `?t=${timestamp}&nocache=${Math.random()}`;
+      const random = Math.floor(Math.random() * 1000000);
+      const cacheBuster = `?t=${timestamp}&r=${random}&nocache=true`;
       
-      // FIX: Use withCredentials for authentication
+      // FIX: Use withCredentials and better cache control
       const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`, {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
       console.log('LogoManagement: Primary logo response:', primaryResponse.data);
       
       if (primaryResponse.data && primaryResponse.data.url) {
         console.log('LogoManagement: Primary logo URL:', primaryResponse.data.url);
-        setPrimaryLogoUrl(primaryResponse.data.url);
+        setPrimaryLogoUrl(`${primaryResponse.data.url}#${timestamp}`);
       } else {
         setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
       
-      // FIX: Use withCredentials for authentication
       const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`, {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
       console.log('LogoManagement: Secondary logo response:', secondaryResponse.data);
       
       if (secondaryResponse.data && secondaryResponse.data.url) {
         console.log('LogoManagement: Secondary logo URL:', secondaryResponse.data.url);
-        setSecondaryLogoUrl(secondaryResponse.data.url);
+        setSecondaryLogoUrl(`${secondaryResponse.data.url}#${timestamp}`);
       } else {
         setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
@@ -155,6 +165,7 @@ const LogoManagement = () => {
     setServerInfo(null);
     setUploadProgress(0);
     setUploadSuccess(false);
+    setUploadAttempts(prev => prev + 1);
     
     try {
       console.log('LogoManagement: Starting logo upload process');
@@ -178,10 +189,15 @@ const LogoManagement = () => {
           console.log('Processing primary logo...', primaryLogo.name, primaryLogo.size, 'bytes');
           toast.loading('Processing primary logo...');
           
+          // Validate file size
+          if (primaryLogo.size > 1.5 * 1024 * 1024) {
+            throw new Error('Primary logo exceeds 1.5MB size limit');
+          }
+          
           const primaryBase64 = await fileToBase64(primaryLogo);
           console.log('Primary logo converted to base64, length:', primaryBase64.length);
           
-          // CRITICAL FIX: Send to server with better error handling
+          // CRITICAL FIX: Send to server with better error handling and retry logic
           console.log('Uploading primary logo to database...');
           await uploadBase64ToDatabase(primaryBase64, 'primary');
           console.log('Primary logo uploaded successfully');
@@ -191,8 +207,14 @@ const LogoManagement = () => {
         } catch (error: any) {
           console.error('Error processing primary logo:', error);
           toast.dismiss();
-          toast.error('Failed to upload primary logo: ' + (error.message || 'Unknown error'));
+          toast.error(`Failed to upload primary logo: ${error.message || 'Unknown error'}`);
+          setError(`Primary logo error: ${error.message || 'Unknown error'}`);
         }
+      }
+      
+      // Add delay between uploads to prevent race conditions
+      if (primaryLogo && secondaryLogo) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
       
       // Process secondary logo if selected
@@ -200,6 +222,11 @@ const LogoManagement = () => {
         try {
           console.log('Processing secondary logo...', secondaryLogo.name, secondaryLogo.size, 'bytes');
           toast.loading('Processing secondary logo...');
+          
+          // Validate file size
+          if (secondaryLogo.size > 1.5 * 1024 * 1024) {
+            throw new Error('Secondary logo exceeds 1.5MB size limit');
+          }
           
           const secondaryBase64 = await fileToBase64(secondaryLogo);
           console.log('Secondary logo converted to base64, length:', secondaryBase64.length);
@@ -214,7 +241,11 @@ const LogoManagement = () => {
         } catch (error: any) {
           console.error('Error processing secondary logo:', error);
           toast.dismiss();
-          toast.error('Failed to upload secondary logo: ' + (error.message || 'Unknown error'));
+          toast.error(`Failed to upload secondary logo: ${error.message || 'Unknown error'}`);
+          
+          if (!error.message?.includes('primary')) {
+            setError(`${error.message || 'Unknown error'}`);
+          }
         }
       }
       
@@ -233,16 +264,25 @@ const LogoManagement = () => {
           input.value = '';
         });
         
-        // CRITICAL FIX: Add longer delay to ensure database update completes
+        // Add longer delay and use progressive fetching to ensure database update completes
         console.log('Dispatching refreshLogos event with delay for database propagation');
+        
+        // Initial notification
+        toast.info('Refreshing logo display...');
+        
+        // First refresh attempt
         setTimeout(() => {
           setLastRefresh(Date.now());
           window.dispatchEvent(new CustomEvent('refreshLogos'));
-          // Force a hard refresh after a delay
-          setTimeout(() => {
-            fetchLogos(); 
-          }, 1000); // Additional delay for UI update
-        }, 5000); // CRITICAL FIX: Increased delay for database update from 3000 to 5000
+        }, 2000);
+        
+        // Second refresh attempt after longer delay
+        setTimeout(() => {
+          toast.info('Finalizing logo updates...');
+          setLastRefresh(Date.now() + 1);
+          window.dispatchEvent(new CustomEvent('refreshLogos'));
+          fetchLogos();
+        }, 7000);
       } else {
         setError('Failed to update any logos');
         toast.error('Failed to update logos');
@@ -302,15 +342,53 @@ const LogoManagement = () => {
   return (
     <div className="space-y-6">
       {uploadSuccess && (
-        <div className="bg-green-100 p-4 rounded-md mb-4 flex items-start gap-3">
-          <div className="h-5 w-5 text-green-600 mt-0.5">✓</div>
-          <div>
-            <p className="text-green-600 font-medium">Logo upload successful!</p>
-            <p className="text-green-600/80 text-sm mt-1">
-              The logos have been successfully uploaded and saved to the database.
-            </p>
-          </div>
-        </div>
+        <Alert variant="success" className="bg-green-100 border-green-200">
+          <AlertTitle className="text-green-600 font-medium flex items-center gap-2">
+            <div className="h-5 w-5 text-green-600 mt-0.5">✓</div>
+            Logo upload successful!
+          </AlertTitle>
+          <AlertDescription className="text-green-600/80">
+            The logos have been successfully uploaded and saved to the database. They should appear on the login page shortly.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {uploadAttempts > 0 && error && (
+        <Alert variant="destructive" className="bg-destructive/15 border-destructive/30">
+          <AlertTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" />
+            Upload Error
+          </AlertTitle>
+          <AlertDescription className="text-destructive/80">
+            <p>{error}</p>
+            <p className="mt-2">Troubleshooting tips:</p>
+            <ul className="list-disc pl-5 mt-1 space-y-1">
+              <li>Try with a smaller image (under 500KB)</li>
+              <li>Ensure you're using JPG or PNG format</li>
+              <li>Try refreshing the page before uploading</li>
+              <li>Verify your network connection</li>
+            </ul>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManualRefresh}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchDiagnostics}
+              >
+                <Bug className="h-4 w-4 mr-2" />
+                Run Diagnostics
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
       
       {serverDetails && (
