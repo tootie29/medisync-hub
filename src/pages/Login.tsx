@@ -1,24 +1,43 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import AuthLayout from '@/components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft, User, Lock, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, ArrowLeft, User, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import EmailVerification from '@/components/auth/EmailVerification';
 
 const Login: React.FC = () => {
   const { login, verificationEmail, setVerificationEmail } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [connectivityError, setConnectivityError] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   const [showVerification, setShowVerification] = React.useState(false);
+
+  // Get URL parameters for email verification
+  const searchParams = new URLSearchParams(location.search);
+  const verified = searchParams.get('verified');
+  const verificationMessage = searchParams.get('message');
+  const verifiedEmail = searchParams.get('email');
+
+  React.useEffect(() => {
+    // Show toast message based on verification result
+    if (verified === 'true') {
+      toast.success('Email verified successfully! You can now log in.');
+      if (verifiedEmail) {
+        setEmail(verifiedEmail);
+      }
+    } else if (verified === 'false' && verificationMessage) {
+      toast.error(verificationMessage);
+    }
+  }, [verified, verificationMessage, verifiedEmail]);
 
   React.useEffect(() => {
     // If there's a verification email, show the verification screen
@@ -97,6 +116,16 @@ const Login: React.FC = () => {
       <div className="mb-6 text-center">
         <h2 className="text-2xl font-bold text-medical-primary">ADMISSION LOG IN</h2>
       </div>
+
+      {/* Verification success message */}
+      {verified === 'true' && (
+        <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
+          <div className="flex">
+            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+            <p className="text-green-700">Your email has been verified successfully! You can now log in.</p>
+          </div>
+        </div>
+      )}
 
       {connectivityError && (
         <div className="bg-destructive/15 p-3 rounded-md mb-4">

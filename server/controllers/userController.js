@@ -307,16 +307,64 @@ exports.verifyEmail = async (req, res) => {
     
     const result = await userModel.verifyEmail(token);
     
+    // Check if the request is from a browser (has accept header for html)
+    const isHtmlRequest = req.headers.accept && req.headers.accept.includes('text/html');
+    
     if (result.success) {
+      // If it's a browser request, redirect to the login page
+      if (isHtmlRequest) {
+        // Determine the frontend URL based on the request origin or host
+        let frontendUrl = 'https://climasys.entrsolutions.com';
+        
+        // Try to determine the origin domain from the request
+        const origin = req.headers.origin;
+        const host = req.headers.host;
+        
+        if (origin && origin.includes('climasys.entrsolutions.com')) {
+          frontendUrl = origin;
+        } else if (host && !host.includes('api.')) {
+          // If host doesn't include 'api.', it might be the frontend
+          frontendUrl = `${req.protocol}://${host}`;
+        }
+        
+        // Add a success parameter to show a message on the login page
+        return res.redirect(`${frontendUrl}/login?verified=true&email=${encodeURIComponent(result.email)}`);
+      }
+      
+      // For API requests, return a JSON response
       res.status(200).json({ 
         message: 'Email verified successfully! You can now log in.', 
         email: result.email 
       });
     } else {
+      // For failed verification with browser request
+      if (isHtmlRequest) {
+        // Determine the frontend URL as above
+        let frontendUrl = 'https://climasys.entrsolutions.com';
+        
+        const origin = req.headers.origin;
+        const host = req.headers.host;
+        
+        if (origin && origin.includes('climasys.entrsolutions.com')) {
+          frontendUrl = origin;
+        } else if (host && !host.includes('api.')) {
+          frontendUrl = `${req.protocol}://${host}`;
+        }
+        
+        return res.redirect(`${frontendUrl}/login?verified=false&message=${encodeURIComponent(result.message)}`);
+      }
+      
+      // For API requests, return error message
       res.status(400).json({ message: result.message });
     }
   } catch (error) {
     console.error('Error in verifyEmail controller:', error);
+    
+    // If it's a browser request, redirect to login page with error
+    if (req.headers.accept && req.headers.accept.includes('text/html')) {
+      return res.redirect('https://climasys.entrsolutions.com/login?verified=false&message=Server%20error%20during%20verification');
+    }
+    
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
