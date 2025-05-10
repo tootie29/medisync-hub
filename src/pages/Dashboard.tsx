@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
   // Check user roles more explicitly - make sure staff can see proper data
   const isStudent = user?.role === 'student';
   const isStaff = user?.role === 'staff';
-  const isDoctor = user?.role === 'doctor';
+  const isDoctor = user?.role === 'head nurse';
   const isAdmin = user?.role === 'admin';
   
   // Consider staff and students as patients for medical records purposes

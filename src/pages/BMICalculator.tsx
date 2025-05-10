@@ -39,7 +39,7 @@ const BMICalculator: React.FC = () => {
   const certificateRef = useRef<HTMLDivElement>(null);
   
   const isPatient = user?.role === 'student' || user?.role === 'staff';
-  const isDoctor = user?.role === 'doctor' || user?.role === 'admin';
+  const isDoctor = user?.role === 'head nurse' || user?.role === 'admin';
   
   const isHealthyBMI = bmi !== null && bmi >= 18.5 && bmi < 25;
   const hasBMICertificate = isHealthyBMI && (lastRecord?.certificateEnabled || false);

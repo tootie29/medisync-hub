@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -28,7 +29,7 @@ const Appointments = () => {
   const [notes, setNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
-  const doctors = SAMPLE_USERS.filter(u => u.role === 'doctor');
+  const doctors = SAMPLE_USERS.filter(u => u.role === 'head nurse');
   const [selectedDoctor, setSelectedDoctor] = useState<string>("");
   
   const effectiveUserId = user?.id || 'user-preview';

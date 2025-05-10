@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +52,7 @@ const MedicalRecords: React.FC = () => {
     }
   });
 
-  const isDoctor = user?.role === 'doctor' || user?.role === 'admin';
+  const isDoctor = user?.role === 'head nurse' || user?.role === 'admin';
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   
   console.log("MedicalRecords component rendering");
