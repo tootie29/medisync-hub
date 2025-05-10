@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Mail, Loader2, Info } from 'lucide-react';
+import { Mail, Loader2, Info, CheckCircle } from 'lucide-react';
 
 interface EmailVerificationProps {
   email: string | null;
@@ -18,8 +18,29 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
   const [isResending, setIsResending] = useState(false);
   const [resent, setResent] = useState(false);
   const [verificationInfo, setVerificationInfo] = useState<string | null>(null);
+  const [autoVerified, setAutoVerified] = useState(false);
+  const [countdown, setCountdown] = useState(5);
   
   const isPreviewMode = window.location.hostname.includes('lovableproject.com');
+
+  // Handle auto-verification countdown in preview mode
+  useEffect(() => {
+    if (isPreviewMode && email && !autoVerified) {
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setAutoVerified(true);
+            toast.success("Your account has been automatically verified!");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(timer);
+    }
+  }, [isPreviewMode, email, autoVerified]);
 
   const handleResendVerification = async () => {
     if (!inputEmail) {
@@ -57,9 +78,27 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
             <div className="flex items-start">
               <Info className="h-5 w-5 text-blue-500 mt-0.5 mr-2" />
-              <p className="text-sm text-blue-700">
-                <strong>Preview Mode:</strong> In this demonstration environment, your account will be automatically verified 
-                after registration. No actual email will be sent.
+              <div className="text-sm text-blue-700">
+                <p>
+                  <strong>Preview Mode:</strong> In this demonstration environment, your account will be automatically verified 
+                  after registration. No actual email will be sent.
+                </p>
+                {!autoVerified && countdown > 0 && (
+                  <p className="mt-1 font-medium">
+                    Auto-verifying in {countdown} seconds...
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {autoVerified && (
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+            <div className="flex items-start">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-2" />
+              <p className="text-sm text-green-700">
+                <strong>Auto-verification complete!</strong> You can now login with your credentials.
               </p>
             </div>
           </div>
@@ -82,7 +121,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
         <Button
           onClick={handleResendVerification}
           className="w-full bg-medical-secondary hover:bg-medical-primary"
-          disabled={isResending || !inputEmail}
+          disabled={isResending || !inputEmail || autoVerified}
         >
           {isResending ? (
             <>
@@ -94,7 +133,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           )}
         </Button>
 
-        {resent && !verificationInfo && (
+        {resent && !verificationInfo && !autoVerified && (
           <div className="rounded-md bg-green-50 p-4 mt-4">
             <div className="flex">
               <div className="ml-3">
