@@ -249,7 +249,7 @@ const processClientLogo = async (logoPath, position) => {
 };
 
 /**
- * Upload base64 logos - CRITICAL FIX: Enhanced error handling and content type enforcement
+ * Upload base64 logos with improved error handling and debugging
  */
 exports.uploadBase64Logos = async (req, res) => {
   console.log('Processing base64 logo upload request');
@@ -258,6 +258,10 @@ exports.uploadBase64Logos = async (req, res) => {
   try {
     // Ensure content type is set to JSON
     res.setHeader('Content-Type', 'application/json');
+    
+    // Log the entire request for detailed debugging
+    console.log('Full request path:', req.originalUrl);
+    console.log('Headers:', JSON.stringify(req.headers));
     
     const { primaryLogo, secondaryLogo } = req.body;
     
@@ -305,6 +309,7 @@ exports.uploadBase64Logos = async (req, res) => {
     
     if (results.length === 0) {
       console.error('No logos were processed in request');
+      // Send JSON response with an error message
       return res.status(400).json({ 
         error: 'No logos were processed',
         details: 'No base64 data was provided',
@@ -312,11 +317,11 @@ exports.uploadBase64Logos = async (req, res) => {
       });
     }
     
-    // CRITICAL FIX: Better response structure and JSON enforcement
+    // Better response structure with consistent JSON format
     const hasErrors = results.some(result => result.error);
     const successCount = results.filter(result => result.success).length;
     
-    // CRITICAL FIX: Always return a properly formatted JSON response
+    // Always return a properly formatted JSON response
     const responseObj = { 
       message: successCount > 0 ? 
         `${successCount} logo(s) processed successfully` : 
@@ -326,12 +331,14 @@ exports.uploadBase64Logos = async (req, res) => {
     };
     
     console.log('Sending response:', JSON.stringify(responseObj));
+    // Explicitly set the content type again before sending
+    res.setHeader('Content-Type', 'application/json');
     res.status(hasErrors && successCount === 0 ? 400 : 200).json(responseObj);
     
   } catch (error) {
     console.error('Error uploading base64 logos:', error);
     
-    // CRITICAL FIX: Ensure JSON response even in error case
+    // Ensure JSON response even in error case
     res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ 
       error: 'Failed to process logo uploads', 
@@ -342,7 +349,7 @@ exports.uploadBase64Logos = async (req, res) => {
 };
 
 /**
- * Process base64 logo - CRITICAL FIX: Improved validation and DB interaction
+ * Process base64 logo
  */
 const processBase64Logo = async (base64Data, position) => {
   console.log(`Processing ${position} logo as base64`);

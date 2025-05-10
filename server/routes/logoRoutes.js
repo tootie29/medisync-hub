@@ -100,12 +100,31 @@ const upload = multer({
   }
 });
 
-// CRITICAL FIX: Add JSON content type check middleware to prevent routing issues
+// IMPROVED: JSON content type check middleware to prevent routing issues
 const ensureJsonResponse = (req, res, next) => {
-  // Set content type explicitly to ensure JSON response
+  // Log incoming request details for debugging
+  console.log('Request URL:', req.originalUrl);
+  console.log('Request method:', req.method);
+  console.log('Content-Type header:', req.headers['content-type']);
+  
+  // Force proper JSON responses for all our API endpoints
   res.setHeader('Content-Type', 'application/json');
+  
+  // CORS headers to ensure proper handling
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).json({});
+  }
+  
   next();
 };
+
+// Apply JSON response middleware to all routes
+router.use(ensureJsonResponse);
 
 // Get all logos
 router.get('/', logoController.getAllLogos);
@@ -116,19 +135,13 @@ router.get('/diagnostics', logoController.getUploadDiagnostics);
 // Add a new route for client-side stored logos that can handle both path and base64
 router.post('/client', logoController.uploadClientLogos);
 
-// CRITICAL FIX: Add JSON content type check middleware to prevent routing issues
-router.post('/base64', ensureJsonResponse, (req, res, next) => {
+// IMPROVED: Base64 upload route with enhanced error handling
+router.post('/base64', (req, res, next) => {
   console.log('Base64 upload route hit with method:', req.method);
   console.log('Request headers:', req.headers);
   console.log('Request path:', req.path);
   console.log('Request URL:', req.url);
   console.log('Request original URL:', req.originalUrl);
-  
-  // Handle preflight OPTIONS requests for CORS
-  if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS preflight request');
-    return res.status(200).end();
-  }
   
   // Log body existence
   console.log('Request body exists:', !!req.body);
@@ -137,12 +150,6 @@ router.post('/base64', ensureJsonResponse, (req, res, next) => {
     console.log('primaryLogo exists:', !!req.body.primaryLogo);
     console.log('secondaryLogo exists:', !!req.body.secondaryLogo);
   }
-  
-  // Handle CORS issues with more permissive settings for troubleshooting
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
   
   next();
 }, logoController.uploadBase64Logos);
@@ -223,7 +230,7 @@ router.post('/', upload.fields([
   next();
 }, logoController.uploadLogos);
 
-// Get a single logo by position - CRITICAL FIX: Add JSON content type
-router.get('/:position', ensureJsonResponse, logoController.getLogoByPosition);
+// Get a single logo by position
+router.get('/:position', logoController.getLogoByPosition);
 
 module.exports = router;

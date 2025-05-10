@@ -53,11 +53,10 @@ export const uploadBase64ToDatabase = async (
         [position + 'Logo']: base64Data
       };
       
-      // CRITICAL FIX: Ensure we're using the absolute path for the API endpoint
-      // Add timestamp to prevent caching issues
+      // CRITICAL FIX: Always use relative paths for API endpoints
+      // This ensures it works correctly in any environment
       const timestamp = Date.now();
-      const apiBasePath = window.location.origin; // Get the current origin (e.g. https://example.com)
-      const endpoint = `${apiBasePath}/api/logos/base64?t=${timestamp}`;
+      const endpoint = `/api/logos/base64?t=${timestamp}`;
       console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
       
       // Ensure we're using proper Content-Type and withCredentials
@@ -67,7 +66,8 @@ export const uploadBase64ToDatabase = async (
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
           'Cache-Control': 'no-cache, no-store',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          'Accept': 'application/json' // Explicitly request JSON response
         },
         // Track upload progress
         onUploadProgress: (progressEvent) => {
@@ -96,6 +96,13 @@ export const uploadBase64ToDatabase = async (
         throw new Error('Received HTML instead of JSON response');
       }
       
+      // If the response is a string containing HTML, it's an error
+      if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+        console.error('FileUploader: Received HTML instead of JSON response');
+        console.log('FileUploader: Response content:', response.data);
+        throw new Error('Received HTML instead of JSON response');
+      }
+      
       // Log the full response for debugging
       console.log('FileUploader: Full response:', response);
       
@@ -103,12 +110,6 @@ export const uploadBase64ToDatabase = async (
       if (!response.data) {
         console.error('FileUploader: Empty response data from server');
         throw new Error('Empty response from server');
-      }
-      
-      // If the response is a string containing HTML, it's an error
-      if (typeof response.data === 'string' && response.data.trim().startsWith('<!DOCTYPE html>')) {
-        console.error('FileUploader: Response indicates failure:', response.data);
-        throw new Error('Operation failed');
       }
       
       // Be more flexible with success response formats
@@ -138,7 +139,7 @@ export const uploadBase64ToDatabase = async (
         
         // If we received HTML instead of JSON, that's a server error
         if (typeof error.response.data === 'string' && 
-            error.response.data.trim().startsWith('<!DOCTYPE html>')) {
+            error.response.data.includes('<!DOCTYPE html>')) {
           console.error('FileUploader: Received HTML instead of JSON, likely server error');
         }
       }
