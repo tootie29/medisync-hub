@@ -36,7 +36,12 @@ interface AuthContextType {
   register: (userData: Partial<User>, password: string) => Promise<{ requiresVerification?: boolean, verificationLink?: string }>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   isRegistering: boolean;
-  resendVerification: (email: string) => Promise<{ verificationLink?: string }>;
+  resendVerification: (email: string) => Promise<{ 
+    verificationLink?: string;
+    emailSent?: boolean;
+    emailPreviewUrl?: string;
+    success?: boolean;
+  }>;
   verificationEmail: string | null;
   setVerificationEmail: (email: string | null) => void;
 }
@@ -416,14 +421,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         toast.success('Verification email sent. Please check your inbox.');
         
-        return { verificationLink };
+        return { 
+          verificationLink,
+          emailSent: true,
+          success: true
+        };
       }
       
       const response = await apiClient.post('/users/resend-verification', { email });
       
       toast.success('Verification email sent. Please check your inbox.');
       
-      return { verificationLink: response.data.verificationLink };
+      return { 
+        verificationLink: response.data.verificationLink,
+        emailSent: response.data.emailSent,
+        emailPreviewUrl: response.data.emailPreviewUrl,
+        success: true
+      };
     } catch (error) {
       console.error('Resend verification error:', error);
       let errorMessage = 'Failed to resend verification email';
