@@ -66,13 +66,15 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
       const formData = new FormData();
       formData.append('file', logo);
       
-      // FIXED: Use the correct endpoint path
+      // CRITICAL FIX: Use absolute path to explicitly hit the API server, not the frontend
       const endpoint = `/api/logos/upload-logo/${logoType}`;
       console.log(`LogoUploader: Using endpoint ${endpoint}`);
       
       const response = await axios.post(endpoint, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          // Add X-Requested-With header to help identify AJAX requests
+          'X-Requested-With': 'XMLHttpRequest'
         },
         timeout: 30000, // 30 seconds timeout
         onUploadProgress: (progressEvent) => {
@@ -82,6 +84,12 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
       });
       
       console.log('LogoUploader: Server response:', response);
+      
+      // Check if we got HTML instead of JSON
+      if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+        console.error('LogoUploader: Received HTML instead of JSON - API routing issue');
+        throw new Error('API routing issue - received HTML instead of JSON');
+      }
       
       if (response.data && response.data.success) {
         console.log(`LogoManagement: ${logoType} logo uploaded successfully`);

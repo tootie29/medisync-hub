@@ -47,7 +47,7 @@ export const saveFileToPublic = async (file: File): Promise<string> => {
   }
 };
 
-// Completely rewritten uploadLogo function with robust error handling
+// Completely rewritten uploadLogo function with robust error handling and ability to handle HTML responses
 export const uploadLogo = async (
   file: File,
   position: 'primary' | 'secondary'
@@ -59,7 +59,7 @@ export const uploadLogo = async (
     const formData = new FormData();
     formData.append('file', file);
     
-    // FIXED: Use the correct endpoint path as defined in logoRoutes.js
+    // CRITICAL FIX: Use absolute path to explicitly hit the API server
     const endpoint = `/api/logos/upload-logo/${position}`;
     console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
     
@@ -70,35 +70,65 @@ export const uploadLogo = async (
     const response = await axios.post(endpoint, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
-        'X-Requested-With': 'XMLHttpRequest'
+        'X-Requested-With': 'XMLHttpRequest' // Help server distinguish AJAX requests
       },
       timeout: 30000, // 30 seconds timeout
       onUploadProgress: (progressEvent) => {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total!);
         console.log(`FileUploader: Upload progress: ${percentCompleted}%`);
-      }
+      },
+      // Critical: Do not transform the response data
+      transformResponse: [(data) => data]
     });
     
     console.log('FileUploader: Response status:', response.status);
     console.log('FileUploader: Response content-type:', response.headers['content-type']);
-    console.log('FileUploader: Response data:', response.data);
     
-    // Validate response format first
-    if (!response.data || typeof response.data !== 'object') {
-      console.error('FileUploader: Invalid response format:', response.data);
-      throw new Error('Invalid response format from server');
-    }
-    
-    // Check for success and file path in the response
-    if (response.data.success && response.data.filePath) {
-      console.log(`FileUploader: Upload successful, file path: ${response.data.filePath}`);
-      return response.data.filePath;
-    } else if (response.data.error) {
-      console.error(`FileUploader: Server returned error:`, response.data.error);
-      throw new Error(response.data.error);
+    // Check if we got HTML instead of JSON
+    if (typeof response.data === 'string') {
+      console.log('FileUploader: Raw response:', response.data.substring(0, 200) + '...');
+      
+      if (response.data.includes('<!DOCTYPE html>')) {
+        console.error('FileUploader: Received HTML instead of JSON - API routing issue');
+        throw new Error('API routing issue - received HTML instead of JSON response. Check server configuration.');
+      }
+      
+      // Try to parse JSON response
+      try {
+        const parsedData = JSON.parse(response.data);
+        console.log('FileUploader: Parsed JSON response:', parsedData);
+        
+        // Check for success and file path in the parsed response
+        if (parsedData.success && parsedData.filePath) {
+          console.log(`FileUploader: Upload successful, file path: ${parsedData.filePath}`);
+          return parsedData.filePath;
+        } else if (parsedData.error) {
+          console.error(`FileUploader: Server returned error:`, parsedData.error);
+          throw new Error(parsedData.error);
+        } else {
+          console.error('FileUploader: No file path in response:', parsedData);
+          throw new Error('No file path returned from server');
+        }
+      } catch (parseError) {
+        console.error('FileUploader: Failed to parse response as JSON:', parseError);
+        throw new Error('Invalid JSON response from server');
+      }
     } else {
-      console.error('FileUploader: No file path in response:', response.data);
-      throw new Error('No file path returned from server');
+      // Response was already parsed as JSON
+      const responseData = response.data;
+      console.log('FileUploader: Response data (already parsed):', responseData);
+      
+      // Check for success and file path in the response
+      if (responseData.success && responseData.filePath) {
+        console.log(`FileUploader: Upload successful, file path: ${responseData.filePath}`);
+        return responseData.filePath;
+      } else if (responseData.error) {
+        console.error(`FileUploader: Server returned error:`, responseData.error);
+        throw new Error(responseData.error);
+      } else {
+        console.error('FileUploader: No file path in response:', responseData);
+        throw new Error('No file path returned from server');
+      }
     }
   } catch (error: any) {
     // Enhanced error logging
@@ -113,11 +143,11 @@ export const uploadLogo = async (
       // If we got HTML instead of JSON, this is a clear indication something's wrong
       if (typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE html>')) {
         console.error('FileUploader: Received HTML instead of JSON - API endpoint issue');
-        throw new Error('API routing issue - received HTML instead of JSON');
+        throw new Error('API routing issue - received HTML instead of JSON. The server is not properly configured for API requests.');
       }
     }
     
-    throw new Error('Upload failed');
+    throw new Error(`Upload failed: ${error.message || 'Unknown error'}`);
   }
 };
 
