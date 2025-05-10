@@ -1,46 +1,23 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Bell, Volume2, Image } from 'lucide-react';
+import { Bell, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
-import LogoManagement from '@/components/settings/LogoManagement';
 
 const Settings = () => {
   const [notifications, setNotifications] = React.useState(true);
   const [sound, setSound] = React.useState(true);
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
   
   const handleSaveSettings = () => {
     // In a real app, we would save these to the user's profile
     toast.success('Settings saved successfully');
   };
-
-  // Add event handler for logo updates
-  const handleLogosUpdated = () => {
-    console.log('Settings: Logos updated, refreshing UI');
-    // Trigger a global refresh event
-    window.dispatchEvent(new CustomEvent('refreshLogos'));
-  };
-
-  // Add effect to listen for logo updates
-  useEffect(() => {
-    // Listen for logo update events
-    const refreshHandler = () => {
-      console.log('Settings: Detected logo refresh event');
-    };
-    
-    window.addEventListener('refreshLogos', refreshHandler);
-    
-    return () => {
-      window.removeEventListener('refreshLogos', refreshHandler);
-    };
-  }, []);
 
   return (
     <MainLayout>
@@ -92,18 +69,6 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
-
-          {isAdmin && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Logo Management</CardTitle>
-                <CardDescription>Update the clinic logos shown on the login and registration pages</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <LogoManagement />
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </MainLayout>
