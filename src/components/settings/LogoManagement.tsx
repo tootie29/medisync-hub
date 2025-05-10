@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive, Terminal, Bug } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
-import { saveFileToPublic, fileToBase64 } from '@/utils/fileUploader';
+import { saveFileToPublic, fileToBase64, uploadBase64ToDatabase } from '@/utils/fileUploader';
 
 const LogoManagement = () => {
   const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
@@ -21,11 +21,9 @@ const LogoManagement = () => {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [serverInfo, setServerInfo] = useState<string | null>(null);
   const [serverDetails, setServerDetails] = useState<any>(null);
-  const [diagnosticInfo, setDiagnosticInfo] = useState<any>(null);
+  const [diagnosticInfo, setDiagnosticInfo] = useState<any>({});  // Initialize as empty object instead of null
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
-  const [primaryClientPath, setPrimaryClientPath] = useState<string | null>(null);
-  const [secondaryClientPath, setSecondaryClientPath] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLogos();
@@ -85,12 +83,13 @@ const LogoManagement = () => {
     try {
       setShowDiagnostics(true);
       const response = await axios.get('/api/logos/diagnostics');
-      setDiagnosticInfo(response.data);
+      setDiagnosticInfo(response.data || {}); // Ensure we set an empty object if null
       console.log('Diagnostics info:', response.data);
       toast.success('Diagnostics information loaded');
     } catch (error) {
       console.error('Failed to fetch diagnostics:', error);
       toast.error('Failed to load diagnostics information');
+      setDiagnosticInfo({}); // Set empty object on error
     }
   };
 
@@ -104,7 +103,6 @@ const LogoManagement = () => {
       }
       console.log('Selected primary logo file:', file.name, file.type, file.size);
       setPrimaryLogo(file);
-      setPrimaryClientPath(null); // Clear any previous client path
       
       // Preview the image immediately
       try {
@@ -127,7 +125,6 @@ const LogoManagement = () => {
       }
       console.log('Selected secondary logo file:', file.name, file.type, file.size);
       setSecondaryLogo(file);
-      setSecondaryClientPath(null); // Clear any previous client path
       
       // Preview the image immediately
       try {
@@ -149,85 +146,53 @@ const LogoManagement = () => {
     setUploadSuccess(false);
     
     try {
-      // First, save the files to the client-side public folder
       const logoData: { primaryLogo?: string; secondaryLogo?: string } = {};
       
+      // Process primary logo if selected
       if (primaryLogo) {
         try {
-          console.log('Saving primary logo to client...');
-          toast.loading('Uploading primary logo...');
-          const primaryPath = await saveFileToPublic(primaryLogo);
-          setPrimaryClientPath(primaryPath);
-          logoData.primaryLogo = primaryPath;
-          console.log('LogoManagement: Saved primary logo to client:', primaryPath);
+          console.log('Processing primary logo...');
+          toast.loading('Processing primary logo...');
+          // Convert directly to base64 and store
+          const primaryBase64 = await fileToBase64(primaryLogo);
+          logoData.primaryLogo = primaryBase64;
+          console.log('Primary logo converted to base64');
           toast.dismiss();
-          toast.success('Primary logo uploaded successfully');
         } catch (error) {
-          console.error('Error saving primary logo to client:', error);
+          console.error('Error processing primary logo:', error);
           toast.dismiss();
-          toast.error('Failed to save primary logo. Using base64 fallback.');
-          
-          // Fallback to base64 if client-side save fails
-          try {
-            const base64Data = await fileToBase64(primaryLogo);
-            logoData.primaryLogo = base64Data;
-            console.log('Using base64 fallback for primary logo');
-          } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
-            setIsLoading(false);
-            setError('Failed to save logo in any format. Please try again.');
-            return;
-          }
+          toast.error('Failed to process primary logo');
+          setIsLoading(false);
+          return;
         }
       }
       
+      // Process secondary logo if selected
       if (secondaryLogo) {
         try {
-          console.log('Saving secondary logo to client...');
-          toast.loading('Uploading secondary logo...');
-          const secondaryPath = await saveFileToPublic(secondaryLogo);
-          setSecondaryClientPath(secondaryPath);
-          logoData.secondaryLogo = secondaryPath;
-          console.log('LogoManagement: Saved secondary logo to client:', secondaryPath);
+          console.log('Processing secondary logo...');
+          toast.loading('Processing secondary logo...');
+          // Convert directly to base64 and store
+          const secondaryBase64 = await fileToBase64(secondaryLogo);
+          logoData.secondaryLogo = secondaryBase64;
+          console.log('Secondary logo converted to base64');
           toast.dismiss();
-          toast.success('Secondary logo uploaded successfully');
         } catch (error) {
-          console.error('Error saving secondary logo to client:', error);
+          console.error('Error processing secondary logo:', error);
           toast.dismiss();
-          toast.error('Failed to save secondary logo. Using base64 fallback.');
-          
-          // Fallback to base64 if client-side save fails
-          try {
-            const base64Data = await fileToBase64(secondaryLogo);
-            logoData.secondaryLogo = base64Data;
-            console.log('Using base64 fallback for secondary logo');
-          } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
-            setIsLoading(false);
-            setError('Failed to save logo in any format. Please try again.');
-            return;
-          }
+          toast.error('Failed to process secondary logo');
+          setIsLoading(false);
+          return;
         }
       }
       
-      // Only proceed if at least one file is saved
+      // Only proceed if at least one file is processed
       if (Object.keys(logoData).length > 0) {
-        console.log('LogoManagement: Uploading logo data to database...');
+        console.log('Uploading logo data to database...');
         toast.loading('Updating database...');
         
-        // Determine which endpoint to use based on whether we're using base64 or file paths
-        const isPrimaryBase64 = logoData.primaryLogo?.startsWith('data:');
-        const isSecondaryBase64 = logoData.secondaryLogo?.startsWith('data:');
-        
-        let endpoint = '/api/logos/client';
-        if (isPrimaryBase64 || isSecondaryBase64) {
-          console.log('Using base64 endpoint for at least one logo');
-          endpoint = '/api/logos/base64';
-        }
-        
-        // Send the paths or base64 data to the server to save in the database
-        const response = await axios.post(endpoint, logoData, {
-          timeout: 60000, // 60 seconds timeout
+        // Send the base64 data directly to the server
+        const response = await axios.post('/api/logos/base64', logoData, {
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
               const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -237,10 +202,10 @@ const LogoManagement = () => {
           }
         });
         
-        console.log('LogoManagement: Upload response:', response.data);
+        console.log('Upload response:', response.data);
         toast.dismiss();
         
-        if (response.data.success) {
+        if (response.data && !response.data.error) {
           setUploadSuccess(true);
           toast.success('Logos updated successfully');
           
@@ -248,7 +213,7 @@ const LogoManagement = () => {
           setPrimaryLogo(null);
           setSecondaryLogo(null);
           
-          // Clear file input fields by resetting the form
+          // Clear file input fields
           const fileInputs = document.querySelectorAll('input[type="file"]');
           fileInputs.forEach((input: any) => {
             input.value = '';
@@ -257,40 +222,31 @@ const LogoManagement = () => {
           // Force refresh the logos
           setLastRefresh(Date.now());
           
-          // Verify database update by checking the server again
-          setTimeout(() => {
-            fetchLogos();
-          }, 1000);
-          
           // Trigger a refresh of the authentication layout
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('refreshLogos'));
-            console.log('LogoManagement: Dispatched refreshLogos event');
+            console.log('Dispatched refreshLogos event');
           }, 500);
         } else {
           console.error('Upload failed:', response.data);
-          setError('Failed to update logos: ' + (response.data.error || 'Unknown error'));
+          setError('Failed to update logos: ' + (response.data?.error || 'Unknown error'));
           toast.error('Failed to update logos in database');
-          await fetchDiagnostics();
         }
       } else {
         toast.error('Please select at least one logo to update');
       }
     } catch (error: any) {
-      console.error('LogoManagement: Error updating logos:', error);
+      console.error('Error updating logos:', error);
       toast.dismiss();
       
       let errorMessage = 'Failed to upload logos. Please try again.';
       if (error.response) {
-        errorMessage = `Error: ${error.response.data.error || error.response.statusText}`;
+        errorMessage = `Error: ${error.response.data?.error || error.response.statusText}`;
         console.error('Server response:', error.response.data);
       }
       
       setError(errorMessage);
       toast.error(errorMessage);
-      
-      // Automatically fetch diagnostics if there's an error
-      await fetchDiagnostics();
     } finally {
       setIsLoading(false);
       setUploadProgress(0);
@@ -313,6 +269,22 @@ const LogoManagement = () => {
     const dbStatus = details.database && details.database.connected ? "connected" : "not connected";
     
     return `${environment} mode with database ${dbStatus}`;
+  };
+
+  // Safe rendering helper for diagnostics
+  const renderDiagnosticSection = (title: string, data: any) => {
+    if (!data) return null;
+    
+    return (
+      <div className="mt-2 font-semibold">
+        {title}:
+        {Object.entries(data || {}).map(([key, value]: [string, any]) => (
+          <div key={key} className="ml-2">
+            <div>{key}: {String(value)}</div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -346,7 +318,7 @@ const LogoManagement = () => {
               >
                 Hide Details
               </Button>
-              {(!serverDetails.database?.connected) && (
+              {(serverDetails.database && !serverDetails.database.connected) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -368,8 +340,7 @@ const LogoManagement = () => {
           <div>
             <p className="text-destructive font-medium">{error}</p>
             <p className="text-destructive/80 text-sm mt-1">
-              This may be caused by file permission issues on the server. 
-              Please check that the server has write permissions to /uploads/assets/logos directory.
+              There was an error processing your request. Please try again.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Button
@@ -442,53 +413,49 @@ const LogoManagement = () => {
           </div>
           
           <div className="text-xs font-mono bg-black text-green-400 p-3 rounded overflow-auto max-h-60">
-            <div>Timestamp: {diagnosticInfo.timestamp}</div>
-            <div className="mt-1">Base Directory: {diagnosticInfo.baseDir}</div>
+            <div>Timestamp: {diagnosticInfo.timestamp || 'N/A'}</div>
+            <div className="mt-1">Base Directory: {diagnosticInfo.baseDir || 'N/A'}</div>
             
-            <div className="mt-2 font-semibold">Directory Status:</div>
-            {Object.entries(diagnosticInfo.directories).map(([name, info]: [string, any]) => (
-              <div key={name} className="ml-2">
-                <div>{name}: {info.exists ? '✅ Exists' : '❌ Missing'}</div>
-                {info.exists && (
-                  <>
-                    <div className="ml-2">Permissions: {info.permissions}</div>
-                    <div className="ml-2">Owner: {info.owner}</div>
-                    <div className="ml-2">
-                      {info.isWritable 
-                        ? '✅ Directory is writable' 
-                        : '❌ Directory is NOT writable'}
-                    </div>
-                  </>
-                )}
+            {diagnosticInfo.directories && (
+              <div className="mt-2 font-semibold">Directory Status:
+                {Object.entries(diagnosticInfo.directories || {}).map(([name, info]: [string, any]) => (
+                  <div key={name} className="ml-2">
+                    <div>{name}: {info && info.exists ? '✅ Exists' : '❌ Missing'}</div>
+                    {info && info.exists && (
+                      <>
+                        <div className="ml-2">Permissions: {info.permissions || 'N/A'}</div>
+                        <div className="ml-2">Owner: {info.owner || 'N/A'}</div>
+                        <div className="ml-2">
+                          {info.isWritable 
+                            ? '✅ Directory is writable' 
+                            : '❌ Directory is NOT writable'}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-            
-            <div className="mt-2 font-semibold">Write Test:</div>
-            {diagnosticInfo.writeTest ? (
-              <div className="ml-2">
-                {diagnosticInfo.writeTest.success 
-                  ? `✅ Successfully wrote test file to ${diagnosticInfo.writeTest.path}` 
-                  : `❌ Failed to write test file: ${diagnosticInfo.writeTest.error}`}
-              </div>
-            ) : (
-              <div className="ml-2">No write test performed</div>
             )}
             
-            <div className="mt-2 font-semibold">Process Info:</div>
-            {diagnosticInfo.process ? (
-              <div className="ml-2">
-                <div>PID: {diagnosticInfo.process.pid}</div>
-                <div>UID: {diagnosticInfo.process.uid}</div>
-                <div>GID: {diagnosticInfo.process.gid}</div>
+            {diagnosticInfo.writeTest && (
+              <div className="mt-2 font-semibold">Write Test:
+                <div className="ml-2">
+                  {diagnosticInfo.writeTest.success 
+                    ? `✅ Successfully wrote test file to ${diagnosticInfo.writeTest.path}` 
+                    : `❌ Failed to write test file: ${diagnosticInfo.writeTest.error || 'Unknown error'}`}
+                </div>
               </div>
-            ) : (
-              <div className="ml-2">No process info available</div>
             )}
             
-            <div className="mt-3 text-yellow-300">
-              If directories show as not writable, contact your server administrator to set proper permissions. 
-              Command to fix: <span className="bg-gray-800 px-1">chmod -R 755 {diagnosticInfo.baseDir}/uploads</span>
-            </div>
+            {diagnosticInfo.process && (
+              <div className="mt-2 font-semibold">Process Info:
+                <div className="ml-2">
+                  <div>PID: {diagnosticInfo.process.pid || 'N/A'}</div>
+                  <div>UID: {diagnosticInfo.process.uid || 'N/A'}</div>
+                  <div>GID: {diagnosticInfo.process.gid || 'N/A'}</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
