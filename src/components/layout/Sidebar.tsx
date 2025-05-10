@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -54,7 +55,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       icon: HeartPulse,
     },
     {
-      path: "/records",
+      path: "/medical-records",
       name: "Medical Records",
       icon: ClipboardCheck,
     },

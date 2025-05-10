@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ export default function Index() {
           <CardContent>
             <p>Access your medical history, lab results, and other important health information.</p>
             <Button asChild className="mt-4 w-full bg-medical-primary hover:bg-medical-secondary">
-              <Link to="/records" className="flex items-center justify-center gap-2">
+              <Link to="/medical-records" className="flex items-center justify-center gap-2">
                 <ClipboardCheck className="h-4 w-4" />
                 View Records
               </Link>

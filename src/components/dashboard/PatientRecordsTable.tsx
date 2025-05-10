@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -209,7 +208,7 @@ const PatientRecordsTable: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button asChild size="sm" variant="ghost">
-                        <Link to={`/records?patient=${patient?.id}`}>
+                        <Link to={`/medical-records?patient=${patient?.id}`}>
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Records
                         </Link>
