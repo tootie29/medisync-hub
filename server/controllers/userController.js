@@ -1,5 +1,98 @@
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
+const nodemailer = require('nodemailer');
+const dotenv = require('dotenv');
+
+// Load environment variables
+dotenv.config();
+
+// Create email transporter based on environment
+const getEmailTransporter = () => {
+  // Check if SMTP settings are available
+  if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
+    console.log('Using SMTP configuration for email');
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+  }
+  
+  console.log('No SMTP configuration found, using ethereal test account');
+  // If no SMTP settings, create a test account with Ethereal
+  return new Promise((resolve, reject) => {
+    nodemailer.createTestAccount().then(testAccount => {
+      console.log('Created Ethereal test account:', testAccount.user);
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass
+        }
+      });
+      resolve(transporter);
+    }).catch(error => {
+      console.error('Failed to create test email account:', error);
+      reject(error);
+    });
+  });
+};
+
+// Function to send verification email
+const sendVerificationEmail = async (email, verificationLink) => {
+  try {
+    const transporter = await getEmailTransporter();
+    
+    const mailOptions = {
+      from: process.env.SMTP_FROM || '"MediSync System" <noreply@medisync.com>',
+      to: email,
+      subject: 'Verify your MediSync account',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0d6efd;">Welcome to MediSync!</h2>
+          <p>Thank you for registering. Please verify your email address by clicking the link below:</p>
+          <p>
+            <a 
+              href="${verificationLink}" 
+              style="background-color: #0d6efd; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;"
+            >
+              Verify Email Address
+            </a>
+          </p>
+          <p>If you did not create an account, please ignore this email.</p>
+          <p>This link will expire in 24 hours.</p>
+          <p>Best regards,<br>MediSync Team</p>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Verification email sent:', info.messageId);
+    
+    // If using Ethereal, log the preview URL
+    if (info.ethereal) {
+      console.log('Email preview URL:', nodemailer.getTestMessageUrl(info));
+      return {
+        success: true,
+        previewUrl: nodemailer.getTestMessageUrl(info)
+      };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to send verification email' 
+    };
+  }
+};
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -71,17 +164,29 @@ exports.createUser = async (req, res) => {
     
     const newUser = await userModel.create(userDataForDb);
     
-    // In a real application, you would send an email with the verification link
-    // For now, we'll just return the token in the response
+    // Create verification link
     const verificationLink = `${req.protocol}://${req.get('host')}/api/users/verify/${verificationToken}`;
     console.log('Verification link:', verificationLink);
+    
+    // In development or testing, use a more direct approach for email verification
+    const isTestEnvironment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    
+    let emailResult = { success: false };
+    
+    // Only attempt to send email if not in test mode
+    if (!isTestEnvironment) {
+      emailResult = await sendVerificationEmail(userData.email, verificationLink);
+      console.log('Email sending result:', emailResult);
+    }
     
     // Don't send the password back in the response
     const { password, ...userWithoutPassword } = newUser;
     res.status(201).json({
       ...userWithoutPassword,
       message: 'Registration successful! Please verify your email.',
-      verificationLink // In production, this would be sent via email, not in the response
+      verificationLink: isTestEnvironment ? verificationLink : undefined,
+      emailSent: emailResult.success,
+      emailPreviewUrl: emailResult.previewUrl
     });
   } catch (error) {
     console.error('Error in createUser controller:', error);
@@ -238,12 +343,25 @@ exports.resendVerification = async (req, res) => {
     // Generate a new verification token
     const token = await userModel.generateVerificationToken(user.id);
     
-    // In a real application, you would send an email with the verification link
+    // Create verification link
     const verificationLink = `${req.protocol}://${req.get('host')}/api/users/verify/${token}`;
+    
+    // In development or testing, use a more direct approach for email verification
+    const isTestEnvironment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    
+    let emailResult = { success: false };
+    
+    // Only attempt to send email if not in test mode
+    if (!isTestEnvironment) {
+      emailResult = await sendVerificationEmail(email, verificationLink);
+      console.log('Email resending result:', emailResult);
+    }
     
     res.json({ 
       message: 'Verification email sent! Please check your inbox.',
-      verificationLink // In production, this would be sent via email, not in the response
+      verificationLink: isTestEnvironment ? verificationLink : undefined,
+      emailSent: emailResult.success,
+      emailPreviewUrl: emailResult.previewUrl
     });
   } catch (error) {
     console.error('Error in resendVerification controller:', error);
