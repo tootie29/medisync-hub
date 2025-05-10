@@ -1,13 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Upload, RefreshCw, AlertCircle, Info } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
-import { fileToBase64 } from '@/utils/fileUploader';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import LogoUploader from './LogoUploader';
+import LogoDisplay from './LogoDisplay';
+import LogoControls from './LogoControls';
 
 const LogoManagement = () => {
   const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
@@ -19,6 +17,10 @@ const LogoManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
+
+  // Reference to uploader components
+  const primaryUploaderRef = React.useRef<any>(null);
+  const secondaryUploaderRef = React.useRef<any>(null);
 
   useEffect(() => {
     fetchLogos();
@@ -66,153 +68,20 @@ const LogoManagement = () => {
     }
   };
 
-  const handlePrimaryLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 1 * 1024 * 1024) { // 1MB max
-        toast.error('Logo file is too large. Maximum size is 1MB.');
-        e.target.value = ''; // Reset input
-        return;
-      }
-      console.log('Selected primary logo file:', file.name, file.type, file.size);
-      setPrimaryLogo(file);
-      
-      // Preview the image immediately
-      try {
-        const base64Preview = await fileToBase64(file);
-        console.log('Generated preview for primary logo');
-        setPrimaryLogoUrl(base64Preview);
-      } catch (error) {
-        console.error('Error generating preview:', error);
-      }
-    }
-  };
-
-  const handleSecondaryLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 1 * 1024 * 1024) { // 1MB max
-        toast.error('Logo file is too large. Maximum size is 1MB.');
-        e.target.value = ''; // Reset input
-        return;
-      }
-      console.log('Selected secondary logo file:', file.name, file.type, file.size);
-      setSecondaryLogo(file);
-      
-      // Preview the image immediately
-      try {
-        const base64Preview = await fileToBase64(file);
-        console.log('Generated preview for secondary logo');
-        setSecondaryLogoUrl(base64Preview);
-      } catch (error) {
-        console.error('Error generating preview:', error);
-      }
-    }
-  };
-
-  // Simplified upload approach with direct form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  const handleLogoUpdated = (type: 'primary' | 'secondary') => {
+    toast.success(`${type === 'primary' ? 'Primary' : 'Secondary'} logo updated successfully`);
+    setUploadSuccess(true);
     
-    try {
-      console.log('LogoManagement: Starting logo upload process');
-      let uploadedCount = 0;
-      
-      if (!primaryLogo && !secondaryLogo) {
-        toast.error('Please select at least one logo to upload');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (primaryLogo) {
-        try {
-          console.log('LogoManagement: Uploading primary logo');
-          
-          // Super simple direct upload approach
-          const formData = new FormData();
-          formData.append('file', primaryLogo);
-          
-          const response = await axios.post('/api/upload-logo/primary', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
-          
-          if (response.data && response.data.success) {
-            uploadedCount++;
-            console.log('LogoManagement: Primary logo uploaded successfully');
-          } else {
-            throw new Error('Upload failed');
-          }
-        } catch (error) {
-          console.error('Error uploading primary logo:', error);
-          toast.error('Failed to upload primary logo');
-          setError('Failed to upload primary logo');
-        }
-      }
-      
-      if (secondaryLogo) {
-        try {
-          console.log('LogoManagement: Uploading secondary logo');
-          
-          // Super simple direct upload approach
-          const formData = new FormData();
-          formData.append('file', secondaryLogo);
-          
-          const response = await axios.post('/api/upload-logo/secondary', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
-          
-          if (response.data && response.data.success) {
-            uploadedCount++;
-            console.log('LogoManagement: Secondary logo uploaded successfully');
-          } else {
-            throw new Error('Upload failed');
-          }
-        } catch (error) {
-          console.error('Error uploading secondary logo:', error);
-          toast.error('Failed to upload secondary logo');
-          if (setError) {
-            setError(prev => 
-              prev ? `${prev}, Failed to upload secondary logo` : `Failed to upload secondary logo`
-            );
-          }
-        }
-      }
-      
-      if (uploadedCount > 0) {
-        setUploadSuccess(true);
-        
-        // Reset state
-        setPrimaryLogo(null);
-        setSecondaryLogo(null);
-        
-        // Clear file input fields
-        const fileInputs = document.querySelectorAll('input[type="file"]');
-        fileInputs.forEach((input: any) => {
-          input.value = '';
-        });
-        
-        toast.success(`${uploadedCount} logo(s) updated successfully`);
-        
-        // Refresh logos after a short delay
-        setTimeout(() => {
-          setLastRefresh(Date.now());
-          window.dispatchEvent(new CustomEvent('refreshLogos'));
-        }, 2000);
-      }
-      
-    } catch (error: any) {
-      console.error('Error uploading logos:', error);
-      toast.error('Failed to upload logos');
-      setError('Failed to upload logos');
-    } finally {
-      setIsLoading(false);
-    }
+    // Refresh logos after a short delay
+    setTimeout(() => {
+      setLastRefresh(Date.now());
+      window.dispatchEvent(new CustomEvent('refreshLogos'));
+    }, 2000);
+  };
+
+  const handleError = (message: string) => {
+    setError(message);
+    toast.error(message);
   };
 
   const handleManualRefresh = () => {
@@ -225,146 +94,48 @@ const LogoManagement = () => {
 
   return (
     <div className="space-y-6">
-      {uploadSuccess && (
-        <Alert variant="info" className="bg-green-100 border-green-200">
-          <AlertTitle className="text-green-600 font-medium flex items-center gap-2">
-            <div className="h-5 w-5 text-green-600 mt-0.5">✓</div>
-            Logo upload successful!
-          </AlertTitle>
-          <AlertDescription className="text-green-600/80">
-            The logos have been successfully uploaded and saved. They should appear on the login page shortly.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <LogoDisplay 
+        uploadSuccess={uploadSuccess}
+        error={error}
+      />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div className="font-medium">Primary Logo</div>
-          {isLoadingLogos ? (
-            <div className="h-40 bg-gray-100 rounded-md flex items-center justify-center">
-              <RefreshCw className="h-8 w-8 text-gray-400 animate-spin" />
-            </div>
-          ) : (
-            primaryLogoUrl ? (
-              <div className="h-40 flex items-center justify-center border rounded-md p-4">
-                <img 
-                  src={primaryLogoUrl} 
-                  alt="Primary Logo" 
-                  className="max-h-full object-contain"
-                  onError={(e) => {
-                    console.error('Failed to load primary logo:', primaryLogoUrl);
-                    e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="h-40 bg-gray-100 rounded-md flex items-center justify-center">
-                <p className="text-gray-500">No logo uploaded</p>
-              </div>
-            )
-          )}
-          <div className="pt-2">
-            <Label htmlFor="primaryLogo" className="block mb-2">Upload new primary logo</Label>
-            <Input 
-              id="primaryLogo" 
-              type="file" 
-              accept="image/*"
-              onChange={handlePrimaryLogoChange}
-              className="cursor-pointer"
-            />
-            {primaryLogo && (
-              <p className="text-xs text-gray-500 mt-1">
-                Selected: {primaryLogo.name} ({Math.round(primaryLogo.size / 1024)} KB)
-              </p>
-            )}
-          </div>
-        </div>
+        <LogoUploader
+          logoType="primary"
+          currentLogoUrl={primaryLogoUrl}
+          isLoading={isLoading}
+          isLoadingLogos={isLoadingLogos}
+          onLogoUpdated={() => handleLogoUpdated('primary')}
+          onError={handleError}
+        />
         
-        <div className="space-y-4">
-          <div className="font-medium">Secondary Logo</div>
-          {isLoadingLogos ? (
-            <div className="h-40 bg-gray-100 rounded-md flex items-center justify-center">
-              <RefreshCw className="h-8 w-8 text-gray-400 animate-spin" />
-            </div>
-          ) : (
-            secondaryLogoUrl ? (
-              <div className="h-40 flex items-center justify-center border rounded-md p-4">
-                <img 
-                  src={secondaryLogoUrl} 
-                  alt="Secondary Logo" 
-                  className="max-h-full object-contain"
-                  onError={(e) => {
-                    console.error('Failed to load secondary logo:', secondaryLogoUrl);
-                    e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="h-40 bg-gray-100 rounded-md flex items-center justify-center">
-                <p className="text-gray-500">No logo uploaded</p>
-              </div>
-            )
-          )}
-          <div className="pt-2">
-            <Label htmlFor="secondaryLogo" className="block mb-2">Upload new secondary logo</Label>
-            <Input 
-              id="secondaryLogo" 
-              type="file" 
-              accept="image/*"
-              onChange={handleSecondaryLogoChange}
-              className="cursor-pointer"
-            />
-            {secondaryLogo && (
-              <p className="text-xs text-gray-500 mt-1">
-                Selected: {secondaryLogo.name} ({Math.round(secondaryLogo.size / 1024)} KB)
-              </p>
-            )}
-          </div>
-        </div>
+        <LogoUploader
+          logoType="secondary"
+          currentLogoUrl={secondaryLogoUrl}
+          isLoading={isLoading}
+          isLoadingLogos={isLoadingLogos}
+          onLogoUpdated={() => handleLogoUpdated('secondary')}
+          onError={handleError}
+        />
       </div>
       
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <Button
-          onClick={handleSubmit}
-          disabled={isLoading || (!primaryLogo && !secondaryLogo)}
-          className="bg-medical-primary hover:bg-medical-secondary text-white w-full sm:w-auto"
-        >
-          {isLoading ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>
-              <Upload className="mr-2 h-4 w-4" />
-              Update Logos
-            </>
-          )}
-        </Button>
-        
-        <Button
-          variant="outline"
-          onClick={handleManualRefresh}
-          disabled={isLoading}
-          className="w-full sm:w-auto"
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingLogos ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-        
-        <div className="flex items-center mt-2 sm:mt-0 text-xs text-gray-500">
-          <Info className="h-3 w-3 mr-1" />
-          Recommended size: 500KB or less
-        </div>
-      </div>
+      <LogoControls
+        isLoading={isLoading}
+        isLoadingLogos={isLoadingLogos}
+        hasSelectedLogos={!!primaryLogo || !!secondaryLogo}
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setIsLoading(true);
+          try {
+            // This is a legacy method kept for backward compatibility
+            // The direct upload in LogoUploader is now the primary method
+            handleManualRefresh();
+          } finally {
+            setIsLoading(false);
+          }
+        }}
+        onRefresh={handleManualRefresh}
+      />
     </div>
   );
 };
