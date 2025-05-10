@@ -23,7 +23,6 @@ import {
   Heart,
   LogOut,
   Settings,
-  HeartPulse // Changed from PulseIcon to HeartPulse
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -31,6 +30,9 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
+  
+  // College logo URL
+  const collegeLogo = "/lovable-uploads/aa4d5983-d176-4536-a23d-35d1ffed0482.png";
 
   const handleLogout = () => {
     logout();
@@ -59,8 +61,11 @@ const Navbar: React.FC = () => {
                 to="/dashboard" 
                 className="flex items-center font-bold text-xl text-medical-primary"
               >
-                <HeartPulse className="h-6 w-6 mr-2" />
-                MediSync Hub
+                <img 
+                  src={collegeLogo} 
+                  alt="College of Nursing" 
+                  className="h-10 w-auto mr-2"
+                />
               </Link>
             </div>
           </div>
