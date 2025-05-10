@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { UserRole } from '@/types';
 import { toast } from "sonner";
-import { UserPlus, User, Loader2, BookOpen } from 'lucide-react';
+import { UserPlus, User, Loader2, BookOpen, Eye, EyeOff } from 'lucide-react';
 
 interface RegistrationFormProps {
   role: 'student' | 'staff';
@@ -33,6 +32,8 @@ const FACULTY_OPTIONS = [
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) => {
   const { register, isRegistering } = useAuth();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -51,6 +52,14 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
     position: '',
     faculty: '',
   });
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -178,30 +187,50 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
 
           <div>
             <Label htmlFor="password">Password *</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              autoComplete="new-password"
-              className="auth-input mt-1"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={handleChange}
+                required
+                autoComplete="new-password"
+                className="auth-input mt-1 pr-10"
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-medical-primary h-5 w-5"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <div>
             <Label htmlFor="confirmPassword">Confirm Password *</Label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              autoComplete="new-password"
-              className="auth-input mt-1"
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                autoComplete="new-password"
+                className="auth-input mt-1 pr-10"
+              />
+              <button
+                type="button"
+                onClick={toggleConfirmPasswordVisibility}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-medical-primary h-5 w-5"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
