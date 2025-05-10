@@ -68,7 +68,7 @@ exports.updateLogo = async (logo) => {
     await connection.query('DELETE FROM logos WHERE position = ?', [position]);
     console.log(`Model: Deleted any existing logos for position ${position}`);
     
-    // Insert the new logo (now with base64 data in the url field)
+    // Insert the new logo (path to the file stored in the url field)
     const [insertResult] = await connection.query(
       'INSERT INTO logos (id, url, position, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
       [logoId, logo.url, position]

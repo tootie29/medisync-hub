@@ -135,6 +135,96 @@ exports.getUploadDiagnostics = async (req, res) => {
 };
 
 /**
+ * Upload client-side stored logos
+ */
+exports.uploadClientLogos = async (req, res) => {
+  console.log('Processing client logo upload request');
+  const results = [];
+  
+  try {
+    const { primaryLogo, secondaryLogo } = req.body;
+    
+    console.log('Logo paths received:',
+      primaryLogo ? 'Primary logo path present' : 'No primary logo',
+      secondaryLogo ? 'Secondary logo path present' : 'No secondary logo'
+    );
+    
+    // Process logos if provided
+    if (primaryLogo) {
+      const primaryResult = await processClientLogo(primaryLogo, 'primary');
+      results.push(primaryResult);
+    }
+
+    if (secondaryLogo) {
+      const secondaryResult = await processClientLogo(secondaryLogo, 'secondary');
+      results.push(secondaryResult);
+    }
+
+    console.log('Logo upload results:', results);
+    
+    if (results.length === 0) {
+      return res.status(400).json({ 
+        error: 'No logos were processed',
+        details: 'No logo paths were provided'
+      });
+    }
+    
+    // Return results
+    const hasErrors = results.some(result => result.error);
+    res.status(hasErrors ? 207 : 200).json({ 
+      message: 'Logos processed',
+      success: !hasErrors,
+      uploads: results
+    });
+    
+  } catch (error) {
+    console.error('Error uploading client logos:', error);
+    res.status(500).json({ 
+      error: 'Failed to process logo uploads', 
+      details: error.message 
+    });
+  }
+};
+
+/**
+ * Process client logo path
+ */
+const processClientLogo = async (logoPath, position) => {
+  console.log(`Processing ${position} logo path:`, logoPath);
+  
+  try {
+    // Add to database with transaction support
+    const id = uuidv4();
+    await logoModel.updateLogo({
+      id: id,
+      url: logoPath,
+      position: position
+    });
+    
+    // Verify update worked
+    const verifiedLogo = await logoModel.getLogoByPosition(position);
+    if (!verifiedLogo) {
+      throw new Error('Logo verification failed after database update');
+    }
+    
+    return {
+      position: position,
+      success: true,
+      db_id: id,
+      path: logoPath
+    };
+    
+  } catch (error) {
+    console.error(`Error processing ${position} logo:`, error);
+    return {
+      position: position,
+      error: 'Processing failed',
+      details: error.message
+    };
+  }
+};
+
+/**
  * Upload base64 logos
  */
 exports.uploadBase64Logos = async (req, res) => {

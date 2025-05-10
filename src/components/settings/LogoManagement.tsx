@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive, Terminal, Bug } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
+import { saveFileToPublic } from '@/utils/fileUploader';
 
 const LogoManagement = () => {
   const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
@@ -22,8 +23,8 @@ const LogoManagement = () => {
   const [diagnosticInfo, setDiagnosticInfo] = useState<any>(null);
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
-  const [primaryBase64, setPrimaryBase64] = useState<string | null>(null);
-  const [secondaryBase64, setSecondaryBase64] = useState<string | null>(null);
+  const [primaryClientPath, setPrimaryClientPath] = useState<string | null>(null);
+  const [secondaryClientPath, setSecondaryClientPath] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLogos();
@@ -79,23 +80,6 @@ const LogoManagement = () => {
     }
   };
 
-  // File to base64 conversion helper
-  const fileToBase64 = (file: File): Promise<string> => {
-    console.log(`Converting file to base64: ${file.name} (${file.size} bytes)`);
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        console.log('File converted to base64 successfully');
-        resolve(reader.result as string);
-      };
-      reader.onerror = error => {
-        console.error('Error converting file to base64:', error);
-        reject(error);
-      };
-    });
-  };
-
   const fetchDiagnostics = async () => {
     try {
       setShowDiagnostics(true);
@@ -119,16 +103,7 @@ const LogoManagement = () => {
       }
       console.log('Selected primary logo file:', file.name, file.type, file.size);
       setPrimaryLogo(file);
-      
-      // Convert to base64
-      try {
-        const base64 = await fileToBase64(file);
-        setPrimaryBase64(base64);
-        console.log('Primary logo converted to base64');
-      } catch (error) {
-        console.error('Error converting primary logo to base64:', error);
-        toast.error('Failed to process the image');
-      }
+      setPrimaryClientPath(null); // Clear any previous client path
     }
   };
 
@@ -142,16 +117,7 @@ const LogoManagement = () => {
       }
       console.log('Selected secondary logo file:', file.name, file.type, file.size);
       setSecondaryLogo(file);
-      
-      // Convert to base64
-      try {
-        const base64 = await fileToBase64(file);
-        setSecondaryBase64(base64);
-        console.log('Secondary logo converted to base64');
-      } catch (error) {
-        console.error('Error converting secondary logo to base64:', error);
-        toast.error('Failed to process the image');
-      }
+      setSecondaryClientPath(null); // Clear any previous client path
     }
   };
 
@@ -164,25 +130,43 @@ const LogoManagement = () => {
     setUploadSuccess(false);
     
     try {
-      // Send the base64 strings directly
+      // First, save the files to the client-side public folder
       const logoData: { primaryLogo?: string; secondaryLogo?: string } = {};
       
-      if (primaryBase64) {
-        logoData.primaryLogo = primaryBase64;
-        console.log('LogoManagement: Added primaryLogo base64 to payload');
+      if (primaryLogo) {
+        try {
+          const primaryPath = await saveFileToPublic(primaryLogo);
+          setPrimaryClientPath(primaryPath);
+          logoData.primaryLogo = primaryPath;
+          console.log('LogoManagement: Saved primary logo to client:', primaryPath);
+        } catch (error) {
+          console.error('Error saving primary logo to client:', error);
+          toast.error('Failed to save primary logo');
+          setIsLoading(false);
+          return;
+        }
       }
       
-      if (secondaryBase64) {
-        logoData.secondaryLogo = secondaryBase64;
-        console.log('LogoManagement: Added secondaryLogo base64 to payload');
+      if (secondaryLogo) {
+        try {
+          const secondaryPath = await saveFileToPublic(secondaryLogo);
+          setSecondaryClientPath(secondaryPath);
+          logoData.secondaryLogo = secondaryPath;
+          console.log('LogoManagement: Saved secondary logo to client:', secondaryPath);
+        } catch (error) {
+          console.error('Error saving secondary logo to client:', error);
+          toast.error('Failed to save secondary logo');
+          setIsLoading(false);
+          return;
+        }
       }
       
-      // Only proceed if at least one file is selected
+      // Only proceed if at least one file is saved
       if (Object.keys(logoData).length > 0) {
-        console.log('LogoManagement: Uploading logos as base64...');
+        console.log('LogoManagement: Uploading logo paths to database...');
         
-        // Set reasonable timeouts
-        const response = await axios.post('/api/logos/base64', logoData, {
+        // Send the paths to the server to save in the database
+        const response = await axios.post('/api/logos/client', logoData, {
           timeout: 60000, // 60 seconds timeout
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
@@ -202,8 +186,6 @@ const LogoManagement = () => {
           // Reset state
           setPrimaryLogo(null);
           setSecondaryLogo(null);
-          setPrimaryBase64(null);
-          setSecondaryBase64(null);
           
           // Clear file input fields by resetting the form
           const fileInputs = document.querySelectorAll('input[type="file"]');
@@ -548,7 +530,7 @@ const LogoManagement = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <Button
           onClick={handleSubmit}
-          disabled={isLoading || (!primaryBase64 && !secondaryBase64)}
+          disabled={isLoading || (!primaryLogo && !secondaryLogo)}
           className="bg-medical-primary hover:bg-medical-secondary text-white w-full sm:w-auto"
         >
           {isLoading ? (
