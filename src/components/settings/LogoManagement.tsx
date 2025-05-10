@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,7 +6,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive, Terminal, Bug } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
-import { fileToBase64 } from '@/utils/fileUploader';
+import { fileToBase64, uploadBase64ToDatabase } from '@/utils/fileUploader';
 
 const LogoManagement = () => {
   const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
@@ -43,10 +42,17 @@ const LogoManagement = () => {
     setError(null);
     try {
       console.log('LogoManagement: Fetching logos...');
-      const timestamp = Date.now();
+      setIsLoadingLogos(true);
+      setError(null);
       
-      // Add cache busting to prevent browser caching
-      const primaryResponse = await axios.get(`/api/logos/primary?t=${timestamp}`);
+      // Add stronger cache busting to force refresh
+      const timestamp = Date.now();
+      const cacheBuster = `?t=${timestamp}&nocache=${Math.random()}`;
+      
+      // FIX: Use withCredentials for authentication
+      const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`, {
+        withCredentials: true
+      });
       console.log('LogoManagement: Primary logo response:', primaryResponse.data);
       
       if (primaryResponse.data && primaryResponse.data.url) {
@@ -56,7 +62,10 @@ const LogoManagement = () => {
         setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
       
-      const secondaryResponse = await axios.get(`/api/logos/secondary?t=${timestamp}`);
+      // FIX: Use withCredentials for authentication
+      const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`, {
+        withCredentials: true
+      });
       console.log('LogoManagement: Secondary logo response:', secondaryResponse.data);
       
       if (secondaryResponse.data && secondaryResponse.data.url) {
@@ -147,22 +156,26 @@ const LogoManagement = () => {
     setUploadSuccess(false);
     
     try {
+      console.log('LogoManagement: Starting logo upload process');
       const logoData: { primaryLogo?: string; secondaryLogo?: string } = {};
       
       // Process primary logo if selected
       if (primaryLogo) {
         try {
-          console.log('Processing primary logo...', primaryLogo.name);
+          console.log('Processing primary logo...', primaryLogo.name, primaryLogo.size, 'bytes');
           toast.loading('Processing primary logo...');
-          // Convert directly to base64 and store
+          
+          // FIX: Use the uploadBase64ToDatabase function directly
           const primaryBase64 = await fileToBase64(primaryLogo);
-          logoData.primaryLogo = primaryBase64;
           console.log('Primary logo converted to base64, length:', primaryBase64.length);
+          
+          // Store in the payload
+          logoData.primaryLogo = primaryBase64;
           toast.dismiss();
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error processing primary logo:', error);
           toast.dismiss();
-          toast.error('Failed to process primary logo');
+          toast.error('Failed to process primary logo: ' + (error.message || 'Unknown error'));
           setIsLoading(false);
           return;
         }
@@ -171,17 +184,20 @@ const LogoManagement = () => {
       // Process secondary logo if selected
       if (secondaryLogo) {
         try {
-          console.log('Processing secondary logo...', secondaryLogo.name);
+          console.log('Processing secondary logo...', secondaryLogo.name, secondaryLogo.size, 'bytes');
           toast.loading('Processing secondary logo...');
-          // Convert directly to base64 and store
+          
+          // FIX: Use the uploadBase64ToDatabase function directly
           const secondaryBase64 = await fileToBase64(secondaryLogo);
-          logoData.secondaryLogo = secondaryBase64;
           console.log('Secondary logo converted to base64, length:', secondaryBase64.length);
+          
+          // Store in the payload
+          logoData.secondaryLogo = secondaryBase64;
           toast.dismiss();
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error processing secondary logo:', error);
           toast.dismiss();
-          toast.error('Failed to process secondary logo');
+          toast.error('Failed to process secondary logo: ' + (error.message || 'Unknown error'));
           setIsLoading(false);
           return;
         }
@@ -190,32 +206,47 @@ const LogoManagement = () => {
       // Only proceed if at least one file is processed
       if (Object.keys(logoData).length > 0) {
         console.log('Uploading logo data to database...');
-        toast.loading('Updating database...');
+        toast.loading('Saving logos to database...');
         
-        // Log the payload size before sending
+        // Log the payload size for debugging
+        console.log('Payload summary:');
         for (const [key, value] of Object.entries(logoData)) {
           console.log(`${key} data length:`, value.length);
         }
         
-        // Send the base64 data directly to the server with better error handling
-        const response = await axios.post('/api/logos/base64', logoData, {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              console.log(`Upload progress: ${percentCompleted}%`);
-              setUploadProgress(percentCompleted);
-            }
-          }
-        });
+        // FIX: Send the logos one by one to avoid payload size issues
+        let uploadSuccess = true;
+        let errorMessage = '';
         
-        console.log('Upload response:', response.data);
+        // Upload primary logo if present
+        if (logoData.primaryLogo) {
+          try {
+            console.log('Uploading primary logo to database...');
+            await uploadBase64ToDatabase(logoData.primaryLogo, 'primary');
+            console.log('Primary logo uploaded successfully');
+          } catch (error: any) {
+            console.error('Failed to upload primary logo:', error);
+            uploadSuccess = false;
+            errorMessage = 'Failed to upload primary logo: ' + (error.message || 'Unknown error');
+          }
+        }
+        
+        // Upload secondary logo if present
+        if (logoData.secondaryLogo) {
+          try {
+            console.log('Uploading secondary logo to database...');
+            await uploadBase64ToDatabase(logoData.secondaryLogo, 'secondary');
+            console.log('Secondary logo uploaded successfully');
+          } catch (error: any) {
+            console.error('Failed to upload secondary logo:', error);
+            uploadSuccess = false;
+            errorMessage = errorMessage || 'Failed to upload secondary logo: ' + (error.message || 'Unknown error');
+          }
+        }
+        
         toast.dismiss();
         
-        if (response.data && !response.data.error) {
+        if (uploadSuccess) {
           setUploadSuccess(true);
           toast.success('Logos updated successfully');
           
@@ -229,18 +260,16 @@ const LogoManagement = () => {
             input.value = '';
           });
           
-          // Force refresh the logos with a longer delay to ensure database update completes
+          // FIX: Add longer delay to ensure database update completes
+          console.log('Dispatching refreshLogos event with delay for database propagation');
           setTimeout(() => {
             setLastRefresh(Date.now());
-            // Trigger a refresh of the authentication layout
             window.dispatchEvent(new CustomEvent('refreshLogos'));
-            console.log('Dispatched refreshLogos event');
             fetchLogos();
-          }, 1500);
+          }, 3000); // Increased delay for database update
         } else {
-          console.error('Upload failed:', response.data);
-          setError('Failed to update logos: ' + (response.data?.error || 'Unknown error'));
-          toast.error('Failed to update logos in database');
+          setError(errorMessage || 'Failed to update logos');
+          toast.error(errorMessage || 'Failed to update logos');
         }
       } else {
         toast.error('Please select at least one logo to update');

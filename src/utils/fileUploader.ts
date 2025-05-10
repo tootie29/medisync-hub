@@ -35,28 +35,39 @@ export const saveFileToPublic = async (file: File): Promise<string> => {
   }
 };
 
-// Upload base64 image directly to database
+// Upload base64 image directly to database - FIX: add proper headers and credentials
 export const uploadBase64ToDatabase = async (
   base64Data: string, 
   position: 'primary' | 'secondary'
 ): Promise<string> => {
   try {
     console.log(`FileUploader: Saving ${position} logo directly to database as base64`);
+    console.log(`FileUploader: Base64 data length: ${base64Data.length}`);
     
     // Create payload with just the base64 data
     const payload: Record<string, string> = {};
     payload[`${position}Logo`] = base64Data;
     
-    // Add console log to trace the payload and verify data is being sent
-    console.log(`FileUploader: Sending ${position} logo payload, data length:`, base64Data.length);
+    // Debug the request
+    console.log(`FileUploader: Sending ${position} logo to endpoint: /api/logos/base64`);
+    console.log(`FileUploader: Payload size: ${JSON.stringify(payload).length} bytes`);
     
-    // Make sure the API endpoint is correct and include withCredentials
+    // FIX: Ensure proper Content-Type and withCredentials for authentication
     const response = await axios.post('/api/logos/base64', payload, {
       withCredentials: true,
       headers: {
         'Content-Type': 'application/json'
+      },
+      // Track upload progress for debugging
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          console.log(`FileUploader: Upload progress: ${percentCompleted}%`);
+        }
       }
     });
+    
+    console.log('FileUploader: Server response:', response.data);
     
     if (!response || !response.data) {
       console.error('FileUploader: Received invalid response from server');
@@ -67,6 +78,7 @@ export const uploadBase64ToDatabase = async (
     return base64Data;
   } catch (error) {
     console.error('FileUploader: Error saving to database:', error);
+    console.error('FileUploader: Error details:', JSON.stringify(error));
     throw error;
   }
 };
