@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const logoController = require('../controllers/logoController');
@@ -101,17 +100,18 @@ const upload = multer({
   }
 });
 
-// Ensure JSON middleware for API endpoints
+// Ensure proper response types for all routes
 router.use((req, res, next) => {
-  // Set proper content type for all responses
+  // Ensure JSON response content type
   res.setHeader('Content-Type', 'application/json');
   
-  // Add CORS headers
+  // Add CORS headers for all responses
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.header('Access-Control-Allow-Credentials', 'true');
   
+  // Handle preflight OPTIONS requests
   if (req.method === 'OPTIONS') {
     return res.status(200).json({});
   }

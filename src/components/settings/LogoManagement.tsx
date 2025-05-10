@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,7 +6,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Upload, RefreshCw, AlertCircle, Info, Server } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
-import { fileToBase64 } from '@/utils/fileUploader';
+import { fileToBase64, uploadLogo } from '@/utils/fileUploader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const LogoManagement = () => {
@@ -111,7 +110,7 @@ const LogoManagement = () => {
     }
   };
 
-  // Simplified file upload approach
+  // Updated approach using direct file uploads
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -127,37 +126,36 @@ const LogoManagement = () => {
         return;
       }
       
-      // Create a FormData object for file upload
-      const formData = new FormData();
+      // Use separate uploads for each logo
+      const uploads = [];
       
       if (primaryLogo) {
-        formData.append('primaryLogo', primaryLogo);
-        console.log('Added primary logo to form data:', primaryLogo.name);
+        try {
+          console.log('LogoManagement: Uploading primary logo');
+          await uploadLogo(primaryLogo, 'primary');
+          uploadedLogos++;
+          uploads.push('primary');
+        } catch (error: any) {
+          console.error('Error uploading primary logo:', error);
+          const errorMsg = error.message || 'Failed to upload primary logo';
+          toast.error(errorMsg);
+        }
       }
       
       if (secondaryLogo) {
-        formData.append('secondaryLogo', secondaryLogo);
-        console.log('Added secondary logo to form data:', secondaryLogo.name);
+        try {
+          console.log('LogoManagement: Uploading secondary logo');
+          await uploadLogo(secondaryLogo, 'secondary');
+          uploadedLogos++;
+          uploads.push('secondary');
+        } catch (error: any) {
+          console.error('Error uploading secondary logo:', error);
+          const errorMsg = error.message || 'Failed to upload secondary logo';
+          toast.error(errorMsg);
+        }
       }
       
-      // Simple direct upload
-      console.log('Uploading logos directly using formData');
-      const response = await axios.post('/api/logos', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            console.log(`Upload progress: ${percentCompleted}%`);
-          }
-        }
-      });
-      
-      console.log('Upload response:', response.data);
-      
-      if (response.data && response.data.uploads) {
-        uploadedLogos = response.data.uploads.length;
+      if (uploadedLogos > 0) {
         setUploadSuccess(true);
         
         // Reset state
@@ -178,7 +176,7 @@ const LogoManagement = () => {
           window.dispatchEvent(new CustomEvent('refreshLogos'));
         }, 2000);
       } else {
-        throw new Error('Invalid server response');
+        toast.error('No logos were uploaded successfully');
       }
       
     } catch (error: any) {
@@ -187,6 +185,8 @@ const LogoManagement = () => {
       let errorMessage = 'Failed to upload logos. Please try again.';
       if (error.response) {
         errorMessage = `Error: ${error.response.data?.error || error.response.statusText}`;
+      } else if (error.message) {
+        errorMessage = `Error: ${error.message}`;
       }
       
       setError(errorMessage);

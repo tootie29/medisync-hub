@@ -10,6 +10,9 @@ const { promisify } = require('util');
  */
 exports.getAllLogos = async (req, res) => {
   try {
+    // Ensure proper JSON content type
+    res.setHeader('Content-Type', 'application/json');
+    
     const logos = await logoModel.getAllLogos();
     
     if (!Array.isArray(logos)) {
@@ -31,6 +34,9 @@ exports.getAllLogos = async (req, res) => {
  */
 exports.getLogoByPosition = async (req, res) => {
   try {
+    // Ensure proper JSON content type
+    res.setHeader('Content-Type', 'application/json');
+    
     const position = req.params.position;
     console.log(`Fetching logo for position: ${position}`);
     
@@ -252,8 +258,9 @@ const processClientLogo = async (logoPath, position) => {
  * Upload base64 logos with improved error handling and debugging
  */
 exports.uploadBase64Logos = async (req, res) => {
+  // Ensure proper JSON content type
+  res.setHeader('Content-Type', 'application/json');
   console.log('Processing base64 logo upload request');
-  const results = [];
   
   try {
     // Ensure content type is set to JSON
@@ -419,16 +426,19 @@ const processBase64Logo = async (base64Data, position) => {
  * Upload logos (file upload method - keeping this for backwards compatibility)
  */
 exports.uploadLogos = async (req, res) => {
+  // Ensure proper JSON content type
+  res.setHeader('Content-Type', 'application/json');
   console.log('Processing logo upload request');
+  
   const files = req.files;
   const results = [];
   
   try {
-    console.log('Files received for upload:', files ? Object.keys(files).length : 'none');
+    console.log('Files received for upload:', files ? Object.keys(files).length : 'none', files);
     
     if (!files || Object.keys(files).length === 0) {
       console.error('No files were provided in the request');
-      return res.status(400).json({ error: 'No files were uploaded' });
+      return res.status(400).json({ error: 'No files were uploaded', success: false });
     }
     
     // Get server base URL and upload info
@@ -447,7 +457,8 @@ exports.uploadLogos = async (req, res) => {
       console.error('Upload directory issues:', dirResult);
       return res.status(500).json({
         error: 'Upload directory is not accessible',
-        details: dirResult
+        details: dirResult,
+        success: false
       });
     }
     
@@ -469,7 +480,8 @@ exports.uploadLogos = async (req, res) => {
     if (results.length === 0) {
       return res.status(500).json({ 
         error: 'No logos were processed',
-        details: 'No files were successfully processed'
+        details: 'No files were successfully processed',
+        success: false
       });
     }
     
