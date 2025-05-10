@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(36) PRIMARY KEY,
   email VARCHAR(255) NOT NULL UNIQUE,
   name VARCHAR(255) NOT NULL,
-  role ENUM('student', 'staff', 'doctor', 'admin') NOT NULL,
+  role ENUM('student', 'staff', 'head nurse', 'admin') NOT NULL,
   phone VARCHAR(20),
   date_of_birth DATE,
   gender ENUM('male', 'female', 'other'),
@@ -119,7 +119,7 @@ VALUES
 INSERT IGNORE INTO users (id, email, name, role, phone, date_of_birth, gender, address, emergency_contact)
 VALUES
 ('1', 'admin@example.com', 'Admin User', 'admin', '123-456-7890', '1980-01-01', 'male', '123 Admin St', 'Jane Admin: 123-456-7890'),
-('2', 'doctor@example.com', 'Dr. Smith', 'doctor', '123-456-7891', '1975-05-15', 'female', '456 Doctor Ave', 'John Smith: 123-456-7892'),
+('2', 'doctor@example.com', 'Head Nurse Smith', 'head nurse', '123-456-7891', '1975-05-15', 'female', '456 Doctor Ave', 'John Smith: 123-456-7892'),
 ('3', 'student@example.com', 'John Student', 'student', '123-456-7893', '2000-10-20', 'male', '789 Student Blvd', 'Mary Student: 123-456-7894'),
 ('4', 'staff@example.com', 'Sarah Staff', 'staff', '123-456-7895', '1990-08-12', 'female', '101 Staff Road', 'Mike Staff: 123-456-7896');
 

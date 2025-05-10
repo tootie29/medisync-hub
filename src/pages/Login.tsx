@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -244,7 +243,7 @@ const Login: React.FC = () => {
               }}
               className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
             >
-              Doctor
+              Head Nurse
             </Button>
             <Button
               type="button"

@@ -149,7 +149,7 @@ const Navbar: React.FC = () => {
             >
               Appointments
             </Link>
-            {(user?.role === 'doctor' || user?.role === 'admin') && (
+            {(user?.role === 'head nurse' || user?.role === 'admin') && (
               <Link
                 to="/patients"
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-medical-primary hover:bg-gray-50"
@@ -158,7 +158,7 @@ const Navbar: React.FC = () => {
                 Patients
               </Link>
             )}
-            {(user?.role === 'doctor' || user?.role === 'admin') && (
+            {(user?.role === 'head nurse' || user?.role === 'admin') && (
               <Link
                 to="/inventory"
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-medical-primary hover:bg-gray-50"

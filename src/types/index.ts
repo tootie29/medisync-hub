@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'staff' | 'doctor' | 'admin';
+export type UserRole = 'student' | 'staff' | 'head nurse' | 'admin';
 
 export interface User {
   id: string;
@@ -91,7 +91,7 @@ export interface Medicine {
   updatedAt: string;
 }
 
-export const ROLES: UserRole[] = ['student', 'staff', 'doctor', 'admin'];
+export const ROLES: UserRole[] = ['student', 'staff', 'head nurse', 'admin'];
 
 export const SAMPLE_USERS: User[] = [
   {
@@ -110,8 +110,8 @@ export const SAMPLE_USERS: User[] = [
   {
     id: '2',
     email: 'doctor@example.com',
-    name: 'Dr. Smith',
-    role: 'doctor',
+    name: 'Head Nurse Smith',
+    role: 'head nurse',
     phone: '123-456-7891',
     dateOfBirth: '1975-05-15',
     gender: 'female',

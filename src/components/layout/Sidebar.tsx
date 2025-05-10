@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,13 +8,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
-  HeartPulse, // Changed from PulseIcon to HeartPulse
+  HeartPulse,
   Home,
   Package,
   Settings,
   UserCircle,
   Activity,
-  // We add a certificate icon from lucide-react allowed icons
   BadgeCheck,
 } from "lucide-react";
 
@@ -26,8 +24,8 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   // School logo URL
   const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
   
-  // Determine if user can access inventory (admin or doctor only)
-  const canAccessInventory = user && (user.role === "admin" || user.role === "doctor");
+  // Determine if user can access inventory (admin or head nurse only)
+  const canAccessInventory = user && (user.role === "admin" || user.role === "head nurse");
 
   // Determine if user is patient
   const isPatient = user && (user.role === "student" || user.role === "staff");
@@ -65,7 +63,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       name: "Health Monitoring",
       icon: Activity,
     },
-    // Only show inventory to admin and doctor roles
+    // Only show inventory to admin and head nurse roles
     ...(canAccessInventory ? [{
       path: "/inventory",
       name: "Inventory",
