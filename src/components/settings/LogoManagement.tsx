@@ -50,9 +50,7 @@ const LogoManagement = () => {
       
       if (primaryResponse.data && primaryResponse.data.url) {
         console.log('LogoManagement: Primary logo URL:', primaryResponse.data.url);
-        const url = new URL(primaryResponse.data.url, window.location.origin);
-        url.searchParams.append('t', timestamp.toString());
-        setPrimaryLogoUrl(url.toString());
+        setPrimaryLogoUrl(primaryResponse.data.url);
       } else {
         setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
@@ -62,9 +60,7 @@ const LogoManagement = () => {
       
       if (secondaryResponse.data && secondaryResponse.data.url) {
         console.log('LogoManagement: Secondary logo URL:', secondaryResponse.data.url);
-        const url = new URL(secondaryResponse.data.url, window.location.origin);
-        url.searchParams.append('t', timestamp.toString());
-        setSecondaryLogoUrl(url.toString());
+        setSecondaryLogoUrl(secondaryResponse.data.url);
       } else {
         setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
@@ -83,13 +79,20 @@ const LogoManagement = () => {
     }
   };
 
-  // New function to convert file to base64
+  // File to base64 conversion helper
   const fileToBase64 = (file: File): Promise<string> => {
+    console.log(`Converting file to base64: ${file.name} (${file.size} bytes)`);
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
+      reader.onload = () => {
+        console.log('File converted to base64 successfully');
+        resolve(reader.result as string);
+      };
+      reader.onerror = error => {
+        console.error('Error converting file to base64:', error);
+        reject(error);
+      };
     });
   };
 
@@ -161,7 +164,7 @@ const LogoManagement = () => {
     setUploadSuccess(false);
     
     try {
-      // Instead of using FormData with files, send the base64 strings directly
+      // Send the base64 strings directly
       const logoData: { primaryLogo?: string; secondaryLogo?: string } = {};
       
       if (primaryBase64) {
@@ -222,6 +225,7 @@ const LogoManagement = () => {
             console.log('LogoManagement: Dispatched refreshLogos event');
           }, 500);
         } else {
+          console.error('Upload failed:', response.data);
           setError('Failed to update logos: ' + (response.data.error || 'Unknown error'));
           toast.error('Failed to update logos');
           await fetchDiagnostics();
@@ -235,6 +239,7 @@ const LogoManagement = () => {
       let errorMessage = 'Failed to upload logos. Please try again.';
       if (error.response) {
         errorMessage = `Error: ${error.response.data.error || error.response.statusText}`;
+        console.error('Server response:', error.response.data);
       }
       
       setError(errorMessage);

@@ -35,15 +35,15 @@ exports.getLogoByPosition = async (position) => {
 
 // Update a logo with simplified transaction handling
 exports.updateLogo = async (logo) => {
-  console.log(`Model: Processing logo update for position: ${position}`);
-  
   if (!logo.url || !logo.position) {
     throw new Error('Logo URL and position are required');
   }
   
+  const position = logo.position;
+  console.log(`Model: Processing logo update for position: ${position}`);
+  
   let connection;
   let logoId = logo.id || uuidv4();
-  const position = logo.position;
   
   try {
     // Get a connection from the pool
