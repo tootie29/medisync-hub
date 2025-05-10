@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -342,7 +343,7 @@ const LogoManagement = () => {
   return (
     <div className="space-y-6">
       {uploadSuccess && (
-        <Alert variant="success" className="bg-green-100 border-green-200">
+        <Alert variant="info" className="bg-green-100 border-green-200">
           <AlertTitle className="text-green-600 font-medium flex items-center gap-2">
             <div className="h-5 w-5 text-green-600 mt-0.5">✓</div>
             Logo upload successful!
