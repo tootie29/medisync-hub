@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -21,7 +20,7 @@ const LogoManagement = () => {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [serverInfo, setServerInfo] = useState<string | null>(null);
   const [serverDetails, setServerDetails] = useState<any>(null);
-  const [diagnosticInfo, setDiagnosticInfo] = useState<any>({});  // Initialize as empty object instead of null
+  const [diagnosticInfo, setDiagnosticInfo] = useState<Record<string, any>>({});  // Initialize as empty object
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
 
@@ -83,13 +82,13 @@ const LogoManagement = () => {
     try {
       setShowDiagnostics(true);
       const response = await axios.get('/api/logos/diagnostics');
-      setDiagnosticInfo(response.data || {}); // Ensure we set an empty object if null
+      setDiagnosticInfo(response.data || {});  // Always ensure we set an object even if response is null
       console.log('Diagnostics info:', response.data);
       toast.success('Diagnostics information loaded');
     } catch (error) {
       console.error('Failed to fetch diagnostics:', error);
       toast.error('Failed to load diagnostics information');
-      setDiagnosticInfo({}); // Set empty object on error
+      setDiagnosticInfo({});  // Set empty object on error
     }
   };
 
