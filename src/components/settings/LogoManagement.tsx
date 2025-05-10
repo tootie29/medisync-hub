@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -158,7 +157,7 @@ const LogoManagement = () => {
     }
   };
 
-  // CRITICAL FIX: Enhance the submit handler to process logos individually
+  // CRITICAL FIX: Update handleSubmit for more reliable uploads
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -183,7 +182,7 @@ const LogoManagement = () => {
         return;
       }
       
-      // CRITICAL FIX: Process each logo separately for more reliable uploads
+      // CRITICAL FIX: Process each logo separately with absolute URL paths
       // Process primary logo if selected
       if (primaryLogo) {
         try {
@@ -198,7 +197,7 @@ const LogoManagement = () => {
           const primaryBase64 = await fileToBase64(primaryLogo);
           console.log('Primary logo converted to base64, length:', primaryBase64.length);
           
-          // CRITICAL FIX: Send to server with better error handling and retry logic
+          // CRITICAL FIX: Use absolute URL path
           console.log('Uploading primary logo to database...');
           await uploadBase64ToDatabase(primaryBase64, 'primary');
           console.log('Primary logo uploaded successfully');

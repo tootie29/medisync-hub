@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -38,22 +37,38 @@ console.log('=====================');
 const BASE_PATH = '';
 console.log(`Using base path: "${BASE_PATH}"`);
 
-// Enhanced CORS configuration - temporarily allow all origins for troubleshooting
-// This is more permissive to help diagnose connection issues
+// Enhanced CORS configuration for proper API handling
 const corsOptions = {
-  origin: '*', // Allow all origins for now
+  origin: '*', // Allow all origins for troubleshooting
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cache-Control', 'Pragma'],
   credentials: true,
   maxAge: 86400 // 24 hours
 };
 
-console.log('CORS: Temporarily allowing all origins for troubleshooting');
+console.log('CORS: Allowing all origins for troubleshooting');
 app.use(cors(corsOptions));
 
 // Log all requests to help with debugging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl} (IP: ${req.ip})`);
+  next();
+});
+
+// Add content type detection middleware
+app.use((req, res, next) => {
+  // Detect API routes
+  if (req.path.startsWith('/api/')) {
+    const isJsonRequest = 
+      req.is('application/json') || 
+      req.headers['content-type']?.includes('application/json') ||
+      req.headers['accept']?.includes('application/json');
+    
+    if (isJsonRequest) {
+      console.log('JSON API request detected, ensuring JSON response');
+      res.setHeader('Content-Type', 'application/json');
+    }
+  }
   next();
 });
 

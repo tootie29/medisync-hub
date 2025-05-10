@@ -100,6 +100,13 @@ const upload = multer({
   }
 });
 
+// CRITICAL FIX: Add JSON content type check middleware to prevent routing issues
+const ensureJsonResponse = (req, res, next) => {
+  // Set content type explicitly to ensure JSON response
+  res.setHeader('Content-Type', 'application/json');
+  next();
+};
+
 // Get all logos
 router.get('/', logoController.getAllLogos);
 
@@ -109,10 +116,13 @@ router.get('/diagnostics', logoController.getUploadDiagnostics);
 // Add a new route for client-side stored logos that can handle both path and base64
 router.post('/client', logoController.uploadClientLogos);
 
-// Add a route for base64 logo uploads - Fix: better error handling
-router.post('/base64', (req, res, next) => {
+// CRITICAL FIX: Add JSON content type check middleware to prevent routing issues
+router.post('/base64', ensureJsonResponse, (req, res, next) => {
   console.log('Base64 upload route hit with method:', req.method);
   console.log('Request headers:', req.headers);
+  console.log('Request path:', req.path);
+  console.log('Request URL:', req.url);
+  console.log('Request original URL:', req.originalUrl);
   
   // Handle preflight OPTIONS requests for CORS
   if (req.method === 'OPTIONS') {
@@ -128,10 +138,10 @@ router.post('/base64', (req, res, next) => {
     console.log('secondaryLogo exists:', !!req.body.secondaryLogo);
   }
   
-  // Handle potential CORS issues
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Handle CORS issues with more permissive settings for troubleshooting
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.header('Access-Control-Allow-Credentials', 'true');
   
   next();
@@ -213,7 +223,7 @@ router.post('/', upload.fields([
   next();
 }, logoController.uploadLogos);
 
-// Get a single logo by position
-router.get('/:position', logoController.getLogoByPosition);
+// Get a single logo by position - CRITICAL FIX: Add JSON content type
+router.get('/:position', ensureJsonResponse, logoController.getLogoByPosition);
 
 module.exports = router;

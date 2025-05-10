@@ -249,18 +249,21 @@ const processClientLogo = async (logoPath, position) => {
 };
 
 /**
- * Upload base64 logos - CRITICAL FIX: Enhanced error handling and logging
+ * Upload base64 logos - CRITICAL FIX: Enhanced error handling and content type enforcement
  */
 exports.uploadBase64Logos = async (req, res) => {
   console.log('Processing base64 logo upload request');
   const results = [];
   
   try {
+    // Ensure content type is set to JSON
+    res.setHeader('Content-Type', 'application/json');
+    
     const { primaryLogo, secondaryLogo } = req.body;
     
     console.log('Base64 data received:',
-      primaryLogo ? 'Primary logo present' : 'No primary logo',
-      secondaryLogo ? 'Secondary logo present' : 'No secondary logo'
+      primaryLogo ? `Primary logo present (${typeof primaryLogo}, length: ${primaryLogo?.length || 0})` : 'No primary logo',
+      secondaryLogo ? `Secondary logo present (${typeof secondaryLogo}, length: ${secondaryLogo?.length || 0})` : 'No secondary logo'
     );
     
     // Process logos if provided
@@ -309,11 +312,11 @@ exports.uploadBase64Logos = async (req, res) => {
       });
     }
     
-    // CRITICAL FIX: Better response structure
+    // CRITICAL FIX: Better response structure and JSON enforcement
     const hasErrors = results.some(result => result.error);
     const successCount = results.filter(result => result.success).length;
     
-    // CRITICAL FIX: Always return a properly formatted response
+    // CRITICAL FIX: Always return a properly formatted JSON response
     const responseObj = { 
       message: successCount > 0 ? 
         `${successCount} logo(s) processed successfully` : 
@@ -322,11 +325,14 @@ exports.uploadBase64Logos = async (req, res) => {
       uploads: results
     };
     
-    console.log('Sending response:', responseObj);
+    console.log('Sending response:', JSON.stringify(responseObj));
     res.status(hasErrors && successCount === 0 ? 400 : 200).json(responseObj);
     
   } catch (error) {
     console.error('Error uploading base64 logos:', error);
+    
+    // CRITICAL FIX: Ensure JSON response even in error case
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ 
       error: 'Failed to process logo uploads', 
       details: error.message || 'Unknown server error',

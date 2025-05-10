@@ -53,9 +53,11 @@ export const uploadBase64ToDatabase = async (
         [position + 'Logo']: base64Data
       };
       
+      // CRITICAL FIX: Ensure we're using the absolute path for the API endpoint
       // Add timestamp to prevent caching issues
       const timestamp = Date.now();
-      const endpoint = `/api/logos/base64?t=${timestamp}`;
+      const apiBasePath = window.location.origin; // Get the current origin (e.g. https://example.com)
+      const endpoint = `${apiBasePath}/api/logos/base64?t=${timestamp}`;
       console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
       
       // Ensure we're using proper Content-Type and withCredentials
@@ -86,6 +88,14 @@ export const uploadBase64ToDatabase = async (
         throw new Error(`Server returned status code ${response?.status || 'unknown'}`);
       }
       
+      // Check response content type to detect HTML instead of JSON
+      const contentType = response.headers['content-type'];
+      if (contentType && contentType.includes('text/html')) {
+        console.error('FileUploader: Received HTML instead of JSON response');
+        console.log('FileUploader: Response content:', response.data);
+        throw new Error('Received HTML instead of JSON response');
+      }
+      
       // Log the full response for debugging
       console.log('FileUploader: Full response:', response);
       
@@ -93,6 +103,12 @@ export const uploadBase64ToDatabase = async (
       if (!response.data) {
         console.error('FileUploader: Empty response data from server');
         throw new Error('Empty response from server');
+      }
+      
+      // If the response is a string containing HTML, it's an error
+      if (typeof response.data === 'string' && response.data.trim().startsWith('<!DOCTYPE html>')) {
+        console.error('FileUploader: Response indicates failure:', response.data);
+        throw new Error('Operation failed');
       }
       
       // Be more flexible with success response formats
