@@ -66,7 +66,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
       const formData = new FormData();
       formData.append('file', logo);
       
-      // CRITICAL FIX: Use absolute path to explicitly hit the API server, not the frontend
+      // Use absolute path to explicitly hit the API server
       const endpoint = `/api/logos/upload-logo/${logoType}`;
       console.log(`LogoUploader: Using endpoint ${endpoint}`);
       
@@ -77,6 +77,15 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
           'X-Requested-With': 'XMLHttpRequest'
         },
         timeout: 30000, // 30 seconds timeout
+        // Don't transform the response - critical for proper error detection
+        transformResponse: [(data) => {
+          try {
+            return JSON.parse(data);
+          } catch (e) {
+            // If it's not JSON, return as-is
+            return data;
+          }
+        }],
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total!);
           console.log(`Upload progress: ${percentCompleted}%`);
