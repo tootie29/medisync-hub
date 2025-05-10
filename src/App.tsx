@@ -1,24 +1,27 @@
+
 import React from 'react';
 import {
   createBrowserRouter,
   RouterProvider,
   Route,
 } from "react-router-dom";
-import Home from '@/pages/Home';
+import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Profile from '@/pages/Profile';
 import MedicalRecords from '@/pages/MedicalRecords';
 import Appointments from '@/pages/Appointments';
-import Medicines from '@/pages/Medicines';
-import AdminDashboard from '@/pages/AdminDashboard';
+import Inventory from '@/pages/Inventory';
 import VerifyEmail from '@/pages/VerifyEmail';
+import Certificate from '@/pages/Certificate';
+import BMICalculator from '@/pages/BMICalculator';
+import HealthMonitoring from '@/pages/HealthMonitoring';
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Home />,
+    element: <Index />,
   },
   {
     path: "/login",
@@ -45,16 +48,24 @@ const router = createBrowserRouter([
     element: <Appointments />,
   },
   {
-    path: "/medicines",
-    element: <Medicines />,
+    path: "/inventory",
+    element: <Inventory />,
   },
   {
-    path: "/admin-dashboard",
-    element: <AdminDashboard />,
-  },
-  { 
     path: "/verify/:token", 
     element: <VerifyEmail /> 
+  },
+  {
+    path: "/certificate",
+    element: <Certificate />
+  },
+  {
+    path: "/bmi",
+    element: <BMICalculator />
+  },
+  {
+    path: "/health-monitoring",
+    element: <HealthMonitoring />
   }
 ]);
 
