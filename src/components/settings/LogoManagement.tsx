@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -44,6 +45,7 @@ const LogoManagement = () => {
       console.log('LogoManagement: Fetching logos...');
       const timestamp = Date.now();
       
+      // Add cache busting to prevent browser caching
       const primaryResponse = await axios.get(`/api/logos/primary?t=${timestamp}`);
       console.log('LogoManagement: Primary logo response:', primaryResponse.data);
       
@@ -150,12 +152,12 @@ const LogoManagement = () => {
       // Process primary logo if selected
       if (primaryLogo) {
         try {
-          console.log('Processing primary logo...');
+          console.log('Processing primary logo...', primaryLogo.name);
           toast.loading('Processing primary logo...');
           // Convert directly to base64 and store
           const primaryBase64 = await fileToBase64(primaryLogo);
           logoData.primaryLogo = primaryBase64;
-          console.log('Primary logo converted to base64');
+          console.log('Primary logo converted to base64, length:', primaryBase64.length);
           toast.dismiss();
         } catch (error) {
           console.error('Error processing primary logo:', error);
@@ -169,12 +171,12 @@ const LogoManagement = () => {
       // Process secondary logo if selected
       if (secondaryLogo) {
         try {
-          console.log('Processing secondary logo...');
+          console.log('Processing secondary logo...', secondaryLogo.name);
           toast.loading('Processing secondary logo...');
           // Convert directly to base64 and store
           const secondaryBase64 = await fileToBase64(secondaryLogo);
           logoData.secondaryLogo = secondaryBase64;
-          console.log('Secondary logo converted to base64');
+          console.log('Secondary logo converted to base64, length:', secondaryBase64.length);
           toast.dismiss();
         } catch (error) {
           console.error('Error processing secondary logo:', error);
@@ -189,6 +191,11 @@ const LogoManagement = () => {
       if (Object.keys(logoData).length > 0) {
         console.log('Uploading logo data to database...');
         toast.loading('Updating database...');
+        
+        // Log the payload size before sending
+        for (const [key, value] of Object.entries(logoData)) {
+          console.log(`${key} data length:`, value.length);
+        }
         
         // Send the base64 data directly to the server
         const response = await axios.post('/api/logos/base64', logoData, {
@@ -222,10 +229,13 @@ const LogoManagement = () => {
           setLastRefresh(Date.now());
           
           // Trigger a refresh of the authentication layout
+          window.dispatchEvent(new CustomEvent('refreshLogos'));
+          console.log('Dispatched refreshLogos event');
+          
+          // Add slight delay before refreshing to ensure database update completes
           setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('refreshLogos'));
-            console.log('Dispatched refreshLogos event');
-          }, 500);
+            fetchLogos();
+          }, 1000);
         } else {
           console.error('Upload failed:', response.data);
           setError('Failed to update logos: ' + (response.data?.error || 'Unknown error'));

@@ -47,6 +47,9 @@ export const uploadBase64ToDatabase = async (
     const payload: Record<string, string> = {};
     payload[`${position}Logo`] = base64Data;
     
+    // Add console log to trace the payload and verify data is being sent
+    console.log(`FileUploader: Sending ${position} logo payload, data length:`, base64Data.length);
+    
     // Send directly to the base64 endpoint
     const response = await axios.post('/api/logos/base64', payload);
     
@@ -55,7 +58,7 @@ export const uploadBase64ToDatabase = async (
       throw new Error('Invalid response from server: empty response');
     }
     
-    console.log(`FileUploader: ${position} logo saved directly to database`);
+    console.log(`FileUploader: ${position} logo saved to database, response:`, response.data);
     return base64Data;
   } catch (error) {
     console.error('FileUploader: Error saving to database:', error);

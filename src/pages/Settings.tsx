@@ -23,9 +23,24 @@ const Settings = () => {
 
   // Add event handler for logo updates
   const handleLogosUpdated = () => {
-    console.log('Logos updated, refreshing UI');
+    console.log('Settings: Logos updated, refreshing UI');
+    // Trigger a global refresh event
     window.dispatchEvent(new CustomEvent('refreshLogos'));
   };
+
+  // Add effect to listen for logo updates
+  useEffect(() => {
+    // Listen for logo update events
+    const refreshHandler = () => {
+      console.log('Settings: Detected logo refresh event');
+    };
+    
+    window.addEventListener('refreshLogos', refreshHandler);
+    
+    return () => {
+      window.removeEventListener('refreshLogos', refreshHandler);
+    };
+  }, []);
 
   return (
     <MainLayout>
