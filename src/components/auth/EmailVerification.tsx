@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2, Info } from 'lucide-react';
 
 interface EmailVerificationProps {
   email: string | null;
@@ -17,6 +17,9 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
   const [inputEmail, setInputEmail] = useState(email || '');
   const [isResending, setIsResending] = useState(false);
   const [resent, setResent] = useState(false);
+  const [verificationInfo, setVerificationInfo] = useState<string | null>(null);
+  
+  const isPreviewMode = window.location.hostname.includes('lovableproject.com');
 
   const handleResendVerification = async () => {
     if (!inputEmail) {
@@ -26,8 +29,13 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
 
     setIsResending(true);
     try {
-      await resendVerification(inputEmail);
+      const result = await resendVerification(inputEmail);
       setResent(true);
+      
+      // For preview mode, show the verification link directly
+      if (isPreviewMode && result.verificationLink) {
+        setVerificationInfo(`Since this is a preview environment, your account will be automatically verified in a few seconds. If not, you can visit this verification link: ${result.verificationLink}`);
+      }
     } catch (error) {
       console.error('Failed to resend verification:', error);
     } finally {
@@ -41,9 +49,21 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
         <Mail className="mx-auto h-12 w-12 text-medical-primary" />
         <h2 className="mt-2 text-2xl font-bold text-medical-primary">Verify Your Email</h2>
         <p className="mt-1 text-sm text-gray-500">
-          We've sent a verification link to your email address. 
+          We've sent a verification link to your email address.
           Please check your inbox and click on the link to verify your account.
         </p>
+        
+        {isPreviewMode && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-start">
+              <Info className="h-5 w-5 text-blue-500 mt-0.5 mr-2" />
+              <p className="text-sm text-blue-700">
+                <strong>Preview Mode:</strong> In this demonstration environment, your account will be automatically verified 
+                after registration. No actual email will be sent.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -74,12 +94,24 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           )}
         </Button>
 
-        {resent && (
+        {resent && !verificationInfo && (
           <div className="rounded-md bg-green-50 p-4 mt-4">
             <div className="flex">
               <div className="ml-3">
                 <p className="text-sm font-medium text-green-800">
                   Verification email sent! Please check your inbox.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {verificationInfo && (
+          <div className="rounded-md bg-blue-50 p-4 mt-4">
+            <div className="flex">
+              <div className="ml-3">
+                <p className="text-sm text-blue-800">
+                  {verificationInfo}
                 </p>
               </div>
             </div>

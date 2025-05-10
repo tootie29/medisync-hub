@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -97,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         
         if (foundRegisteredUser) {
-          // Check if email is verified in preview mode, but skip for demo accounts
+          // Skip email verification check for demo accounts
           const isDemoAccount = SAMPLE_USERS.some(demo => demo.email === email);
           
           if (foundRegisteredUser.emailVerified === false && !isDemoAccount) {
@@ -114,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
         
+        // Demo accounts always bypass verification
         const foundSampleUser = SAMPLE_USERS.find(u => u.email === email);
         
         if (foundSampleUser) {
@@ -162,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error: any) {
         console.error('Login API error:', error);
         
-        // Check if this is a verification required error, but skip for demo accounts
+        // Skip verification check for demo accounts
         const isDemoAccount = SAMPLE_USERS.some(demo => demo.email === email);
         
         if (error.response?.status === 403 && error.response?.data?.requiresVerification && !isDemoAccount) {
@@ -221,6 +221,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (isPreviewMode) {
         console.log('Running in preview mode - using mock user registration');
+        
+        // Check if email already exists
+        const registeredUsers = getRegisteredUsers();
+        const existingUser = registeredUsers.find(u => u.email === userData.email);
+        if (existingUser) {
+          throw new Error('Email already registered. Please use a different email address.');
+        }
+        
         const newUser: User = {
           id: formattedData.id,
           email: userData.email || '',
@@ -248,9 +256,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Generate mock verification token
         const verificationToken = Math.random().toString(36).substring(2, 15) + 
-                                Math.random().toString(36).substring(2, 15);
+                               Math.random().toString(36).substring(2, 15);
                                 
-        const verificationLink = `http://localhost:5173/verify/${verificationToken}`;
+        // Create verification link that works in preview mode
+        const verificationLink = `/verify/${verificationToken}`;
         
         const registeredUser: RegisteredUser = {
           ...newUser,
@@ -258,15 +267,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           emailVerified: false, // Email is not verified by default
         };
         
+        // Store the user with the verification token in localStorage
         const currentUsers = getRegisteredUsers();
         currentUsers.push(registeredUser);
         saveRegisteredUsers(currentUsers);
-        console.log('Saved registered user:', registeredUser.email);
+        
+        console.log('Saved registered user:', registeredUser.email, 'with verification link:', verificationLink);
         
         // Set the email for verification
         setVerificationEmail(userData.email || null);
         
         toast.success('Registration successful! Please verify your email before logging in.');
+        
+        // In preview mode, automatically "verify" the user for testing purposes
+        setTimeout(() => {
+          const users = getRegisteredUsers();
+          const userIndex = users.findIndex(u => u.email === userData.email);
+          
+          if (userIndex >= 0) {
+            users[userIndex].emailVerified = true;
+            saveRegisteredUsers(users);
+            console.log('Auto-verified user in preview mode:', userData.email);
+          }
+        }, 5000);
         
         return { 
           requiresVerification: true,
