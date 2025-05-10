@@ -23,6 +23,9 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   const { user } = useAuth();
   const { getMedicalRecordsByPatientId } = useData();
   
+  // School logo URL
+  const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
+  
   // Determine if user can access inventory (admin or doctor only)
   const canAccessInventory = user && (user.role === "admin" || user.role === "doctor");
 
@@ -84,8 +87,14 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       )}
     >
       <div className="flex items-center justify-between px-4 mb-4">
-        <div className={cn("font-bold text-white text-xl", !isSidebarOpen && "hidden")}>
-          MedCenter
+        <div className={cn("font-bold text-white", !isSidebarOpen && "hidden")}>
+          {isSidebarOpen ? (
+            <img 
+              src={schoolLogo} 
+              alt="College of Nursing" 
+              className="h-12 w-auto"
+            />
+          ) : null}
         </div>
         <Button
           variant="ghost"
