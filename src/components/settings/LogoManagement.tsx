@@ -8,8 +8,6 @@ import LogoDisplay from './LogoDisplay';
 import LogoControls from './LogoControls';
 
 const LogoManagement = () => {
-  const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
-  const [secondaryLogo, setSecondaryLogo] = useState<File | null>(null);
   const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>('');
   const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,10 +15,6 @@ const LogoManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
-
-  // Reference to uploader components
-  const primaryUploaderRef = React.useRef<any>(null);
-  const secondaryUploaderRef = React.useRef<any>(null);
 
   useEffect(() => {
     fetchLogos();
@@ -36,21 +30,32 @@ const LogoManagement = () => {
       const timestamp = Date.now();
       const cacheBuster = `?t=${timestamp}`;
       
-      const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`);
-      console.log('LogoManagement: Primary logo response:', primaryResponse.data);
-      
-      if (primaryResponse.data && primaryResponse.data.url) {
-        setPrimaryLogoUrl(`${primaryResponse.data.url}${cacheBuster}`);
-      } else {
+      // Try to use relative paths first, which work in development
+      try {
+        const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`);
+        console.log('LogoManagement: Primary logo response:', primaryResponse.data);
+        
+        if (primaryResponse.data && primaryResponse.data.url) {
+          setPrimaryLogoUrl(`${primaryResponse.data.url}${cacheBuster}`);
+        } else {
+          setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
+        }
+      } catch (error) {
+        console.error('Error fetching primary logo:', error);
         setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
       
-      const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`);
-      console.log('LogoManagement: Secondary logo response:', secondaryResponse.data);
-      
-      if (secondaryResponse.data && secondaryResponse.data.url) {
-        setSecondaryLogoUrl(`${secondaryResponse.data.url}${cacheBuster}`);
-      } else {
+      try {
+        const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`);
+        console.log('LogoManagement: Secondary logo response:', secondaryResponse.data);
+        
+        if (secondaryResponse.data && secondaryResponse.data.url) {
+          setSecondaryLogoUrl(`${secondaryResponse.data.url}${cacheBuster}`);
+        } else {
+          setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
+        }
+      } catch (error) {
+        console.error('Error fetching secondary logo:', error);
         setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
       
@@ -122,17 +127,10 @@ const LogoManagement = () => {
       <LogoControls
         isLoading={isLoading}
         isLoadingLogos={isLoadingLogos}
-        hasSelectedLogos={!!primaryLogo || !!secondaryLogo}
+        hasSelectedLogos={false} // No need for global upload anymore as we handle uploads individually
         onSubmit={async (e) => {
           e.preventDefault();
-          setIsLoading(true);
-          try {
-            // This is a legacy method kept for backward compatibility
-            // The direct upload in LogoUploader is now the primary method
-            handleManualRefresh();
-          } finally {
-            setIsLoading(false);
-          }
+          handleManualRefresh();
         }}
         onRefresh={handleManualRefresh}
       />

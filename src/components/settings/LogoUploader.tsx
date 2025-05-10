@@ -66,57 +66,98 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
       const formData = new FormData();
       formData.append('file', logo);
       
-      // Get the API URL from window.location to ensure we hit the right server
-      // This is critical for deployment environments where frontend and API might be on different domains
-      const apiBaseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://api.climasys.entrsolutions.com'  // Production API server
-        : window.location.origin;                    // Development API server (same as frontend)
+      // For development and testing, try using the local server first
+      const localEndpoint = `/api/logos/upload-logo/${logoType}`;
+      console.log(`LogoUploader: First trying local endpoint ${localEndpoint}`);
       
-      const endpoint = `${apiBaseUrl}/api/logos/upload-logo/${logoType}`;
-      console.log(`LogoUploader: Using endpoint ${endpoint}`);
-      
-      const response = await axios.post(endpoint, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        timeout: 30000,
-        transformResponse: [(data) => {
-          try {
-            return JSON.parse(data);
-          } catch (e) {
-            return data;
+      try {
+        // Try local upload first
+        const response = await axios.post(localEndpoint, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          timeout: 30000,
+          transformResponse: [(data) => {
+            try {
+              return JSON.parse(data);
+            } catch (e) {
+              return data;
+            }
+          }],
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total!);
+            console.log(`Upload progress: ${percentCompleted}%`);
           }
-        }],
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total!);
-          console.log(`Upload progress: ${percentCompleted}%`);
-        }
-      });
-      
-      console.log('LogoUploader: Server response:', response);
-      
-      // Check if we got HTML instead of JSON
-      if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
-        console.error('LogoUploader: Received HTML instead of JSON - API routing issue');
-        throw new Error('API routing issue - received HTML instead of JSON. The request may be going to the wrong server.');
-      }
-      
-      if (response.data && response.data.success) {
-        console.log(`LogoManagement: ${logoType} logo uploaded successfully`);
-        setLogo(null);
+        });
         
-        // Clear file input field
-        const fileInput = document.querySelector(`input#${logoType}Logo`) as HTMLInputElement;
-        if (fileInput) {
-          fileInput.value = '';
+        // Check if we got HTML instead of JSON
+        if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+          console.error('LogoUploader: Received HTML instead of JSON - trying base64 upload instead');
+          // We'll handle this by falling back to base64 upload
+          throw new Error('HTML response received instead of JSON');
         }
         
-        onLogoUpdated();
-        return true;
-      } else {
-        console.error('LogoUploader: Upload failed with response:', response.data);
-        throw new Error(response.data?.error || 'Upload failed without specific error');
+        console.log('LogoUploader: Local upload response:', response);
+        
+        if (response.data && response.data.success) {
+          console.log(`LogoManagement: ${logoType} logo uploaded successfully`);
+          setLogo(null);
+          
+          // Clear file input field
+          const fileInput = document.querySelector(`input#${logoType}Logo`) as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = '';
+          }
+          
+          onLogoUpdated();
+          return true;
+        } else {
+          throw new Error(response.data?.error || 'Upload failed without specific error');
+        }
+      } catch (localError) {
+        // If local upload fails, try base64 upload as fallback
+        console.warn('Local file upload failed, falling back to base64 upload:', localError);
+        
+        try {
+          // Convert the file to base64
+          const base64Data = await fileToBase64(logo);
+          
+          // Create payload for base64 upload
+          const base64Payload = {
+            [`${logoType}Logo`]: base64Data
+          };
+          
+          // Send base64 data directly
+          const base64Response = await axios.post(`/api/logos/upload-base64-logo/${logoType}`, base64Payload, {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            timeout: 30000
+          });
+          
+          console.log('LogoUploader: Base64 upload response:', base64Response);
+          
+          if (base64Response.data && base64Response.data.success) {
+            console.log(`LogoManagement: ${logoType} logo uploaded successfully via base64`);
+            setLogo(null);
+            
+            // Clear file input field
+            const fileInput = document.querySelector(`input#${logoType}Logo`) as HTMLInputElement;
+            if (fileInput) {
+              fileInput.value = '';
+            }
+            
+            onLogoUpdated();
+            return true;
+          } else {
+            throw new Error(base64Response.data?.error || 'Base64 upload failed without specific error');
+          }
+        } catch (base64Error) {
+          console.error(`Base64 upload also failed for ${logoType} logo:`, base64Error);
+          throw base64Error;
+        }
       }
     } catch (error) {
       console.error(`Error uploading ${logoType} logo:`, error);
