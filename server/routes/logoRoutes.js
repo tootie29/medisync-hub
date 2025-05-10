@@ -51,27 +51,11 @@ console.log(`Full upload path: ${fullUploadPath}`);
   }
 })();
 
-// Configure multer for file uploads with improved error handling
+// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    console.log(`Starting file upload to: ${fullUploadPath}`);
-    
-    // Ensure directory exists before storing
-    fileUtils.ensureDirectoryExists(fullUploadPath)
-      .then(result => {
-        if (result.success && result.isWritable) {
-          console.log(`Will store file in: ${fullUploadPath}`);
-          cb(null, fullUploadPath);
-        } else {
-          console.error(`Cannot save file - upload directory issue: ${fullUploadPath}`);
-          console.error('Directory details:', result);
-          cb(new Error(`Upload directory is not accessible or writable: ${fullUploadPath}`), null);
-        }
-      })
-      .catch(err => {
-        console.error(`Error preparing upload directory: ${fullUploadPath}`, err);
-        cb(err, null);
-      });
+    console.log(`Storing file in: ${fullUploadPath}`);
+    cb(null, fullUploadPath);
   },
   filename: function (req, file, cb) {
     // Generate a more reliable filename
@@ -83,7 +67,7 @@ const storage = multer.diskStorage({
   }
 });
 
-// Improve upload configuration for better reliability
+// Simple upload configuration
 const upload = multer({ 
   storage: storage,
   limits: {
@@ -122,20 +106,21 @@ router.use((req, res, next) => {
 // Get all logos
 router.get('/', logoController.getAllLogos);
 
-// New diagnostic endpoint
+// Get logo by position
+router.get('/:position', logoController.getLogoByPosition);
+
+// Diagnostics route
 router.get('/diagnostics', logoController.getUploadDiagnostics);
 
-// Add a new route for client-side stored logos
-router.post('/client', logoController.uploadClientLogos);
-
-// Simplified base64 upload route
-router.post('/base64', logoController.uploadBase64Logos);
-
-// Add direct upload endpoints for better reliability
+// SIMPLIFIED DIRECT UPLOAD ENDPOINT - THIS IS THE MAIN ONE WE'LL USE
 router.post('/upload-logo/:position', upload.single('file'), logoController.uploadSingleLogo);
+
+// Base64 upload route (keeping for backward compatibility)
 router.post('/upload-base64-logo/:position', logoController.uploadSingleBase64Logo);
 
-// Route for file uploads (original method - keeping for backward compatibility)
+// Legacy routes (keeping for backward compatibility)
+router.post('/client', logoController.uploadClientLogos);
+router.post('/base64', logoController.uploadBase64Logos);
 router.post('/', upload.fields([
   { name: 'primaryLogo', maxCount: 1 },
   { name: 'secondaryLogo', maxCount: 1 }
@@ -157,8 +142,5 @@ router.post('/', upload.fields([
   
   next();
 }, logoController.uploadLogos);
-
-// Get a single logo by position
-router.get('/:position', logoController.getLogoByPosition);
 
 module.exports = router;

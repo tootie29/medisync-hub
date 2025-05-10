@@ -40,7 +40,7 @@ exports.getLogoByPosition = async (req, res) => {
     const position = req.params.position;
     console.log(`Fetching logo for position: ${position}`);
     
-    // CRITICAL FIX: Add cache busting headers to prevent browser caching
+    // Add cache busting headers
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
@@ -53,7 +53,7 @@ exports.getLogoByPosition = async (req, res) => {
       return getDefaultLogo(req, res, position);
     }
     
-    // Return the logo directly (it's already base64)
+    // Return the logo directly
     console.log(`Returning logo for ${position}`);
     
     res.status(200).json(logo);
@@ -645,6 +645,8 @@ exports.uploadSingleLogo = async (req, res) => {
       // Default path construction
       relativePath = `/uploads/assets/logos/${req.file.filename}`;
     }
+    
+    console.log(`Relative path: ${relativePath}`);
     
     // Verify file exists
     if (!fs.existsSync(req.file.path)) {

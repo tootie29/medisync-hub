@@ -4,9 +4,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Upload, RefreshCw, AlertCircle, Info, Server } from 'lucide-react';
+import { Upload, RefreshCw, AlertCircle, Info } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
-import { fileToBase64, uploadLogo } from '@/utils/fileUploader';
+import { fileToBase64 } from '@/utils/fileUploader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const LogoManagement = () => {
@@ -110,7 +110,7 @@ const LogoManagement = () => {
     }
   };
 
-  // Updated approach using direct upload endpoint
+  // Simplified upload approach with direct form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -118,7 +118,7 @@ const LogoManagement = () => {
     
     try {
       console.log('LogoManagement: Starting logo upload process');
-      let uploadedLogos = 0;
+      let uploadedCount = 0;
       
       if (!primaryLogo && !secondaryLogo) {
         toast.error('Please select at least one logo to upload');
@@ -126,40 +126,30 @@ const LogoManagement = () => {
         return;
       }
       
-      // Use direct upload for each logo
       if (primaryLogo) {
         try {
           console.log('LogoManagement: Uploading primary logo');
           
-          // Create form data directly for manual control
+          // Super simple direct upload approach
           const formData = new FormData();
           formData.append('file', primaryLogo);
           
-          // Use simpler, more direct endpoint
-          const endpoint = `/api/upload-logo/primary`;
-          console.log(`Sending primary logo to endpoint: ${endpoint}`);
-          
-          const response = await axios.post(endpoint, formData, {
+          const response = await axios.post('/api/upload-logo/primary', formData, {
             headers: {
-              'Content-Type': 'multipart/form-data',
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            withCredentials: true
+              'Content-Type': 'multipart/form-data'
+            }
           });
           
-          console.log('Primary logo upload response:', response.data);
-          
           if (response.data && response.data.success) {
-            uploadedLogos++;
-            console.log('Primary logo uploaded successfully');
+            uploadedCount++;
+            console.log('LogoManagement: Primary logo uploaded successfully');
           } else {
-            throw new Error(response.data?.error || 'Upload failed');
+            throw new Error('Upload failed');
           }
-        } catch (error: any) {
+        } catch (error) {
           console.error('Error uploading primary logo:', error);
-          const errorMsg = error.message || 'Failed to upload primary logo';
-          toast.error(errorMsg);
-          setError(`Primary logo: ${errorMsg}`);
+          toast.error('Failed to upload primary logo');
+          setError('Failed to upload primary logo');
         }
       }
       
@@ -167,43 +157,34 @@ const LogoManagement = () => {
         try {
           console.log('LogoManagement: Uploading secondary logo');
           
-          // Create form data directly for manual control
+          // Super simple direct upload approach
           const formData = new FormData();
           formData.append('file', secondaryLogo);
           
-          // Use simpler, more direct endpoint
-          const endpoint = `/api/upload-logo/secondary`;
-          console.log(`Sending secondary logo to endpoint: ${endpoint}`);
-          
-          const response = await axios.post(endpoint, formData, {
+          const response = await axios.post('/api/upload-logo/secondary', formData, {
             headers: {
-              'Content-Type': 'multipart/form-data',
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            withCredentials: true
+              'Content-Type': 'multipart/form-data'
+            }
           });
           
-          console.log('Secondary logo upload response:', response.data);
-          
           if (response.data && response.data.success) {
-            uploadedLogos++;
-            console.log('Secondary logo uploaded successfully');
+            uploadedCount++;
+            console.log('LogoManagement: Secondary logo uploaded successfully');
           } else {
-            throw new Error(response.data?.error || 'Upload failed');
+            throw new Error('Upload failed');
           }
-        } catch (error: any) {
+        } catch (error) {
           console.error('Error uploading secondary logo:', error);
-          const errorMsg = error.message || 'Failed to upload secondary logo';
-          toast.error(errorMsg);
+          toast.error('Failed to upload secondary logo');
           if (setError) {
             setError(prev => 
-              prev ? `${prev}, Secondary logo: ${errorMsg}` : `Secondary logo: ${errorMsg}`
+              prev ? `${prev}, Failed to upload secondary logo` : `Failed to upload secondary logo`
             );
           }
         }
       }
       
-      if (uploadedLogos > 0) {
+      if (uploadedCount > 0) {
         setUploadSuccess(true);
         
         // Reset state
@@ -216,29 +197,19 @@ const LogoManagement = () => {
           input.value = '';
         });
         
-        toast.success(`${uploadedLogos} logo(s) updated successfully`);
+        toast.success(`${uploadedCount} logo(s) updated successfully`);
         
         // Refresh logos after a short delay
         setTimeout(() => {
           setLastRefresh(Date.now());
           window.dispatchEvent(new CustomEvent('refreshLogos'));
         }, 2000);
-      } else if (!error) { // Only show this if we don't have a more specific error
-        toast.error('No logos were uploaded successfully');
       }
       
     } catch (error: any) {
       console.error('Error uploading logos:', error);
-      
-      let errorMessage = 'Failed to upload logos. Please try again.';
-      if (error.response) {
-        errorMessage = `Error: ${error.response.data?.error || error.response.statusText}`;
-      } else if (error.message) {
-        errorMessage = `Error: ${error.message}`;
-      }
-      
-      setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error('Failed to upload logos');
+      setError('Failed to upload logos');
     } finally {
       setIsLoading(false);
     }
