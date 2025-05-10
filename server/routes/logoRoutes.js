@@ -109,8 +109,33 @@ router.get('/diagnostics', logoController.getUploadDiagnostics);
 // Add a new route for client-side stored logos that can handle both path and base64
 router.post('/client', logoController.uploadClientLogos);
 
-// Add a route for base64 logo uploads
-router.post('/base64', logoController.uploadBase64Logos);
+// Add a route for base64 logo uploads - Fix: better error handling
+router.post('/base64', (req, res, next) => {
+  console.log('Base64 upload route hit with method:', req.method);
+  console.log('Request headers:', req.headers);
+  
+  // Handle preflight OPTIONS requests for CORS
+  if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request');
+    return res.status(200).end();
+  }
+  
+  // Log body existence
+  console.log('Request body exists:', !!req.body);
+  if (req.body) {
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('primaryLogo exists:', !!req.body.primaryLogo);
+    console.log('secondaryLogo exists:', !!req.body.secondaryLogo);
+  }
+  
+  // Handle potential CORS issues
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  next();
+}, logoController.uploadBase64Logos);
 
 // Keep the original route for file uploads
 router.post('/', upload.fields([
@@ -122,7 +147,7 @@ router.post('/', upload.fields([
   
   if (!req.files || Object.keys(req.files).length === 0) {
     console.error('No files were uploaded in the request');
-    return res.status(400).json({ error: 'No files were uploaded' });
+    return res.status(400).json({ error: 'No files were uploaded', success: false });
   }
   
   // Add upload path information to request for controller reference
@@ -179,7 +204,8 @@ router.post('/', upload.fields([
   if (!filesOk) {
     return res.status(500).json({ 
       error: 'File upload failed - files not saved to disk',
-      details: fileErrors
+      details: fileErrors,
+      success: false
     });
   }
   

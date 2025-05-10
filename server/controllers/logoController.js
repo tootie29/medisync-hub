@@ -181,7 +181,8 @@ exports.uploadClientLogos = async (req, res) => {
     if (results.length === 0) {
       return res.status(400).json({ 
         error: 'No logos were processed',
-        details: 'No logo paths were provided'
+        details: 'No logo paths were provided',
+        success: false
       });
     }
     
@@ -197,7 +198,8 @@ exports.uploadClientLogos = async (req, res) => {
     console.error('Error uploading client logos:', error);
     res.status(500).json({ 
       error: 'Failed to process logo uploads', 
-      details: error.message 
+      details: error.message,
+      success: false
     });
   }
 };
@@ -240,7 +242,8 @@ const processClientLogo = async (logoPath, position) => {
     return {
       position: position,
       error: 'Processing failed',
-      details: error.message
+      details: error.message,
+      success: false
     };
   }
 };
@@ -260,16 +263,6 @@ exports.uploadBase64Logos = async (req, res) => {
       secondaryLogo ? 'Secondary logo present' : 'No secondary logo'
     );
     
-    // CRITICAL FIX: Handle authentication check - ensure user is authorized
-    if (!req.session || !req.session.user || req.session.user.role !== 'admin') {
-      console.log('User session:', req.session ? 'exists' : 'not found');
-      if (req.session && req.session.user) {
-        console.log('User role:', req.session.user.role);
-      }
-      // For testing/debugging, temporarily bypass auth check
-      console.log('Warning: Proceeding despite potential auth issue - TESTING MODE');
-    }
-    
     // Process logos if provided
     if (primaryLogo) {
       try {
@@ -282,7 +275,8 @@ exports.uploadBase64Logos = async (req, res) => {
         results.push({
           position: 'primary',
           error: 'Processing failed',
-          details: primaryError.message || 'Unknown error'
+          details: primaryError.message || 'Unknown error',
+          success: false
         });
       }
     }
@@ -298,7 +292,8 @@ exports.uploadBase64Logos = async (req, res) => {
         results.push({
           position: 'secondary',
           error: 'Processing failed',
-          details: secondaryError.message || 'Unknown error'
+          details: secondaryError.message || 'Unknown error',
+          success: false
         });
       }
     }
@@ -309,7 +304,8 @@ exports.uploadBase64Logos = async (req, res) => {
       console.error('No logos were processed in request');
       return res.status(400).json({ 
         error: 'No logos were processed',
-        details: 'No base64 data was provided'
+        details: 'No base64 data was provided',
+        success: false
       });
     }
     
@@ -317,19 +313,24 @@ exports.uploadBase64Logos = async (req, res) => {
     const hasErrors = results.some(result => result.error);
     const successCount = results.filter(result => result.success).length;
     
-    res.status(hasErrors && successCount === 0 ? 400 : 200).json({ 
+    // CRITICAL FIX: Always return a properly formatted response
+    const responseObj = { 
       message: successCount > 0 ? 
         `${successCount} logo(s) processed successfully` : 
         'Failed to process logos',
       success: successCount > 0,
       uploads: results
-    });
+    };
+    
+    console.log('Sending response:', responseObj);
+    res.status(hasErrors && successCount === 0 ? 400 : 200).json(responseObj);
     
   } catch (error) {
     console.error('Error uploading base64 logos:', error);
     res.status(500).json({ 
       error: 'Failed to process logo uploads', 
-      details: error.message || 'Unknown server error'
+      details: error.message || 'Unknown server error',
+      success: false
     });
   }
 };
@@ -346,7 +347,8 @@ const processBase64Logo = async (base64Data, position) => {
       return {
         position,
         error: 'Invalid base64 format',
-        details: 'The data must be a valid base64-encoded image'
+        details: 'The data must be a valid base64-encoded image',
+        success: false
       };
     }
     
@@ -374,7 +376,7 @@ const processBase64Logo = async (base64Data, position) => {
       
       console.log(`${position} logo verified in database with ID: ${verifiedLogo.id}`);
       
-      // Return success
+      // Return success with standardized format
       return {
         position: position,
         success: true,
@@ -385,7 +387,8 @@ const processBase64Logo = async (base64Data, position) => {
       return {
         position: position,
         error: 'Database update failed',
-        details: dbError.message || 'Unknown database error'
+        details: dbError.message || 'Unknown database error',
+        success: false
       };
     }
   } catch (error) {
@@ -393,7 +396,8 @@ const processBase64Logo = async (base64Data, position) => {
     return {
       position: position,
       error: 'Processing failed',
-      details: error.message || 'Unknown error'
+      details: error.message || 'Unknown error',
+      success: false
     };
   }
 };

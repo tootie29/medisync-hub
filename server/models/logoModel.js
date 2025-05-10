@@ -42,6 +42,8 @@ exports.updateLogo = async (logo) => {
   const position = logo.position;
   console.log(`Model: Processing logo update for position: ${position}`);
   console.log(`Model: Logo URL length: ${logo.url.length} characters`);
+  console.log(`Model: Logo URL type: ${typeof logo.url}`); // Debug type
+  console.log(`Model: Logo URL starts with: ${logo.url.substring(0, 30)}...`); // Debug content
   
   let connection;
   let logoId = logo.id || uuidv4();
@@ -62,7 +64,6 @@ exports.updateLogo = async (logo) => {
     
     console.log(`Model: Check for existing ${position} logo returned:`, existingLogos.length);
     
-    // CRITICAL FIX: Explicitly handle the update as a two-step operation with better error logging
     try {
       // First delete existing logo
       const [deleteResult] = await connection.query(
@@ -105,6 +106,8 @@ exports.updateLogo = async (logo) => {
     }
     
     console.log(`Model: Verified logo saved for position ${position} with ID ${logoId}`);
+    console.log(`Model: Saved logo URL type: ${typeof verifyRows[0].url}`);
+    console.log(`Model: Saved logo URL length: ${verifyRows[0].url.length}`);
     
     return logoId;
   } catch (error) {
