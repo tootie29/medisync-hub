@@ -27,6 +27,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
 }) => {
   const [logo, setLogo] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>(currentLogoUrl);
+  const [uploading, setUploading] = useState<boolean>(false);
 
   React.useEffect(() => {
     setPreviewUrl(currentLogoUrl);
@@ -58,17 +59,29 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
     if (!logo) return;
     
     try {
+      setUploading(true);
       console.log(`LogoManagement: Uploading ${logoType} logo`);
       
       // Create form data for upload
       const formData = new FormData();
       formData.append('file', logo);
       
-      const response = await axios.post(`/api/upload-logo/${logoType}`, formData, {
+      // FIXED: Use the correct endpoint path
+      const endpoint = `/api/logos/upload-logo/${logoType}`;
+      console.log(`LogoUploader: Using endpoint ${endpoint}`);
+      
+      const response = await axios.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
+        },
+        timeout: 30000, // 30 seconds timeout
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total!);
+          console.log(`Upload progress: ${percentCompleted}%`);
         }
       });
+      
+      console.log('LogoUploader: Server response:', response);
       
       if (response.data && response.data.success) {
         console.log(`LogoManagement: ${logoType} logo uploaded successfully`);
@@ -83,12 +96,15 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
         onLogoUpdated();
         return true;
       } else {
-        throw new Error('Upload failed');
+        console.error('LogoUploader: Upload failed with response:', response.data);
+        throw new Error(response.data?.error || 'Upload failed without specific error');
       }
     } catch (error) {
       console.error(`Error uploading ${logoType} logo:`, error);
-      onError(`Failed to upload ${logoType} logo`);
+      onError(`Failed to upload ${logoType} logo: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -128,7 +144,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
           accept="image/*"
           onChange={handleLogoChange}
           className="cursor-pointer"
-          disabled={isLoading}
+          disabled={isLoading || uploading}
         />
         {logo && (
           <p className="text-xs text-gray-500 mt-1">
@@ -140,11 +156,11 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
       {logo && (
         <Button
           onClick={handleUpload}
-          disabled={isLoading || !logo}
+          disabled={isLoading || uploading || !logo}
           className="mt-2 bg-medical-primary hover:bg-medical-secondary text-white w-full"
           size="sm"
         >
-          {isLoading ? (
+          {uploading ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Uploading...

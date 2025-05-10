@@ -58,10 +58,9 @@ export const uploadLogo = async (
     // Create FormData object with the file
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('position', position);
     
-    // Use the most direct API endpoint possible
-    const endpoint = `/api/upload-logo/${position}`;
+    // FIXED: Use the correct endpoint path as defined in logoRoutes.js
+    const endpoint = `/api/logos/upload-logo/${position}`;
     console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
     
     // Add debug info for this request
@@ -82,6 +81,7 @@ export const uploadLogo = async (
     
     console.log('FileUploader: Response status:', response.status);
     console.log('FileUploader: Response content-type:', response.headers['content-type']);
+    console.log('FileUploader: Response data:', response.data);
     
     // Validate response format first
     if (!response.data || typeof response.data !== 'object') {
@@ -117,7 +117,7 @@ export const uploadLogo = async (
       }
     }
     
-    throw error;
+    throw new Error('Upload failed');
   }
 };
 
@@ -135,7 +135,7 @@ export const uploadBase64ToDatabase = async (
     };
     
     // Use simpler endpoint
-    const endpoint = `/api/upload-base64-logo/${position}`;
+    const endpoint = `/api/logos/upload-base64-logo/${position}`;
     console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
     
     const response = await axios.post(endpoint, payload, {
