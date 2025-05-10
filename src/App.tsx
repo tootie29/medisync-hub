@@ -4,6 +4,7 @@ import {
   createBrowserRouter,
   RouterProvider,
   Route,
+  Navigate,
 } from "react-router-dom";
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
@@ -17,6 +18,7 @@ import VerifyEmail from '@/pages/VerifyEmail';
 import Certificate from '@/pages/Certificate';
 import BMICalculator from '@/pages/BMICalculator';
 import HealthMonitoring from '@/pages/HealthMonitoring';
+import NotFound from '@/pages/NotFound';
 
 const router = createBrowserRouter([
   {
@@ -44,6 +46,10 @@ const router = createBrowserRouter([
     element: <MedicalRecords />,
   },
   {
+    path: "/record",
+    element: <Navigate to="/medical-records" replace />,
+  },
+  {
     path: "/appointments",
     element: <Appointments />,
   },
@@ -66,6 +72,10 @@ const router = createBrowserRouter([
   {
     path: "/health-monitoring",
     element: <HealthMonitoring />
+  },
+  {
+    path: "*",
+    element: <NotFound />
   }
 ]);
 
