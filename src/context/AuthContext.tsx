@@ -33,21 +33,26 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (userData: Partial<User>, password: string) => Promise<void>;
+  register: (userData: Partial<User>, password: string) => Promise<{ requiresVerification?: boolean, verificationLink?: string }>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   isRegistering: boolean;
+  resendVerification: (email: string) => Promise<{ verificationLink?: string }>;
+  verificationEmail: string | null;
+  setVerificationEmail: (email: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface RegisteredUser extends User {
   password: string;
+  emailVerified?: boolean;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
   const isPreviewMode = window.location.hostname.includes('lovableproject.com');
   
   const getRegisteredUsers = (): RegisteredUser[] => {
@@ -91,6 +96,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         
         if (foundRegisteredUser) {
+          // Check if email is verified in preview mode
+          if (foundRegisteredUser.emailVerified === false) {
+            setVerificationEmail(email);
+            setIsLoading(false);
+            throw new Error('Email not verified. Please check your email for the verification link or request a new one.');
+          }
+
           const { password: _, ...userWithoutPassword } = foundRegisteredUser;
           setUser(userWithoutPassword);
           localStorage.setItem('medisyncUser', JSON.stringify(userWithoutPassword));
@@ -128,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           gender: response.data.gender as 'male' | 'female' | 'other',
           address: response.data.address || '',
           emergencyContact: response.data.emergency_contact || '',
+          faculty: response.data.faculty || '',
           ...(response.data.role === 'student' && {
             studentId: response.data.student_id || '',
             department: response.data.department || '',
@@ -143,8 +156,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(loggedInUser);
         localStorage.setItem('medisyncUser', JSON.stringify(loggedInUser));
         toast.success(`Welcome, ${loggedInUser.name}!`);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Login API error:', error);
+        
+        // Check if this is a verification required error
+        if (error.response?.status === 403 && error.response?.data?.requiresVerification) {
+          setVerificationEmail(email);
+          throw new Error('Email not verified. Please check your email for the verification link or request a new one.');
+        }
         
         const foundUser = SAMPLE_USERS.find(u => u.email === email);
         
@@ -221,10 +240,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         
         await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Generate mock verification token
+        const verificationToken = Math.random().toString(36).substring(2, 15) + 
+                                Math.random().toString(36).substring(2, 15);
+                                
+        const verificationLink = `http://localhost:5173/verify/${verificationToken}`;
         
         const registeredUser: RegisteredUser = {
           ...newUser,
-          password: password
+          password: password,
+          emailVerified: false, // Email is not verified by default
         };
         
         const currentUsers = getRegisteredUsers();
@@ -232,41 +258,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveRegisteredUsers(currentUsers);
         console.log('Saved registered user:', registeredUser.email);
         
-        setUser(newUser);
-        localStorage.setItem('medisyncUser', JSON.stringify(newUser));
-        toast.success('Registration successful!');
-        return;
+        // Set the email for verification
+        setVerificationEmail(userData.email || null);
+        
+        toast.success('Registration successful! Please verify your email before logging in.');
+        
+        return { 
+          requiresVerification: true,
+          verificationLink
+        };
       }
       
       const response = await apiClient.post('/users', formattedData);
       console.log('Registration API response:', response.data);
       
-      const newUser: User = {
-        id: response.data.id,
-        email: response.data.email,
-        name: response.data.name,
-        role: response.data.role as UserRole,
-        phone: response.data.phone || '',
-        dateOfBirth: response.data.date_of_birth || '',
-        gender: response.data.gender as 'male' | 'female' | 'other',
-        address: response.data.address || '',
-        emergencyContact: response.data.emergency_contact || '',
-        faculty: response.data.faculty || '',
-        ...(response.data.role === 'student' && {
-          studentId: response.data.student_id || '',
-          department: response.data.department || '',
-        }),
-        ...(response.data.role === 'staff' && {
-          staffId: response.data.staff_id || '',
-          position: response.data.position || '',
-        }),
-        createdAt: response.data.created_at,
-        updatedAt: response.data.updated_at,
-      };
+      // Set the email for verification
+      setVerificationEmail(userData.email || null);
       
-      setUser(newUser);
-      localStorage.setItem('medisyncUser', JSON.stringify(newUser));
-      toast.success('Registration successful!');
+      toast.success('Registration successful! Please verify your email before logging in.');
+
+      return { 
+        requiresVerification: true,
+        verificationLink: response.data.verificationLink
+      };
     } catch (error) {
       console.error('Registration error:', error);
       let errorMessage = 'Registration failed';
@@ -328,7 +342,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           department: userData.department,
         }),
         ...(user.role === 'staff' && {
-          staff_id: userData.staffId,
+          staffId: userData.staffId,
           position: userData.position,
         }),
       };
@@ -360,8 +374,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resendVerification = async (email: string) => {
+    setIsLoading(true);
+    try {
+      if (isPreviewMode) {
+        // Generate mock verification token
+        const verificationToken = Math.random().toString(36).substring(2, 15) + 
+                               Math.random().toString(36).substring(2, 15);
+                               
+        const verificationLink = `http://localhost:5173/verify/${verificationToken}`;
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        toast.success('Verification email sent. Please check your inbox.');
+        
+        return { verificationLink };
+      }
+      
+      const response = await apiClient.post('/users/resend-verification', { email });
+      
+      toast.success('Verification email sent. Please check your inbox.');
+      
+      return { verificationLink: response.data.verificationLink };
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      let errorMessage = 'Failed to resend verification email';
+      
+      if (axios.isAxiosError(error) && error.response) {
+        errorMessage = error.response.data?.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isRegistering, login, logout, register, updateProfile }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isLoading, 
+        isRegistering, 
+        login, 
+        logout, 
+        register, 
+        updateProfile,
+        resendVerification,
+        verificationEmail,
+        setVerificationEmail
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

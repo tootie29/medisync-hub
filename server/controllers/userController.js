@@ -1,4 +1,3 @@
-
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
 
@@ -38,6 +37,14 @@ exports.createUser = async (req, res) => {
       userData.id = uuidv4();
     }
     
+    // Generate a verification token
+    const verificationToken = Math.random().toString(36).substring(2, 15) + 
+                             Math.random().toString(36).substring(2, 15);
+    
+    // Token expires in 24 hours
+    const tokenExpiry = new Date();
+    tokenExpiry.setHours(tokenExpiry.getHours() + 24);
+    
     // Process the input data to match database column names
     const userDataForDb = {
       id: userData.id,
@@ -54,16 +61,28 @@ exports.createUser = async (req, res) => {
       staffId: userData.staff_id || userData.staffId,
       position: userData.position,
       faculty: userData.faculty,
-      password: userData.password
+      password: userData.password,
+      emailVerified: false,
+      verificationToken: verificationToken,
+      tokenExpiry: tokenExpiry
     };
     
     console.log('Processed user data for DB:', userDataForDb);
     
     const newUser = await userModel.create(userDataForDb);
     
+    // In a real application, you would send an email with the verification link
+    // For now, we'll just return the token in the response
+    const verificationLink = `${req.protocol}://${req.get('host')}/api/users/verify/${verificationToken}`;
+    console.log('Verification link:', verificationLink);
+    
     // Don't send the password back in the response
     const { password, ...userWithoutPassword } = newUser;
-    res.status(201).json(userWithoutPassword);
+    res.status(201).json({
+      ...userWithoutPassword,
+      message: 'Registration successful! Please verify your email.',
+      verificationLink // In production, this would be sent via email, not in the response
+    });
   } catch (error) {
     console.error('Error in createUser controller:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -124,6 +143,14 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
     
+    // Check if email is verified
+    if (!user.email_verified) {
+      return res.status(403).json({ 
+        message: 'Email not verified. Please check your email for the verification link.',
+        requiresVerification: true
+      });
+    }
+    
     // Check if password matches
     console.log('Checking password match:', 
       user.password === password ? 'Password matches' : 'Password does not match');
@@ -164,6 +191,62 @@ exports.getUsersByRole = async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error('Error in getUsersByRole controller:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// New endpoint for email verification
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const result = await userModel.verifyEmail(token);
+    
+    if (result.success) {
+      res.status(200).json({ 
+        message: 'Email verified successfully! You can now log in.', 
+        email: result.email 
+      });
+    } else {
+      res.status(400).json({ message: result.message });
+    }
+  } catch (error) {
+    console.error('Error in verifyEmail controller:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// New endpoint for resending verification email
+exports.resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    
+    const user = await userModel.getUserByEmail(email);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    if (user.email_verified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+    
+    // Generate a new verification token
+    const token = await userModel.generateVerificationToken(user.id);
+    
+    // In a real application, you would send an email with the verification link
+    const verificationLink = `${req.protocol}://${req.get('host')}/api/users/verify/${token}`;
+    
+    res.json({ 
+      message: 'Verification email sent! Please check your inbox.',
+      verificationLink // In production, this would be sent via email, not in the response
+    });
+  } catch (error) {
+    console.error('Error in resendVerification controller:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

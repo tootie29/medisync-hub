@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -7,15 +8,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
 import { AlertCircle, ArrowLeft, User, Lock, Eye, EyeOff } from 'lucide-react';
+import EmailVerification from '@/components/auth/EmailVerification';
 
 const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, verificationEmail, setVerificationEmail } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [connectivityError, setConnectivityError] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [showVerification, setShowVerification] = React.useState(false);
+
+  React.useEffect(() => {
+    // If there's a verification email, show the verification screen
+    if (verificationEmail) {
+      setEmail(verificationEmail);
+      setShowVerification(true);
+    }
+  }, [verificationEmail]);
 
   const handleRetry = () => {
     window.location.reload();
@@ -46,6 +57,12 @@ const Login: React.FC = () => {
     } catch (error: any) {
       console.error('Login error:', error);
       
+      // Check if this might be due to an unverified email
+      if (error.message && error.message.toLowerCase().includes('not verified')) {
+        setShowVerification(true);
+        return;
+      }
+      
       // Check if this is a network connectivity error
       if (error.message && (
           error.message.includes('Network Error') || 
@@ -61,6 +78,19 @@ const Login: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const handleBackToLogin = () => {
+    setShowVerification(false);
+    setVerificationEmail(null);
+  };
+
+  if (showVerification) {
+    return (
+      <AuthLayout>
+        <EmailVerification email={email} onBack={handleBackToLogin} />
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>

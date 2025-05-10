@@ -6,6 +6,10 @@ const userController = require('../controllers/userController');
 // Get users by role - this needs to come BEFORE the ID route
 router.get('/role/:role', userController.getUsersByRole);
 
+// Email verification routes
+router.get('/verify/:token', userController.verifyEmail);
+router.post('/resend-verification', userController.resendVerification);
+
 // Get all users
 router.get('/', userController.getAllUsers);
 

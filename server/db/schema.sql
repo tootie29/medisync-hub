@@ -1,4 +1,3 @@
-
 -- Create the database
 CREATE DATABASE IF NOT EXISTS medi_hub;
 USE medi_hub;
@@ -18,7 +17,11 @@ CREATE TABLE IF NOT EXISTS users (
   department VARCHAR(100),
   staff_id VARCHAR(50),
   position VARCHAR(100),
+  faculty VARCHAR(100),
   password VARCHAR(255),
+  email_verified BOOLEAN DEFAULT FALSE,
+  verification_token VARCHAR(100),
+  token_expiry TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

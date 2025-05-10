@@ -8,29 +8,67 @@ import {
   TabsList, 
   TabsTrigger 
 } from '@/components/ui/tabs';
-import { GraduationCap, Users, ArrowLeft } from 'lucide-react';
+import { GraduationCap, Users, ArrowLeft, Mail } from 'lucide-react';
 import RegistrationForm from '@/components/forms/RegistrationForm';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import EmailVerification from '@/components/auth/EmailVerification';
+import { useAuth } from '@/context/AuthContext';
 
 const Register: React.FC = () => {
   const [activeTab, setActiveTab] = useState('student');
   const navigate = useNavigate();
+  const { verificationEmail } = useAuth();
+  const [showVerification, setShowVerification] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   
+  React.useEffect(() => {
+    // If there's a verification email, show the verification screen
+    if (verificationEmail) {
+      setRegisteredEmail(verificationEmail);
+      setShowVerification(true);
+    }
+  }, [verificationEmail]);
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
 
   const handleBack = () => {
-    navigate(-1); // Go back to the previous page
+    if (showVerification) {
+      setShowVerification(false);
+    } else {
+      navigate(-1); // Go back to the previous page
+    }
   };
 
-  const handleSuccess = () => {
-    toast.success("Registration successful! Redirecting to dashboard...");
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 1500);
+  const handleSuccess = (email: string) => {
+    setRegisteredEmail(email);
+    setShowVerification(true);
   };
+
+  const handleBackToRegister = () => {
+    setShowVerification(false);
+  };
+
+  if (showVerification) {
+    return (
+      <AuthLayout>
+        <div className="mb-4">
+          <Button 
+            variant="ghost" 
+            className="p-0 h-auto flex items-center text-medical-primary hover:text-medical-secondary"
+            onClick={handleBack}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
+        </div>
+        
+        <EmailVerification email={registeredEmail} onBack={handleBackToRegister} />
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>

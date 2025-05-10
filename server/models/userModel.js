@@ -1,4 +1,3 @@
-
 const { pool } = require('../db/config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -35,21 +34,25 @@ class UserModel {
       const { 
         email, name, role, phone, dateOfBirth, gender, 
         address, emergencyContact, studentId, department, 
-        staffId, position, faculty, password 
+        staffId, position, faculty, password,
+        emailVerified, verificationToken, tokenExpiry
       } = userData;
 
       // Log the password to verify it's being passed correctly
       console.log('Creating user with password:', password ? 'Password provided' : 'No password provided');
       console.log('Faculty/College value:', faculty || 'Not provided');
+      console.log('Verification token:', verificationToken || 'Not provided');
 
       const [result] = await pool.query(
         `INSERT INTO users (
           id, email, name, role, phone, date_of_birth, gender, 
-          address, emergency_contact, student_id, department, staff_id, position, faculty, password
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          address, emergency_contact, student_id, department, staff_id, position, faculty, password,
+          email_verified, verification_token, token_expiry
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, email, name, role, phone, dateOfBirth, gender, 
-          address, emergencyContact, studentId, department, staffId, position, faculty, password
+          address, emergencyContact, studentId, department, staffId, position, faculty, password,
+          emailVerified || false, verificationToken || null, tokenExpiry || null
         ]
       );
 
@@ -65,7 +68,8 @@ class UserModel {
       const { 
         email, name, role, phone, dateOfBirth, gender, 
         address, emergencyContact, studentId, department, 
-        staffId, position, faculty, password
+        staffId, position, faculty, password,
+        emailVerified, verificationToken, tokenExpiry
       } = userData;
 
       const [result] = await pool.query(
@@ -83,12 +87,16 @@ class UserModel {
           staff_id = IFNULL(?, staff_id), 
           position = IFNULL(?, position),
           faculty = IFNULL(?, faculty),
-          password = IFNULL(?, password)
+          password = IFNULL(?, password),
+          email_verified = IFNULL(?, email_verified),
+          verification_token = ?,
+          token_expiry = ?
         WHERE id = ?`,
         [
           email, name, role, phone, dateOfBirth, gender, 
           address, emergencyContact, studentId, department, 
-          staffId, position, faculty, password, id
+          staffId, position, faculty, password,
+          emailVerified, verificationToken, tokenExpiry, id
         ]
       );
 
@@ -126,6 +134,55 @@ class UserModel {
       return rows[0];
     } catch (error) {
       console.error('Error fetching user by email:', error);
+      throw error;
+    }
+  }
+  
+  async verifyEmail(token) {
+    try {
+      // Check if the token exists and is not expired
+      const [rows] = await pool.query(
+        'SELECT * FROM users WHERE verification_token = ? AND token_expiry > NOW()',
+        [token]
+      );
+      
+      if (rows.length === 0) {
+        return { success: false, message: 'Invalid or expired verification token' };
+      }
+      
+      // Update the user to mark email as verified
+      const userId = rows[0].id;
+      await pool.query(
+        'UPDATE users SET email_verified = TRUE, verification_token = NULL, token_expiry = NULL WHERE id = ?',
+        [userId]
+      );
+      
+      return { success: true, email: rows[0].email };
+    } catch (error) {
+      console.error('Error verifying email:', error);
+      throw error;
+    }
+  }
+  
+  async generateVerificationToken(userId) {
+    try {
+      // Generate a random token
+      const token = Math.random().toString(36).substring(2, 15) + 
+                   Math.random().toString(36).substring(2, 15);
+      
+      // Token expires in 24 hours
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 24);
+      
+      // Update the user with the new token
+      await pool.query(
+        'UPDATE users SET verification_token = ?, token_expiry = ? WHERE id = ?',
+        [token, expiry, userId]
+      );
+      
+      return token;
+    } catch (error) {
+      console.error('Error generating verification token:', error);
       throw error;
     }
   }

@@ -17,7 +17,7 @@ import { UserPlus, User, Loader2, BookOpen, Eye, EyeOff } from 'lucide-react';
 
 interface RegistrationFormProps {
   role: 'student' | 'staff';
-  onSuccess?: () => void;
+  onSuccess?: (email: string) => void;
 }
 
 const FACULTY_OPTIONS = [
@@ -115,7 +115,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
     if (!validateForm()) return;
     
     try {
-      await register(
+      const result = await register(
         {
           name: formData.name,
           email: formData.email,
@@ -138,9 +138,15 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
         formData.password
       );
       
-      if (onSuccess) {
-        onSuccess();
+      if (result.requiresVerification) {
+        // Email verification is required
+        if (onSuccess) {
+          onSuccess(formData.email);
+        } else {
+          navigate('/login');
+        }
       } else {
+        // No verification required, direct login
         navigate('/dashboard');
       }
     } catch (error) {
