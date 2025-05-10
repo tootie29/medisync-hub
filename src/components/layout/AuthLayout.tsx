@@ -37,10 +37,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
     // Listen for refresh events from the logo management component
     const refreshHandler = () => {
       console.log('AuthLayout: Received logo refresh event');
-      // Add slight delay to ensure database update completes
+      // Add a more significant delay to ensure database update completes
       setTimeout(() => {
         fetchLogos();
-      }, 500);
+      }, 2000);
     };
     
     window.addEventListener('refreshLogos', refreshHandler);
@@ -60,8 +60,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
       const timestamp = Date.now();
       const cacheBuster = `?t=${timestamp}&nocache=${Math.random()}`;
       
-      // Fetch primary logo directly with cache busting
-      const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`);
+      // Fetch primary logo directly with cache busting and improved error handling
+      const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`, {
+        withCredentials: true
+      });
       console.log('AuthLayout: Primary logo response received:', primaryResponse.data);
       
       if (primaryResponse.data && primaryResponse.data.url) {
@@ -84,8 +86,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
         console.log('AuthLayout: Using fallback for primary logo');
       }
       
-      // Fetch secondary logo directly with cache busting
-      const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`);
+      // Fetch secondary logo with the same improvements
+      const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`, {
+        withCredentials: true
+      });
       console.log('AuthLayout: Secondary logo response received:', secondaryResponse.data);
       
       if (secondaryResponse.data && secondaryResponse.data.url) {

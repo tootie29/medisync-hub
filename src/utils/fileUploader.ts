@@ -50,8 +50,13 @@ export const uploadBase64ToDatabase = async (
     // Add console log to trace the payload and verify data is being sent
     console.log(`FileUploader: Sending ${position} logo payload, data length:`, base64Data.length);
     
-    // Send directly to the base64 endpoint
-    const response = await axios.post('/api/logos/base64', payload);
+    // Make sure the API endpoint is correct and include withCredentials
+    const response = await axios.post('/api/logos/base64', payload, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
     
     if (!response || !response.data) {
       console.error('FileUploader: Received invalid response from server');

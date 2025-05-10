@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive, Terminal, Bug } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
-import { saveFileToPublic, fileToBase64, uploadBase64ToDatabase } from '@/utils/fileUploader';
+import { fileToBase64 } from '@/utils/fileUploader';
 
 const LogoManagement = () => {
   const [primaryLogo, setPrimaryLogo] = useState<File | null>(null);
@@ -197,8 +197,12 @@ const LogoManagement = () => {
           console.log(`${key} data length:`, value.length);
         }
         
-        // Send the base64 data directly to the server
+        // Send the base64 data directly to the server with better error handling
         const response = await axios.post('/api/logos/base64', logoData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          },
           onUploadProgress: (progressEvent) => {
             if (progressEvent.total) {
               const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -225,17 +229,14 @@ const LogoManagement = () => {
             input.value = '';
           });
           
-          // Force refresh the logos
-          setLastRefresh(Date.now());
-          
-          // Trigger a refresh of the authentication layout
-          window.dispatchEvent(new CustomEvent('refreshLogos'));
-          console.log('Dispatched refreshLogos event');
-          
-          // Add slight delay before refreshing to ensure database update completes
+          // Force refresh the logos with a longer delay to ensure database update completes
           setTimeout(() => {
+            setLastRefresh(Date.now());
+            // Trigger a refresh of the authentication layout
+            window.dispatchEvent(new CustomEvent('refreshLogos'));
+            console.log('Dispatched refreshLogos event');
             fetchLogos();
-          }, 1000);
+          }, 1500);
         } else {
           console.error('Upload failed:', response.data);
           setError('Failed to update logos: ' + (response.data?.error || 'Unknown error'));
