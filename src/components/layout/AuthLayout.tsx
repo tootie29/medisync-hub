@@ -1,20 +1,12 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMediaQuery } from '@/hooks/use-mobile';
-import axios from 'axios';
-import { CLIENT_FALLBACK_LOGO_PATH } from '@/components/settings/SiteSettingsModel';
-import { toast } from 'sonner';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
   title?: string;
-}
-
-interface Logo {
-  id: string;
-  url: string;
-  position: 'primary' | 'secondary';
 }
 
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
@@ -25,117 +17,9 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const isMobile = useMediaQuery("(max-width: 639px)");
   const isSmallDesktop = useMediaQuery("(min-width: 1024px) and (max-width: 1279px)");
   
-  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string>(CLIENT_FALLBACK_LOGO_PATH);
-  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string>(CLIENT_FALLBACK_LOGO_PATH);
-  const [isLoadingLogos, setIsLoadingLogos] = useState(true);
-  const [fetchError, setFetchError] = useState(false);
-
-  useEffect(() => {
-    console.log('AuthLayout: Initial logo fetch');
-    fetchLogos();
-    
-    // Listen for refresh events from the logo management component
-    const refreshHandler = () => {
-      console.log('AuthLayout: Received logo refresh event');
-      // CRITICAL FIX: Add a longer delay to ensure database update completes
-      setTimeout(() => {
-        console.log('AuthLayout: Executing delayed logo fetch after refresh event');
-        fetchLogos();
-      }, 5000); // CRITICAL FIX: Increased from 3000 to 5000ms
-    };
-    
-    window.addEventListener('refreshLogos', refreshHandler);
-    
-    return () => {
-      window.removeEventListener('refreshLogos', refreshHandler);
-    };
-  }, []);
-
-  const fetchLogos = async () => {
-    try {
-      console.log('AuthLayout: Fetching logos from server...');
-      setIsLoadingLogos(true);
-      setFetchError(false);
-      
-      // CRITICAL FIX: Use stronger cache busting to force browser to get fresh data
-      const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000000); // Increased randomness
-      const cacheBuster = `?t=${timestamp}&r=${random}`;
-      
-      // CRITICAL FIX: Include withCredentials and better error handling
-      console.log('AuthLayout: Fetching primary logo...');
-      const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`, {
-        withCredentials: true,
-        headers: {
-          'Cache-Control': 'no-cache, no-store', // Force fresh data
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      console.log('AuthLayout: Primary logo response:', primaryResponse.data);
-      
-      // CRITICAL FIX: Log more details about the response
-      if (primaryResponse.data && primaryResponse.data.url) {
-        const url = primaryResponse.data.url;
-        console.log('AuthLayout: Primary logo URL:', url.substring(0, 50) + '...');
-        
-        // Check if it's a base64 string or a file path
-        if (url.startsWith('data:image/')) {
-          console.log('AuthLayout: Primary logo is a base64 image, length:', url.length);
-          // CRITICAL FIX: Force refresh by appending a dummy query param
-          setPrimaryLogoUrl(`${url}#${timestamp}`);
-        } else {
-          console.log('AuthLayout: Primary logo is a file path');
-          // Add cache busting to file path
-          const fullUrl = `${url}${url.includes('?') ? '&' : '?'}t=${timestamp}`;
-          setPrimaryLogoUrl(fullUrl);
-        }
-      } else {
-        console.log('AuthLayout: No primary logo found, using fallback');
-        setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}${cacheBuster}`);
-      }
-      
-      // CRITICAL FIX: Same improvements for secondary logo
-      console.log('AuthLayout: Fetching secondary logo...');
-      const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`, {
-        withCredentials: true,
-        headers: {
-          'Cache-Control': 'no-cache, no-store', // Force fresh data
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      console.log('AuthLayout: Secondary logo response:', secondaryResponse.data);
-      
-      if (secondaryResponse.data && secondaryResponse.data.url) {
-        const url = secondaryResponse.data.url;
-        console.log('AuthLayout: Secondary logo URL:', url.substring(0, 50) + '...');
-        
-        if (url.startsWith('data:image/')) {
-          console.log('AuthLayout: Secondary logo is a base64 image, length:', url.length);
-          // CRITICAL FIX: Force refresh by appending a dummy query param
-          setSecondaryLogoUrl(`${url}#${timestamp}`);
-        } else {
-          console.log('AuthLayout: Secondary logo is a file path');
-          const fullUrl = `${url}${url.includes('?') ? '&' : '?'}t=${timestamp}`;
-          setSecondaryLogoUrl(fullUrl);
-        }
-      } else {
-        console.log('AuthLayout: No secondary logo found, using fallback');
-        setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}${cacheBuster}`);
-      }
-      
-    } catch (error) {
-      console.error('AuthLayout: Error fetching logos:', error);
-      setFetchError(true);
-      
-      const timestamp = Date.now();
-      setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
-      setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
-    } finally {
-      setIsLoadingLogos(false);
-    }
-  };
+  // Hardcoded logo paths
+  const primaryLogoUrl = "/lovable-uploads/f843d17e-c042-4114-8d85-23f87017db35.png"; // School logo
+  const secondaryLogoUrl = "/lovable-uploads/12e46415-ff94-4b60-9eca-349dff03581c.png"; // College logo
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
@@ -174,23 +58,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
             <div className="flex flex-col justify-center items-center">
               <img 
                 src={primaryLogoUrl} 
-                alt="Olivarez Clinic Logo" 
+                alt="School Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
-                onError={(e) => {
-                  console.error('Failed to load primary logo in AuthLayout:', primaryLogoUrl);
-                  e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
-                }}
               />
             </div>
             <div className="flex flex-col justify-center items-center">
               <img 
                 src={secondaryLogoUrl} 
-                alt="Olivarez Clinic Logo" 
+                alt="College Logo" 
                 className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
-                onError={(e) => {
-                  console.error('Failed to load secondary logo in AuthLayout:', secondaryLogoUrl);
-                  e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
-                }}
               />
             </div>
           </div>
@@ -212,23 +88,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                   <div className="flex flex-col justify-center">
                     <img 
                       src={primaryLogoUrl} 
-                      alt="Olivarez Clinic Logo" 
+                      alt="School Logo" 
                       className="h-16 w-auto object-contain"
-                      onError={(e) => {
-                        console.error('Failed to load primary logo in AuthLayout (mobile):', primaryLogoUrl);
-                        e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
-                      }}
                     />
                   </div>
                   <div className="flex flex-col justify-center">
                     <img 
                       src={secondaryLogoUrl} 
-                      alt="Olivarez Clinic Logo" 
+                      alt="College Logo" 
                       className="h-16 w-auto object-contain"
-                      onError={(e) => {
-                        console.error('Failed to load secondary logo in AuthLayout (mobile):', secondaryLogoUrl);
-                        e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
-                      }}
                     />
                   </div>
                 </div>
@@ -238,23 +106,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
                   <div className="flex justify-center">
                     <img 
                       src={primaryLogoUrl} 
-                      alt="Olivarez Clinic Logo" 
+                      alt="School Logo" 
                       className="h-14 w-auto object-contain"
-                      onError={(e) => {
-                        console.error('Failed to load primary logo in AuthLayout (tablet):', primaryLogoUrl);
-                        e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
-                      }}
                     />
                   </div>
                   <div className="flex justify-center">
                     <img 
                       src={secondaryLogoUrl} 
-                      alt="Olivarez Clinic Logo" 
+                      alt="College Logo" 
                       className="h-14 w-auto object-contain"
-                      onError={(e) => {
-                        console.error('Failed to load secondary logo in AuthLayout (tablet):', secondaryLogoUrl);
-                        e.currentTarget.src = CLIENT_FALLBACK_LOGO_PATH;
-                      }}
                     />
                   </div>
                 </div>
