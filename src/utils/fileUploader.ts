@@ -78,8 +78,16 @@ export const saveFileToPublic = async (file: File): Promise<string> => {
     // Upload to lovable's upload endpoint
     const response = await axios.post('/api/upload', formData);
     
-    if (!response.data || !response.data.url) {
-      throw new Error('Invalid response from server');
+    // Add defensive check against null/undefined response
+    if (!response || !response.data) {
+      console.error('FileUploader: Received invalid response from server');
+      throw new Error('Invalid response from server: empty response');
+    }
+    
+    // Check if the response.data exists and contains a url
+    if (typeof response.data !== 'object' || !response.data.url) {
+      console.error('FileUploader: Invalid response structure:', response.data);
+      throw new Error('Invalid response from server: missing URL');
     }
     
     const fullUrl = response.data.url;
