@@ -16,11 +16,13 @@ const PatientRecordsTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState(false);
 
   // Function to fetch users from the API
   useEffect(() => {
     const fetchUsers = async () => {
       setIsLoading(true);
+      setConnectionError(false);
       const isPreviewMode = window.location.hostname.includes('lovableproject.com');
       
       if (isPreviewMode) {
@@ -41,26 +43,44 @@ const PatientRecordsTable: React.FC = () => {
         // Get API URL using the same logic as in DataContext
         const getApiUrl = () => {
           const hostname = window.location.hostname;
+          
+          // Check if we're on the production domain
           if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
+            console.log('Using production API URL');
             return 'https://api.climasys.entrsolutions.com/api';
           }
           
+          // Check for environment variable
           const envApiUrl = import.meta.env.VITE_API_URL;
           if (envApiUrl) {
+            console.log('Using environment API URL:', envApiUrl);
             return envApiUrl;
           }
           
+          // Default to localhost
+          console.log('Using localhost API URL');
           return 'http://localhost:8080/api';
         };
         
         const API_URL = getApiUrl();
         console.log('Fetching users from API:', API_URL);
         
-        const response = await axios.get(`${API_URL}/users`);
+        // Configure Axios with additional settings
+        const response = await axios.get(`${API_URL}/users`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          timeout: 10000,
+          withCredentials: false // Set to true only if using cookies for auth
+        });
+        
         console.log('Users fetched successfully:', response.data.length);
         setUsers(response.data);
       } catch (error) {
         console.error('Error fetching users:', error);
+        setConnectionError(true);
         // Fallback to sample data if API fails
         setUsers(SAMPLE_USERS);
       } finally {
@@ -119,6 +139,15 @@ const PatientRecordsTable: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        
+        {connectionError && (
+          <div className="bg-destructive/15 p-3 rounded-md mb-4">
+            <p className="text-sm text-destructive">
+              Unable to connect to the API server. Using sample data instead.
+              Please ensure the API server is running and CORS is properly configured.
+            </p>
+          </div>
+        )}
         
         <div className="rounded-md border">
           <Table>
