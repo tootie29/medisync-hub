@@ -1,7 +1,7 @@
 
 import axios from 'axios';
 
-// Function to generate a unique filename
+// Function to generate a unique filename (for reference only)
 export const generateUniqueFilename = (originalName: string): string => {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 10000);
@@ -19,90 +19,46 @@ export const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Save file to public folder and return the path
+// Process file entirely client-side and return base64 data
 export const saveFileToPublic = async (file: File): Promise<string> => {
   try {
-    console.log('FileUploader: Processing file', file.name, file.type, file.size);
+    console.log('FileUploader: Processing file client-side only', file.name, file.type, file.size);
     
-    // Convert the file to base64 first
+    // Convert the file to base64 directly - no server storage
     const base64Data = await fileToBase64(file);
-    console.log('FileUploader: Converted file to base64');
+    console.log('FileUploader: Converted file to base64, ready for database storage');
     
-    // Create a unique filename
-    const uniqueFilename = generateUniqueFilename(file.name);
-    console.log('FileUploader: Generated unique filename:', uniqueFilename);
+    return base64Data;
+  } catch (error) {
+    console.error('FileUploader: Error processing file:', error);
+    throw error;
+  }
+};
+
+// Upload base64 image directly to database
+export const uploadBase64ToDatabase = async (
+  base64Data: string, 
+  position: 'primary' | 'secondary'
+): Promise<string> => {
+  try {
+    console.log(`FileUploader: Saving ${position} logo directly to database as base64`);
     
-    // Define the path where the file will be saved in the lovable-uploads folder
-    const savePath = `/lovable-uploads/${uniqueFilename}`;
-    console.log('FileUploader: Save path:', savePath);
+    // Create payload with just the base64 data
+    const payload: Record<string, string> = {};
+    payload[`${position}Logo`] = base64Data;
     
-    // Create an image element from the base64 data
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = (e) => {
-        console.error('FileUploader: Error loading image:', e);
-        reject(new Error('Failed to load image'));
-      };
-      img.src = base64Data;
-    });
+    // Send directly to the base64 endpoint
+    const response = await axios.post('/api/logos/base64', payload);
     
-    // Create a canvas to draw the image
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    
-    // Draw the image on the canvas
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Could not get canvas context');
-    }
-    ctx.drawImage(img, 0, 0);
-    
-    // Get the image data as blob
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => {
-        if (b) {
-          resolve(b);
-        } else {
-          reject(new Error('Failed to convert canvas to blob'));
-        }
-      }, file.type);
-    });
-    
-    // Create form data for the upload
-    const formData = new FormData();
-    formData.append('file', blob, uniqueFilename);
-    
-    console.log('FileUploader: Uploading to /api/upload endpoint');
-    // Upload to lovable's upload endpoint
-    const response = await axios.post('/api/upload', formData);
-    
-    // Add defensive check against null/undefined response
     if (!response || !response.data) {
       console.error('FileUploader: Received invalid response from server');
       throw new Error('Invalid response from server: empty response');
     }
     
-    // Check if the response.data exists and contains a url
-    if (typeof response.data !== 'object' || !response.data.url) {
-      console.error('FileUploader: Invalid response structure:', response.data);
-      throw new Error('Invalid response from server: missing URL');
-    }
-    
-    const fullUrl = response.data.url;
-    console.log('FileUploader: File saved successfully:', fullUrl);
-    return fullUrl;
+    console.log(`FileUploader: ${position} logo saved directly to database`);
+    return base64Data;
   } catch (error) {
-    console.error('FileUploader: Error saving file:', error);
-    // Return base64 data as fallback if upload to public folder fails
-    try {
-      console.log('FileUploader: Attempting to use base64 data as fallback');
-      const base64Data = await fileToBase64(file);
-      return base64Data;
-    } catch (innerError) {
-      console.error('FileUploader: Fallback also failed:', innerError);
-      throw error;
-    }
+    console.error('FileUploader: Error saving to database:', error);
+    throw error;
   }
 };
