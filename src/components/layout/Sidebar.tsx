@@ -9,7 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
-  HeartPulse,
+  HeartPulse, // Changed from PulseIcon to HeartPulse
   Home,
   Package,
   Settings,

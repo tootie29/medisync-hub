@@ -1,7 +1,8 @@
+
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HeartPulse, Calendar, Calculator, ClipboardCheck, Pill } from "lucide-react";
+import { HeartPulse, Calendar, Calculator, ClipboardCheck, Pill } from "lucide-react"; // Changed from Pills to Pill
 
 export default function Index() {
   return (

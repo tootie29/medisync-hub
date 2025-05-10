@@ -23,7 +23,7 @@ import {
   Heart,
   LogOut,
   Settings,
-  HeartPulse
+  HeartPulse // Changed from PulseIcon to HeartPulse
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
