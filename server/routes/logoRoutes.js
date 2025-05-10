@@ -1,3 +1,4 @@
+
 const express = require('express');
 const router = express.Router();
 const logoController = require('../controllers/logoController');
@@ -100,17 +101,12 @@ const upload = multer({
   }
 });
 
-// IMPROVED: JSON content type check middleware to prevent routing issues
-const ensureJsonResponse = (req, res, next) => {
-  // Log incoming request details for debugging
-  console.log('Request URL:', req.originalUrl);
-  console.log('Request method:', req.method);
-  console.log('Content-Type header:', req.headers['content-type']);
-  
-  // Force proper JSON responses for all our API endpoints
+// Ensure JSON middleware for API endpoints
+router.use((req, res, next) => {
+  // Set proper content type for all responses
   res.setHeader('Content-Type', 'application/json');
   
-  // CORS headers to ensure proper handling
+  // Add CORS headers
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
@@ -121,10 +117,7 @@ const ensureJsonResponse = (req, res, next) => {
   }
   
   next();
-};
-
-// Apply JSON response middleware to all routes
-router.use(ensureJsonResponse);
+});
 
 // Get all logos
 router.get('/', logoController.getAllLogos);
@@ -132,38 +125,20 @@ router.get('/', logoController.getAllLogos);
 // New diagnostic endpoint
 router.get('/diagnostics', logoController.getUploadDiagnostics);
 
-// Add a new route for client-side stored logos that can handle both path and base64
+// Add a new route for client-side stored logos
 router.post('/client', logoController.uploadClientLogos);
 
-// IMPROVED: Base64 upload route with enhanced error handling
-router.post('/base64', (req, res, next) => {
-  console.log('Base64 upload route hit with method:', req.method);
-  console.log('Request headers:', req.headers);
-  console.log('Request path:', req.path);
-  console.log('Request URL:', req.url);
-  console.log('Request original URL:', req.originalUrl);
-  
-  // Log body existence
-  console.log('Request body exists:', !!req.body);
-  if (req.body) {
-    console.log('Request body keys:', Object.keys(req.body));
-    console.log('primaryLogo exists:', !!req.body.primaryLogo);
-    console.log('secondaryLogo exists:', !!req.body.secondaryLogo);
-  }
-  
-  next();
-}, logoController.uploadBase64Logos);
+// Simplified base64 upload route
+router.post('/base64', logoController.uploadBase64Logos);
 
-// Keep the original route for file uploads
+// Route for file uploads
 router.post('/', upload.fields([
   { name: 'primaryLogo', maxCount: 1 },
   { name: 'secondaryLogo', maxCount: 1 }
 ]), (req, res, next) => {
   console.log('Logo upload request received with files:', req.files);
-  console.log('Request body:', req.body);
   
   if (!req.files || Object.keys(req.files).length === 0) {
-    console.error('No files were uploaded in the request');
     return res.status(400).json({ error: 'No files were uploaded', success: false });
   }
   
@@ -176,57 +151,6 @@ router.post('/', upload.fields([
     fullUploadPath
   };
   
-  // Validate the uploaded files exist on disk before proceeding
-  let filesOk = true;
-  const fileErrors = [];
-  
-  if (req.files.primaryLogo && req.files.primaryLogo[0]) {
-    const primaryPath = req.files.primaryLogo[0].path;
-    if (!fs.existsSync(primaryPath)) {
-      filesOk = false;
-      fileErrors.push(`Primary logo file not saved to disk: ${primaryPath}`);
-      console.error(`Primary logo file not saved to disk: ${primaryPath}`);
-    } else {
-      console.log(`Verified primary logo exists on disk: ${primaryPath}`);
-      
-      // Ensure file has correct permissions
-      try {
-        fs.chmodSync(primaryPath, 0o644); // rw-r--r--
-        console.log(`Set file permissions on: ${primaryPath}`);
-      } catch (permErr) {
-        console.error(`Could not set file permissions: ${permErr.message}`);
-      }
-    }
-  }
-  
-  if (req.files.secondaryLogo && req.files.secondaryLogo[0]) {
-    const secondaryPath = req.files.secondaryLogo[0].path;
-    if (!fs.existsSync(secondaryPath)) {
-      filesOk = false;
-      fileErrors.push(`Secondary logo file not saved to disk: ${secondaryPath}`);
-      console.error(`Secondary logo file not saved to disk: ${secondaryPath}`);
-    } else {
-      console.log(`Verified secondary logo exists on disk: ${secondaryPath}`);
-      
-      // Ensure file has correct permissions
-      try {
-        fs.chmodSync(secondaryPath, 0o644); // rw-r--r--
-        console.log(`Set file permissions on: ${secondaryPath}`);
-      } catch (permErr) {
-        console.error(`Could not set file permissions: ${permErr.message}`);
-      }
-    }
-  }
-  
-  if (!filesOk) {
-    return res.status(500).json({ 
-      error: 'File upload failed - files not saved to disk',
-      details: fileErrors,
-      success: false
-    });
-  }
-  
-  console.log('All files validated, proceeding to controller');
   next();
 }, logoController.uploadLogos);
 

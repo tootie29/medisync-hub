@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Upload, RefreshCw, AlertCircle, Info, FileWarning, Server, HardDrive, Terminal, Bug } from 'lucide-react';
+import { Upload, RefreshCw, AlertCircle, Info, Server } from 'lucide-react';
 import { CLIENT_FALLBACK_LOGO_PATH } from './SiteSettingsModel';
-import { fileToBase64, uploadBase64ToDatabase } from '@/utils/fileUploader';
+import { fileToBase64 } from '@/utils/fileUploader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const LogoManagement = () => {
@@ -18,25 +19,10 @@ const LogoManagement = () => {
   const [isLoadingLogos, setIsLoadingLogos] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [serverInfo, setServerInfo] = useState<string | null>(null);
-  const [serverDetails, setServerDetails] = useState<any>(null);
-  const [diagnosticInfo, setDiagnosticInfo] = useState<Record<string, any>>({});  // Initialize as empty object
-  const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
-  const [uploadAttempts, setUploadAttempts] = useState<number>(0);
 
   useEffect(() => {
     fetchLogos();
-    // Get server health information for diagnostics
-    axios.get('/api/health')
-      .then(response => {
-        setServerDetails(response.data);
-        console.log('Server health info:', response.data);
-      })
-      .catch(error => {
-        console.error('Failed to fetch server health info:', error);
-      });
   }, [lastRefresh]);
 
   const fetchLogos = async () => {
@@ -45,42 +31,24 @@ const LogoManagement = () => {
     try {
       console.log('LogoManagement: Fetching logos...');
       
-      // Add stronger cache busting to force refresh
+      // Add cache busting to force refresh
       const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000000);
-      const cacheBuster = `?t=${timestamp}&r=${random}&nocache=true`;
+      const cacheBuster = `?t=${timestamp}`;
       
-      // FIX: Use withCredentials and better cache control
-      const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`, {
-        withCredentials: true,
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
+      const primaryResponse = await axios.get(`/api/logos/primary${cacheBuster}`);
       console.log('LogoManagement: Primary logo response:', primaryResponse.data);
       
       if (primaryResponse.data && primaryResponse.data.url) {
-        console.log('LogoManagement: Primary logo URL:', primaryResponse.data.url);
-        setPrimaryLogoUrl(`${primaryResponse.data.url}#${timestamp}`);
+        setPrimaryLogoUrl(`${primaryResponse.data.url}${cacheBuster}`);
       } else {
         setPrimaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
       
-      const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`, {
-        withCredentials: true,
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
+      const secondaryResponse = await axios.get(`/api/logos/secondary${cacheBuster}`);
       console.log('LogoManagement: Secondary logo response:', secondaryResponse.data);
       
       if (secondaryResponse.data && secondaryResponse.data.url) {
-        console.log('LogoManagement: Secondary logo URL:', secondaryResponse.data.url);
-        setSecondaryLogoUrl(`${secondaryResponse.data.url}#${timestamp}`);
+        setSecondaryLogoUrl(`${secondaryResponse.data.url}${cacheBuster}`);
       } else {
         setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
       }
@@ -96,20 +64,6 @@ const LogoManagement = () => {
       setSecondaryLogoUrl(`${CLIENT_FALLBACK_LOGO_PATH}?t=${timestamp}`);
     } finally {
       setIsLoadingLogos(false);
-    }
-  };
-
-  const fetchDiagnostics = async () => {
-    try {
-      setShowDiagnostics(true);
-      const response = await axios.get('/api/logos/diagnostics');
-      setDiagnosticInfo(response.data || {});  // Always ensure we set an object even if response is null
-      console.log('Diagnostics info:', response.data);
-      toast.success('Diagnostics information loaded');
-    } catch (error) {
-      console.error('Failed to fetch diagnostics:', error);
-      toast.error('Failed to load diagnostics information');
-      setDiagnosticInfo({});  // Set empty object on error
     }
   };
 
@@ -157,102 +111,54 @@ const LogoManagement = () => {
     }
   };
 
-  // CRITICAL FIX: Update handleSubmit for more reliable uploads
+  // Simplified file upload approach
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    setServerInfo(null);
-    setUploadProgress(0);
-    setUploadSuccess(false);
-    setUploadAttempts(prev => prev + 1);
     
     try {
       console.log('LogoManagement: Starting logo upload process');
       let uploadedLogos = 0;
-      let totalLogos = 0;
       
-      // Count how many logos we need to upload
-      if (primaryLogo) totalLogos++;
-      if (secondaryLogo) totalLogos++;
-      
-      if (totalLogos === 0) {
+      if (!primaryLogo && !secondaryLogo) {
         toast.error('Please select at least one logo to upload');
         setIsLoading(false);
         return;
       }
       
-      // CRITICAL FIX: Process each logo separately with absolute URL paths
-      // Process primary logo if selected
+      // Create a FormData object for file upload
+      const formData = new FormData();
+      
       if (primaryLogo) {
-        try {
-          console.log('Processing primary logo...', primaryLogo.name, primaryLogo.size, 'bytes');
-          toast.loading('Processing primary logo...');
-          
-          // Validate file size
-          if (primaryLogo.size > 1.5 * 1024 * 1024) {
-            throw new Error('Primary logo exceeds 1.5MB size limit');
-          }
-          
-          const primaryBase64 = await fileToBase64(primaryLogo);
-          console.log('Primary logo converted to base64, length:', primaryBase64.length);
-          
-          // CRITICAL FIX: Use absolute URL path
-          console.log('Uploading primary logo to database...');
-          await uploadBase64ToDatabase(primaryBase64, 'primary');
-          console.log('Primary logo uploaded successfully');
-          uploadedLogos++;
-          toast.dismiss();
-          toast.success('Primary logo uploaded successfully');
-        } catch (error: any) {
-          console.error('Error processing primary logo:', error);
-          toast.dismiss();
-          toast.error(`Failed to upload primary logo: ${error.message || 'Unknown error'}`);
-          setError(`Primary logo error: ${error.message || 'Unknown error'}`);
-        }
+        formData.append('primaryLogo', primaryLogo);
+        console.log('Added primary logo to form data:', primaryLogo.name);
       }
       
-      // Add delay between uploads to prevent race conditions
-      if (primaryLogo && secondaryLogo) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-      
-      // Process secondary logo if selected
       if (secondaryLogo) {
-        try {
-          console.log('Processing secondary logo...', secondaryLogo.name, secondaryLogo.size, 'bytes');
-          toast.loading('Processing secondary logo...');
-          
-          // Validate file size
-          if (secondaryLogo.size > 1.5 * 1024 * 1024) {
-            throw new Error('Secondary logo exceeds 1.5MB size limit');
-          }
-          
-          const secondaryBase64 = await fileToBase64(secondaryLogo);
-          console.log('Secondary logo converted to base64, length:', secondaryBase64.length);
-          
-          // CRITICAL FIX: Send to server with better error handling
-          console.log('Uploading secondary logo to database...');
-          await uploadBase64ToDatabase(secondaryBase64, 'secondary');
-          console.log('Secondary logo uploaded successfully');
-          uploadedLogos++;
-          toast.dismiss();
-          toast.success('Secondary logo uploaded successfully');
-        } catch (error: any) {
-          console.error('Error processing secondary logo:', error);
-          toast.dismiss();
-          toast.error(`Failed to upload secondary logo: ${error.message || 'Unknown error'}`);
-          
-          if (!error.message?.includes('primary')) {
-            setError(`${error.message || 'Unknown error'}`);
-          }
-        }
+        formData.append('secondaryLogo', secondaryLogo);
+        console.log('Added secondary logo to form data:', secondaryLogo.name);
       }
       
-      // Check if any logos were successfully uploaded
-      if (uploadedLogos > 0) {
+      // Simple direct upload
+      console.log('Uploading logos directly using formData');
+      const response = await axios.post('/api/logos', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log(`Upload progress: ${percentCompleted}%`);
+          }
+        }
+      });
+      
+      console.log('Upload response:', response.data);
+      
+      if (response.data && response.data.uploads) {
+        uploadedLogos = response.data.uploads.length;
         setUploadSuccess(true);
-        toast.success(`${uploadedLogos} logo(s) updated successfully`);
         
         // Reset state
         setPrimaryLogo(null);
@@ -264,44 +170,29 @@ const LogoManagement = () => {
           input.value = '';
         });
         
-        // Add longer delay and use progressive fetching to ensure database update completes
-        console.log('Dispatching refreshLogos event with delay for database propagation');
+        toast.success(`${uploadedLogos} logo(s) updated successfully`);
         
-        // Initial notification
-        toast.info('Refreshing logo display...');
-        
-        // First refresh attempt
+        // Refresh logos after a short delay
         setTimeout(() => {
           setLastRefresh(Date.now());
           window.dispatchEvent(new CustomEvent('refreshLogos'));
         }, 2000);
-        
-        // Second refresh attempt after longer delay
-        setTimeout(() => {
-          toast.info('Finalizing logo updates...');
-          setLastRefresh(Date.now() + 1);
-          window.dispatchEvent(new CustomEvent('refreshLogos'));
-          fetchLogos();
-        }, 7000);
       } else {
-        setError('Failed to update any logos');
-        toast.error('Failed to update logos');
+        throw new Error('Invalid server response');
       }
+      
     } catch (error: any) {
-      console.error('Error updating logos:', error);
-      toast.dismiss();
+      console.error('Error uploading logos:', error);
       
       let errorMessage = 'Failed to upload logos. Please try again.';
       if (error.response) {
         errorMessage = `Error: ${error.response.data?.error || error.response.statusText}`;
-        console.error('Server response:', error.response.data);
       }
       
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -310,33 +201,7 @@ const LogoManagement = () => {
     fetchLogos();
     toast.info('Refreshing logos...');
     
-    // Also refresh in the auth layout
     window.dispatchEvent(new CustomEvent('refreshLogos'));
-  };
-
-  const formatServerEnvironment = (details: any) => {
-    if (!details || !details.server) return "Unknown";
-    
-    const environment = details.server.environment || "unknown";
-    const dbStatus = details.database && details.database.connected ? "connected" : "not connected";
-    
-    return `${environment} mode with database ${dbStatus}`;
-  };
-
-  // Safe rendering helper for diagnostics
-  const renderDiagnosticSection = (title: string, data: any) => {
-    if (!data) return null;
-    
-    return (
-      <div className="mt-2 font-semibold">
-        {title}:
-        {Object.entries(data || {}).map(([key, value]: [string, any]) => (
-          <div key={key} className="ml-2">
-            <div>{key}: {String(value)}</div>
-          </div>
-        ))}
-      </div>
-    );
   };
 
   return (
@@ -348,206 +213,17 @@ const LogoManagement = () => {
             Logo upload successful!
           </AlertTitle>
           <AlertDescription className="text-green-600/80">
-            The logos have been successfully uploaded and saved to the database. They should appear on the login page shortly.
+            The logos have been successfully uploaded and saved. They should appear on the login page shortly.
           </AlertDescription>
         </Alert>
-      )}
-      
-      {uploadAttempts > 0 && error && (
-        <Alert variant="destructive" className="bg-destructive/15 border-destructive/30">
-          <AlertTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            Upload Error
-          </AlertTitle>
-          <AlertDescription className="text-destructive/80">
-            <p>{error}</p>
-            <p className="mt-2">Troubleshooting tips:</p>
-            <ul className="list-disc pl-5 mt-1 space-y-1">
-              <li>Try with a smaller image (under 500KB)</li>
-              <li>Ensure you're using JPG or PNG format</li>
-              <li>Try refreshing the page before uploading</li>
-              <li>Verify your network connection</li>
-            </ul>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleManualRefresh}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchDiagnostics}
-              >
-                <Bug className="h-4 w-4 mr-2" />
-                Run Diagnostics
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {serverDetails && (
-        <div className="bg-blue-100 p-4 rounded-md mb-4 flex items-start gap-3">
-          <Server className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div>
-            <p className="text-blue-600 font-medium">Server Environment</p>
-            <p className="text-blue-600/80 text-sm mt-1">
-              Running in {formatServerEnvironment(serverDetails)}
-            </p>
-            <div className="mt-2 flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setServerDetails(null)}
-                className="text-xs"
-              >
-                Hide Details
-              </Button>
-              {(serverDetails.database && !serverDetails.database.connected) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleManualRefresh}
-                  className="text-xs"
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Retry Connection
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
       )}
       
       {error && (
-        <div className="bg-destructive/15 p-4 rounded-md mb-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
-          <div>
-            <p className="text-destructive font-medium">{error}</p>
-            <p className="text-destructive/80 text-sm mt-1">
-              There was an error processing your request. Please try again.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleManualRefresh}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchDiagnostics}
-              >
-                <Bug className="h-4 w-4 mr-2" />
-                Run Diagnostics
-              </Button>
-              
-              {!serverDetails && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    axios.get('/api/health')
-                      .then(response => {
-                        setServerDetails(response.data);
-                        console.log('Server health info:', response.data);
-                      })
-                      .catch(error => {
-                        console.error('Failed to fetch server health info:', error);
-                        toast.error('Failed to get server information');
-                      });
-                  }}
-                >
-                  <HardDrive className="h-4 w-4 mr-2" />
-                  Check Server Status
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {serverInfo && (
-        <div className="bg-blue-100 p-4 rounded-md mb-4 flex items-start gap-3">
-          <FileWarning className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div>
-            <p className="text-blue-600 font-medium">Server Information</p>
-            <p className="text-blue-600/80 text-sm mt-1">{serverInfo}</p>
-          </div>
-        </div>
-      )}
-      
-      {showDiagnostics && diagnosticInfo && (
-        <div className="bg-gray-100 p-4 rounded-md mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center">
-              <Terminal className="h-5 w-5 text-gray-600 mr-2" />
-              <p className="font-medium">Server Diagnostics</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowDiagnostics(false)}
-            >
-              Hide
-            </Button>
-          </div>
-          
-          <div className="text-xs font-mono bg-black text-green-400 p-3 rounded overflow-auto max-h-60">
-            <div>Timestamp: {diagnosticInfo.timestamp || 'N/A'}</div>
-            <div className="mt-1">Base Directory: {diagnosticInfo.baseDir || 'N/A'}</div>
-            
-            {diagnosticInfo.directories && (
-              <div className="mt-2 font-semibold">Directory Status:
-                {Object.entries(diagnosticInfo.directories || {}).map(([name, info]: [string, any]) => (
-                  <div key={name} className="ml-2">
-                    <div>{name}: {info && info.exists ? '✅ Exists' : '❌ Missing'}</div>
-                    {info && info.exists && (
-                      <>
-                        <div className="ml-2">Permissions: {info.permissions || 'N/A'}</div>
-                        <div className="ml-2">Owner: {info.owner || 'N/A'}</div>
-                        <div className="ml-2">
-                          {info.isWritable 
-                            ? '✅ Directory is writable' 
-                            : '❌ Directory is NOT writable'}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {diagnosticInfo.writeTest && (
-              <div className="mt-2 font-semibold">Write Test:
-                <div className="ml-2">
-                  {diagnosticInfo.writeTest.success 
-                    ? `✅ Successfully wrote test file to ${diagnosticInfo.writeTest.path}` 
-                    : `❌ Failed to write test file: ${diagnosticInfo.writeTest.error || 'Unknown error'}`}
-                </div>
-              </div>
-            )}
-            
-            {diagnosticInfo.process && (
-              <div className="mt-2 font-semibold">Process Info:
-                <div className="ml-2">
-                  <div>PID: {diagnosticInfo.process.pid || 'N/A'}</div>
-                  <div>UID: {diagnosticInfo.process.uid || 'N/A'}</div>
-                  <div>GID: {diagnosticInfo.process.gid || 'N/A'}</div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -636,16 +312,6 @@ const LogoManagement = () => {
         </div>
       </div>
       
-      {isLoading && uploadProgress > 0 && (
-        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-          <div 
-            className="bg-medical-primary h-2.5 rounded-full" 
-            style={{ width: `${uploadProgress}%` }}
-          ></div>
-          <p className="text-xs text-gray-500 mt-1">Upload progress: {uploadProgress}%</p>
-        </div>
-      )}
-      
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <Button
           onClick={handleSubmit}
@@ -673,16 +339,6 @@ const LogoManagement = () => {
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingLogos ? 'animate-spin' : ''}`} />
           Refresh
-        </Button>
-        
-        <Button
-          variant="outline"
-          onClick={fetchDiagnostics}
-          disabled={isLoading}
-          className="w-full sm:w-auto"
-        >
-          <Bug className="mr-2 h-4 w-4" />
-          Diagnostics
         </Button>
         
         <div className="flex items-center mt-2 sm:mt-0 text-xs text-gray-500">

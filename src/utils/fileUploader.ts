@@ -1,7 +1,6 @@
-
 import axios from 'axios';
 
-// Function to generate a unique filename (for reference only)
+// Function to generate a unique filename
 export const generateUniqueFilename = (originalName: string): string => {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 10000);
@@ -9,7 +8,7 @@ export const generateUniqueFilename = (originalName: string): string => {
   return `logo-${timestamp}-${random}.${ext}`;
 };
 
-// Convert file to base64
+// Convert file to base64 (keeping this method for preview functionality)
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -19,142 +18,68 @@ export const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Process file entirely client-side and return base64 data
+// Upload file and return the file path (new simplified approach)
 export const saveFileToPublic = async (file: File): Promise<string> => {
   try {
-    console.log('FileUploader: Processing file client-side only', file.name, file.type, file.size);
+    console.log('FileUploader: Processing file for upload', file.name, file.type, file.size);
     
-    // Convert the file to base64 directly - no server storage
-    const base64Data = await fileToBase64(file);
-    console.log('FileUploader: Converted file to base64, ready for database storage');
+    // Create a FormData object for file upload
+    const formData = new FormData();
+    formData.append('file', file);
     
-    return base64Data;
+    // Use a simple POST to upload the file
+    const response = await axios.post('/api/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    console.log('FileUploader: File upload response:', response.data);
+    
+    if (response.data && response.data.filePath) {
+      return response.data.filePath;
+    } else {
+      throw new Error('Invalid server response');
+    }
   } catch (error) {
-    console.error('FileUploader: Error processing file:', error);
+    console.error('FileUploader: Error uploading file:', error);
     throw error;
   }
 };
 
-// Upload base64 image directly to database with enhanced error handling and retry mechanism
+// Upload logo to the server with file path approach
 export const uploadBase64ToDatabase = async (
   base64Data: string, 
   position: 'primary' | 'secondary'
 ): Promise<string> => {
-  let retries = 2; // Allow for retries
-  let lastError = null;
-  
-  while (retries >= 0) {
-    try {
-      console.log(`FileUploader: Saving ${position} logo directly to database as base64 (attempts left: ${retries})`);
-      console.log(`FileUploader: Base64 data length: ${base64Data.length}`);
-      
-      // Create payload with just the base64 data for this specific logo position
-      const payload = {
-        [position + 'Logo']: base64Data
-      };
-      
-      // CRITICAL FIX: Always use relative paths for API endpoints
-      // This ensures it works correctly in any environment
-      const timestamp = Date.now();
-      const endpoint = `/api/logos/base64?t=${timestamp}`;
-      console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
-      
-      // Ensure we're using proper Content-Type and withCredentials
-      const response = await axios.post(endpoint, payload, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Cache-Control': 'no-cache, no-store',
-          'Pragma': 'no-cache',
-          'Accept': 'application/json' // Explicitly request JSON response
-        },
-        // Track upload progress
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            console.log(`FileUploader: Upload progress: ${percentCompleted}%`);
-          }
-        },
-        // Set longer timeout to handle large base64 strings
-        timeout: 30000
-      });
-      
-      // Enhanced response validation with better error reporting
-      console.log('FileUploader: Server response status:', response.status);
-      
-      if (!response || response.status !== 200) {
-        console.error(`FileUploader: Bad status code: ${response?.status || 'unknown'}`);
-        throw new Error(`Server returned status code ${response?.status || 'unknown'}`);
+  try {
+    console.log(`FileUploader: Uploading ${position} logo to server`);
+    
+    // Create payload with the file path for this specific logo position
+    const payload = {
+      [position + 'Logo']: base64Data
+    };
+    
+    // Use relative paths for API endpoints
+    const endpoint = '/api/logos/base64';
+    console.log(`FileUploader: Sending ${position} logo to endpoint: ${endpoint}`);
+    
+    const response = await axios.post(endpoint, payload, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json'
       }
-      
-      // Check response content type to detect HTML instead of JSON
-      const contentType = response.headers['content-type'];
-      if (contentType && contentType.includes('text/html')) {
-        console.error('FileUploader: Received HTML instead of JSON response');
-        console.log('FileUploader: Response content:', response.data);
-        throw new Error('Received HTML instead of JSON response');
-      }
-      
-      // If the response is a string containing HTML, it's an error
-      if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
-        console.error('FileUploader: Received HTML instead of JSON response');
-        console.log('FileUploader: Response content:', response.data);
-        throw new Error('Received HTML instead of JSON response');
-      }
-      
-      // Log the full response for debugging
-      console.log('FileUploader: Full response:', response);
-      
-      // More tolerant response handling - check if we got ANY response data
-      if (!response.data) {
-        console.error('FileUploader: Empty response data from server');
-        throw new Error('Empty response from server');
-      }
-      
-      // Be more flexible with success response formats
-      // Check multiple possible success indicators
-      const isSuccessful = 
-        response.data.success === true || 
-        (response.data.uploads && Array.isArray(response.data.uploads)) ||
-        response.data.message?.includes('success') ||
-        response.data.id || 
-        (typeof response.data === 'object' && Object.keys(response.data).length > 0);
-      
-      if (!isSuccessful) {
-        console.error('FileUploader: Response indicates failure:', response.data);
-        throw new Error(response.data.error || 'Operation failed');
-      }
-      
-      console.log(`FileUploader: ${position} logo saved to database successfully`);
-      return base64Data;
-    } catch (error: any) {
-      lastError = error;
-      console.error(`FileUploader: Error saving ${position} logo to database (attempt ${2-retries}/2):`, error);
-      
-      // Log response details for debugging
-      if (error.response) {
-        console.error('FileUploader: Error response data:', error.response.data);
-        console.error('FileUploader: Error status:', error.response.status);
-        
-        // If we received HTML instead of JSON, that's a server error
-        if (typeof error.response.data === 'string' && 
-            error.response.data.includes('<!DOCTYPE html>')) {
-          console.error('FileUploader: Received HTML instead of JSON, likely server error');
-        }
-      }
-      
-      retries--;
-      
-      if (retries >= 0) {
-        console.log(`FileUploader: Retrying upload after delay... (${retries} attempts left)`);
-        // Add increasing delay between retries
-        await new Promise(resolve => setTimeout(resolve, (2-retries) * 2000));
-      }
+    });
+    
+    console.log('FileUploader: Server response:', response.data);
+    
+    if (!response.data || response.data.error) {
+      throw new Error(response.data?.error || 'Failed to upload logo');
     }
+    
+    return base64Data;
+  } catch (error: any) {
+    console.error(`FileUploader: Error uploading ${position} logo:`, error);
+    throw error;
   }
-  
-  // If we get here, all retries failed
-  console.error('FileUploader: All upload attempts failed');
-  throw lastError || new Error('Failed to upload logo after multiple attempts');
 };
