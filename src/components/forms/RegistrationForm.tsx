@@ -79,21 +79,25 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    // Reset any previous errors
-    if (name === 'name') setNameError(null);
-    if (name === 'phone') setPhoneError(null);
-    
-    // Name validation - don't allow numbers
-    if (name === 'name' && value && !validateName(value)) {
-      setNameError('Name should only contain letters (no numbers)');
+    // Handle name input - only allow letters
+    if (name === 'name') {
+      // If attempting to enter a number, don't update the state
+      if (value && !validateName(value)) {
+        return;
+      }
+      setNameError(null);
     }
     
-    // Phone validation - don't allow letters
-    if (name === 'phone' && value && !validatePhone(value)) {
-      setPhoneError('Phone number should only contain numbers');
+    // Handle phone input - only allow numbers
+    if (name === 'phone') {
+      // If attempting to enter a letter, don't update the state
+      if (value && !validatePhone(value)) {
+        return;
+      }
+      setPhoneError(null);
     }
     
-    // Always update the field value so users can see what they're typing
+    // Always update the state for other fields
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
