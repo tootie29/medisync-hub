@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
@@ -21,12 +22,23 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   AlertCircle, 
   Package, 
   PackagePlus, 
   PlusCircle, 
-  RefreshCw 
+  RefreshCw,
+  Trash2
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +46,7 @@ import { toast } from "sonner";
 import MainLayout from "@/components/layout/MainLayout";
 
 const Inventory = () => {
-  const { medicines, addMedicine, updateMedicine } = useData();
+  const { medicines, addMedicine, updateMedicine, deleteMedicine } = useData();
   const { user } = useAuth();
   const [newMedicine, setNewMedicine] = useState({
     name: "",
@@ -45,6 +57,7 @@ const Inventory = () => {
   });
   const [updateQuantity, setUpdateQuantity] = useState<{ [key: string]: number }>({});
   const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [medicineToDelete, setMedicineToDelete] = useState<string | null>(null);
 
   // Check user role - only staff, doctor and head nurse can access this page
   const hasAccess = user && (user.role === "staff" || user.role === "head nurse" || user.role === "doctor");
@@ -124,6 +137,20 @@ const Inventory = () => {
       }));
 
       toast.success(`Updated ${medicine.name} inventory`);
+    }
+  };
+  
+  const confirmDelete = async () => {
+    if (medicineToDelete) {
+      try {
+        const medicine = medicines.find(med => med.id === medicineToDelete);
+        await deleteMedicine(medicineToDelete);
+        toast.success(`${medicine?.name || 'Medicine'} has been removed from inventory`);
+        setMedicineToDelete(null);
+      } catch (error) {
+        toast.error("Failed to delete medicine");
+        console.error("Error deleting medicine:", error);
+      }
     }
   };
 
@@ -309,6 +336,15 @@ const Inventory = () => {
                               <RefreshCw className="h-3 w-3" />
                               Update
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setMedicineToDelete(medicine.id)}
+                              className="gap-1"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </Button>
                           </div>
                         </TableCell>
                       )}
@@ -320,6 +356,25 @@ const Inventory = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!medicineToDelete} onOpenChange={(open) => !open && setMedicineToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this medicine
+              from the inventory.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };
