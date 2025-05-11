@@ -887,4 +887,4 @@ const MedicalRecords: React.FC = () => {
                         return (
                           <TableRow key={record.id}>
                             <TableCell>{format(new Date(record.date), 'PPP')}</TableCell>
-                            <TableCell>{getDoctorName(record.doctorId
+                            <TableCell>{getDoctorName(record.doctorId)}</TableCell
