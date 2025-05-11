@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -36,6 +38,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [consentChecked, setConsentChecked] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -53,6 +56,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
     staffId: '',
     position: '',
     faculty: '',
+    consentGiven: false,
   });
 
   const togglePasswordVisibility = () => {
@@ -108,6 +112,11 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleConsentChange = (checked: boolean) => {
+    setConsentChecked(checked);
+    setFormData((prev) => ({ ...prev, consentGiven: checked }));
   };
 
   const validateForm = () => {
@@ -168,6 +177,11 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
       isValid = false;
     }
 
+    if (!formData.consentGiven) {
+      toast.error('You must agree to the Privacy Policy and Terms & Conditions');
+      isValid = false;
+    }
+
     return isValid;
   };
 
@@ -188,6 +202,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
           address: formData.address,
           emergencyContact: formData.emergencyContact,
           faculty: formData.faculty,
+          consentGiven: formData.consentGiven,
           ...(role === 'student' && {
             studentId: formData.studentId,
             department: formData.department,
@@ -467,6 +482,27 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
           </div>
         </div>
       )}
+
+      {/* Privacy Policy and Terms Consent Checkbox */}
+      <div className="flex items-start space-x-2">
+        <Checkbox 
+          id="consent" 
+          checked={consentChecked}
+          onCheckedChange={handleConsentChange}
+          className="mt-1"
+        />
+        <div className="grid gap-1.5 leading-none">
+          <label
+            htmlFor="consent"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            I agree to the <a href="#" className="text-medical-primary hover:underline">Privacy Policy</a> and <a href="#" className="text-medical-primary hover:underline">Terms & Conditions</a> *
+          </label>
+          <p className="text-xs text-gray-500">
+            By selecting this, you acknowledge that you have read and understood our policies.
+          </p>
+        </div>
+      </div>
 
       <div>
         <Button

@@ -157,7 +157,8 @@ exports.createUser = async (req, res) => {
       password: userData.password,
       emailVerified: false,
       verificationToken: verificationToken,
-      tokenExpiry: tokenExpiry
+      tokenExpiry: tokenExpiry,
+      consentGiven: userData.consent_given || userData.consentGiven || false
     };
     
     console.log('Processed user data for DB:', userDataForDb);
@@ -214,7 +215,8 @@ exports.updateUser = async (req, res) => {
       staffId: userData.staff_id || userData.staffId,
       position: userData.position,
       faculty: userData.faculty,
-      password: userData.password
+      password: userData.password,
+      consentGiven: userData.consent_given || userData.consentGiven
     };
     
     const updatedUser = await userModel.update(userId, userDataForDb);

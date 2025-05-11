@@ -1,4 +1,3 @@
-
 const { pool } = require('../db/config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -60,24 +59,25 @@ class UserModel {
         email, name, role, phone, dateOfBirth, gender, 
         address, emergencyContact, studentId, department, 
         staffId, position, faculty, password,
-        emailVerified, verificationToken, tokenExpiry
+        emailVerified, verificationToken, tokenExpiry, consentGiven
       } = userData;
 
       // Log the password to verify it's being passed correctly
       console.log('Creating user with password:', password ? 'Password provided' : 'No password provided');
       console.log('Faculty/College value:', faculty || 'Not provided');
       console.log('Verification token:', verificationToken || 'Not provided');
+      console.log('Consent given:', consentGiven ? 'Yes' : 'No');
 
       const [result] = await pool.query(
         `INSERT INTO users (
           id, email, name, role, phone, date_of_birth, gender, 
           address, emergency_contact, student_id, department, staff_id, position, faculty, password,
-          email_verified, verification_token, token_expiry
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          email_verified, verification_token, token_expiry, consent_given
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, email, name, role, phone, dateOfBirth, gender, 
           address, emergencyContact, studentId, department, staffId, position, faculty, password,
-          emailVerified || false, verificationToken || null, tokenExpiry || null
+          emailVerified || false, verificationToken || null, tokenExpiry || null, consentGiven || false
         ]
       );
 
@@ -94,7 +94,7 @@ class UserModel {
         email, name, role, phone, dateOfBirth, gender, 
         address, emergencyContact, studentId, department, 
         staffId, position, faculty, password,
-        emailVerified, verificationToken, tokenExpiry
+        emailVerified, verificationToken, tokenExpiry, consentGiven
       } = userData;
 
       const [result] = await pool.query(
@@ -115,13 +115,14 @@ class UserModel {
           password = IFNULL(?, password),
           email_verified = IFNULL(?, email_verified),
           verification_token = ?,
-          token_expiry = ?
+          token_expiry = ?,
+          consent_given = IFNULL(?, consent_given)
         WHERE id = ?`,
         [
           email, name, role, phone, dateOfBirth, gender, 
           address, emergencyContact, studentId, department, 
           staffId, position, faculty, password,
-          emailVerified, verificationToken, tokenExpiry, id
+          emailVerified, verificationToken, tokenExpiry, consentGiven, id
         ]
       );
 

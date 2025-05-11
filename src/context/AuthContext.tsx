@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -51,6 +52,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 interface RegisteredUser extends User {
   password: string;
   emailVerified?: boolean;
+  consentGiven?: boolean;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -221,6 +223,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         staff_id: userData.staffId,
         position: userData.position,
         faculty: userData.faculty,
+        consent_given: userData.consentGiven,
         password: password
       };
       
@@ -245,6 +248,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           address: userData.address || '',
           emergencyContact: userData.emergencyContact || '',
           faculty: userData.faculty || '',
+          consentGiven: userData.consentGiven || false,
           ...(userData.role === 'student' && {
             studentId: userData.studentId || '',
             department: userData.department || '',
