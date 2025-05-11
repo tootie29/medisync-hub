@@ -64,6 +64,18 @@ exports.updateAppointment = async (req, res) => {
   try {
     const appointmentId = req.params.id;
     const appointmentData = req.body;
+    
+    console.log(`Updating appointment ${appointmentId} with data:`, JSON.stringify(appointmentData));
+    
+    // Handle special status transitions
+    if (appointmentData.status) {
+      console.log(`Status change requested to: ${appointmentData.status}`);
+      
+      // You could add additional logic here for specific status transitions
+      // For example, if status changes to "completed", you might want to
+      // automatically suggest creating a medical record
+    }
+    
     const updatedAppointment = await appointmentModel.update(appointmentId, appointmentData);
     
     if (!updatedAppointment) {

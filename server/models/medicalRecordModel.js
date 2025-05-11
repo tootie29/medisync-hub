@@ -38,6 +38,8 @@ class MedicalRecordModel {
         record.certificateEnabled = record.certificate_enabled ? true : false;
         record.createdAt = record.created_at;
         record.updatedAt = record.updated_at;
+        record.appointmentId = record.appointment_id || null;
+        record.type = record.type || 'General Checkup';
         
         delete record.patient_id;
         delete record.doctor_id;
@@ -46,6 +48,7 @@ class MedicalRecordModel {
         delete record.certificate_enabled;
         delete record.created_at;
         delete record.updated_at;
+        delete record.appointment_id;
       }
       
       return records;
@@ -93,6 +96,8 @@ class MedicalRecordModel {
       record.certificateEnabled = record.certificate_enabled ? true : false;
       record.createdAt = record.created_at;
       record.updatedAt = record.updated_at;
+      record.appointmentId = record.appointment_id || null;
+      record.type = record.type || 'General Checkup';
       
       delete record.patient_id;
       delete record.doctor_id;
@@ -101,6 +106,7 @@ class MedicalRecordModel {
       delete record.certificate_enabled;
       delete record.created_at;
       delete record.updated_at;
+      delete record.appointment_id;
       
       return record;
     } catch (error) {
@@ -145,6 +151,8 @@ class MedicalRecordModel {
         record.certificateEnabled = record.certificate_enabled ? true : false;
         record.createdAt = record.created_at;
         record.updatedAt = record.updated_at;
+        record.appointmentId = record.appointment_id || null;
+        record.type = record.type || 'General Checkup';
         
         delete record.patient_id;
         delete record.doctor_id;
@@ -153,6 +161,7 @@ class MedicalRecordModel {
         delete record.certificate_enabled;
         delete record.created_at;
         delete record.updated_at;
+        delete record.appointment_id;
       }
       
       return records;
@@ -200,11 +209,18 @@ class MedicalRecordModel {
       console.log('Certificate status type:', typeof certificateEnabled);
       console.log('Patient ID being used for record:', recordData.patientId);
       
+      // Set the appointment ID if provided
+      const appointmentId = recordData.appointmentId || null;
+      
+      // Set the visit type or use default
+      const visitType = recordData.type || 'General Checkup';
+      
       // Insert record with explicit type handling
       await connection.query(
         `INSERT INTO medical_records 
-        (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, follow_up_date, certificate_enabled, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, 
+        follow_up_date, certificate_enabled, type, appointment_id, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, 
           recordData.patientId, 
@@ -219,6 +235,8 @@ class MedicalRecordModel {
           recordData.notes || null, 
           recordData.followUpDate || null,
           certificateEnabled ? 1 : 0,
+          visitType,
+          appointmentId,
           now,
           now
         ]
@@ -261,6 +279,8 @@ class MedicalRecordModel {
         ...recordData, 
         bmi,
         certificateEnabled,
+        type: visitType,
+        appointmentId,
         createdAt: now,
         updatedAt: now
       };
@@ -385,6 +405,16 @@ class MedicalRecordModel {
         const dbValue = certificateEnabled ? 1 : 0;
         params.push(dbValue);
         console.log(`Setting certificate_enabled in database to ${dbValue} (from boolean ${certificateEnabled})`);
+      }
+      
+      if (recordData.type) {
+        setClause.push('type = ?');
+        params.push(recordData.type);
+      }
+      
+      if (recordData.appointmentId) {
+        setClause.push('appointment_id = ?');
+        params.push(recordData.appointmentId);
       }
       
       setClause.push('updated_at = NOW()');

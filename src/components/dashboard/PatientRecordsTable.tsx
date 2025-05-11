@@ -127,7 +127,7 @@ const PatientRecordsTable: React.FC = () => {
     
     const recordCount = patientRecords.length;
     
-    // Get latest record date
+    // Get latest record date and type
     const latestRecord = patientRecords
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
     
@@ -137,6 +137,7 @@ const PatientRecordsTable: React.FC = () => {
       role: patient.role,
       recordCount,
       latestRecordDate: latestRecord ? latestRecord.date : '',
+      latestRecordType: latestRecord ? latestRecord.type || 'General Checkup' : '',
     };
   });
   
@@ -198,14 +199,15 @@ const PatientRecordsTable: React.FC = () => {
                 <TableHead>Patient Name</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Record Count</TableHead>
-                <TableHead>Latest Record</TableHead>
+                <TableHead>Latest Visit</TableHead>
+                <TableHead>Visit Type</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     Loading patients...
                   </TableCell>
                 </TableRow>
@@ -229,6 +231,9 @@ const PatientRecordsTable: React.FC = () => {
                           : 'N/A'
                         }
                       </TableCell>
+                      <TableCell>
+                        {patient?.latestRecordType || 'N/A'}
+                      </TableCell>
                       <TableCell className="text-right flex justify-end gap-2">
                         <Button asChild size="sm" variant="ghost">
                           <Link to={`/medical-records?patient=${patientUrlId}`}>
@@ -250,13 +255,25 @@ const PatientRecordsTable: React.FC = () => {
                             </Link>
                           </Button>
                         )}
+                        {isMedicalStaff && (
+                          <Button 
+                            asChild 
+                            size="sm" 
+                            variant="outline"
+                            className="ml-2"
+                          >
+                            <Link to={`/appointments`}>
+                              Appointments
+                            </Link>
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No patients found.
                   </TableCell>
                 </TableRow>

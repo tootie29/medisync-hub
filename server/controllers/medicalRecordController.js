@@ -67,6 +67,11 @@ exports.createMedicalRecord = async (req, res) => {
       // Keep the patientId as is to maintain the same format sent by the client
     }
     
+    // Add appointmentId if provided (for linking records to appointments)
+    if (recordData.appointmentId) {
+      console.log('Linking medical record to appointment:', recordData.appointmentId);
+    }
+    
     // Check for required numeric fields
     recordData.height = parseFloat(recordData.height) || 0;
     recordData.weight = parseFloat(recordData.weight) || 0;
@@ -83,6 +88,14 @@ exports.createMedicalRecord = async (req, res) => {
     // Ensure doctorId is present
     if (!recordData.doctorId) {
       recordData.doctorId = 'self-recorded';
+    }
+    
+    // Add visit type if provided
+    if (recordData.type) {
+      console.log('Visit type specified:', recordData.type);
+    } else {
+      // Default to general checkup if not specified
+      recordData.type = 'General Checkup';
     }
     
     const newRecord = await medicalRecordModel.create(recordData);
