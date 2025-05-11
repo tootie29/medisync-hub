@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'staff' | 'head nurse' | 'admin';
+export type UserRole = 'student' | 'staff' | 'head nurse' | 'admin' | 'doctor';
 
 export interface User {
   id: string;
@@ -91,7 +91,7 @@ export interface Medicine {
   updatedAt: string;
 }
 
-export const ROLES: UserRole[] = ['student', 'staff', 'head nurse', 'admin'];
+export const ROLES: UserRole[] = ['student', 'staff', 'head nurse', 'admin', 'doctor'];
 
 export const SAMPLE_USERS: User[] = [
   {
