@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { MedicalRecord, SAMPLE_USERS, VitalSigns } from '@/types';
 import { format } from 'date-fns';
-import { Activity, Calendar, FileText, Filter, Award, User } from 'lucide-react';
+import { Activity, Calendar, FileText, Filter, Award, User, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -59,14 +59,15 @@ const MedicalRecords: React.FC = () => {
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   
   // Check if user is medical staff (specifically doctor or head nurse, NOT admin)
-  const isMedicalStaffNotAdmin = user?.role === 'doctor' || user?.role === 'head nurse';
+  const isMedicalStaff = user?.role === 'doctor' || user?.role === 'head nurse';
   
   console.log("MedicalRecords component rendering");
   console.log("User:", user);
   console.log("Patient ID from URL:", patientIdFromUrl);
   console.log("Is doctor:", isDoctor);
+  console.log("Is head nurse:", isHeadNurse);
   console.log("Is patient:", isPatient);
-  console.log("Is medical staff not admin:", isMedicalStaffNotAdmin);
+  console.log("Is medical staff:", isMedicalStaff);
   
   useEffect(() => {
     if (patientIdFromUrl) {
@@ -309,7 +310,7 @@ const MedicalRecords: React.FC = () => {
   // Check whether the current user can add records for this patient
   const canAddRecords = () => {
     // Only doctors and head nurse roles can add records (not admin)
-    return isMedicalStaffNotAdmin;
+    return isMedicalStaff;
   };
 
   return (
@@ -331,8 +332,9 @@ const MedicalRecords: React.FC = () => {
                       setIsAddingRecord(true);
                       resetForm();
                     }}
-                    className="bg-medical-primary hover:bg-medical-secondary"
+                    className="bg-green-600 hover:bg-green-700"
                   >
+                    <Plus className="h-4 w-4 mr-2" />
                     Add New Record
                   </Button>
                 )}

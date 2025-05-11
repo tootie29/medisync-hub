@@ -31,11 +31,8 @@ exports.getMedicalRecordsByPatientId = async (req, res) => {
     let patientId = req.params.patientId;
     console.log('Original patientId parameter:', patientId);
     
-    // Handle both formats of patient ID (with or without prefix)
-    if (patientId.startsWith('user-')) {
-      console.log('Patient ID has user- prefix, will handle appropriately');
-      // We'll keep the ID as is for consistent lookups
-    }
+    // Always use the patient ID as is, regardless of prefix format
+    console.log('Using patient ID as provided:', patientId);
     
     console.log('Looking up records for patient ID:', patientId);
     const records = await medicalRecordModel.getByPatientId(patientId);

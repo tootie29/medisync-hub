@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
@@ -23,7 +22,7 @@ const PatientRecordsTable: React.FC = () => {
   const [lastFetchAttempt, setLastFetchAttempt] = useState(Date.now());
 
   // Check if user is medical staff (specifically doctor or head nurse, NOT admin)
-  const isMedicalStaffNotAdmin = user?.role === 'doctor' || user?.role === 'head nurse';
+  const isMedicalStaff = user?.role === 'doctor' || user?.role === 'head nurse';
 
   // Function to fetch users from the API
   useEffect(() => {
@@ -142,7 +141,7 @@ const PatientRecordsTable: React.FC = () => {
 
   console.log("Available patients:", filteredPatients.length);
   console.log("Current user role:", user?.role);
-  console.log("Is medical staff not admin:", isMedicalStaffNotAdmin);
+  console.log("Is medical staff (not admin):", isMedicalStaff);
 
   return (
     <Card>
@@ -222,7 +221,7 @@ const PatientRecordsTable: React.FC = () => {
                         </Link>
                       </Button>
                       {/* Only show Add Record button for doctors and head nurses (NOT admin) */}
-                      {isMedicalStaffNotAdmin && (
+                      {isMedicalStaff && (
                         <Button 
                           asChild 
                           size="sm" 
