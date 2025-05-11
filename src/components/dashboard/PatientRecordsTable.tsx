@@ -23,7 +23,7 @@ const PatientRecordsTable: React.FC = () => {
   const [lastFetchAttempt, setLastFetchAttempt] = useState(Date.now());
 
   // Check if user is medical staff (specifically doctor or head nurse, NOT admin)
-  const isMedicalStaffNotAdmin = user?.role === 'head nurse' || user?.role === 'doctor';
+  const isMedicalStaffNotAdmin = user?.role === 'doctor' || user?.role === 'head nurse';
 
   // Function to fetch users from the API
   useEffect(() => {
@@ -221,7 +221,7 @@ const PatientRecordsTable: React.FC = () => {
                           Records
                         </Link>
                       </Button>
-                      {/* Only show Add Record button for doctors and head nurse roles */}
+                      {/* Only show Add Record button for doctors and head nurses (NOT admin) */}
                       {isMedicalStaffNotAdmin && (
                         <Button 
                           asChild 
@@ -229,7 +229,7 @@ const PatientRecordsTable: React.FC = () => {
                           variant="outline"
                           className="ml-2"
                         >
-                          <Link to={`/medical-records?patient=${patient?.id}`}>
+                          <Link to={`/medical-records?patient=${patient?.id}&action=add`}>
                             <FilePlus className="h-4 w-4 mr-2" />
                             Add Record
                           </Link>

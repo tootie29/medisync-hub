@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,8 +29,9 @@ const MedicalRecords: React.FC = () => {
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const patientIdFromUrl = queryParams.get('patient');
+  const actionFromUrl = queryParams.get('action');
   
-  const [isAddingRecord, setIsAddingRecord] = useState(false);
+  const [isAddingRecord, setIsAddingRecord] = useState(actionFromUrl === 'add');
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<string>('date-desc');
@@ -54,11 +54,12 @@ const MedicalRecords: React.FC = () => {
     }
   });
 
-  const isDoctor = user?.role === 'head nurse' || user?.role === 'doctor';
+  const isDoctor = user?.role === 'doctor';
+  const isHeadNurse = user?.role === 'head nurse';
   const isPatient = user?.role === 'student' || user?.role === 'staff';
   
   // Check if user is medical staff (specifically doctor or head nurse, NOT admin)
-  const isMedicalStaffNotAdmin = user?.role === 'head nurse' || user?.role === 'doctor';
+  const isMedicalStaffNotAdmin = user?.role === 'doctor' || user?.role === 'head nurse';
   
   console.log("MedicalRecords component rendering");
   console.log("User:", user);
@@ -76,6 +77,14 @@ const MedicalRecords: React.FC = () => {
       setSelectedPatientId(user.id);
     }
   }, [patientIdFromUrl, isPatient, user]);
+  
+  useEffect(() => {
+    // If the action from URL is 'add', set isAddingRecord to true
+    if (actionFromUrl === 'add') {
+      setIsAddingRecord(true);
+      resetForm();
+    }
+  }, [actionFromUrl]);
   
   const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
   console.log("Selected patient:", selectedPatient);
