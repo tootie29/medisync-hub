@@ -9,7 +9,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, LineChartIcon, Activity, Heart, Lungs } from "lucide-react";
+import { PlusCircle, LineChartIcon, Activity, Heart, Wind } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 
