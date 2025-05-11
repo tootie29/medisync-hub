@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +14,7 @@ import { Activity, Calendar, FileText, Filter, Award, User, Plus } from 'lucide-
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
@@ -23,7 +23,8 @@ const MedicalRecords: React.FC = () => {
     addMedicalRecord, 
     updateMedicalRecord,
     deleteMedicalRecord,
-    getUserById
+    getUserById,
+    getApiUrl
   } = useData();
   
   const location = useLocation();
@@ -37,6 +38,8 @@ const MedicalRecords: React.FC = () => {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<string>('date-desc');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [patientData, setPatientData] = useState<any>(null);
+  const [isLoadingPatient, setIsLoadingPatient] = useState<boolean>(false);
   const [formData, setFormData] = useState<Partial<MedicalRecord>>({
     height: 0,
     weight: 0,
@@ -75,11 +78,74 @@ const MedicalRecords: React.FC = () => {
     if (patientIdFromUrl) {
       console.log("Attempting to set patient ID from URL:", patientIdFromUrl);
       setSelectedPatientId(patientIdFromUrl);
+      fetchPatientData(patientIdFromUrl);
     } else if (isPatient && user) {
       console.log("Setting selected patient ID from user:", user.id);
       setSelectedPatientId(user.id);
+      setPatientData(user);
     }
   }, [patientIdFromUrl, isPatient, user]);
+  
+  // Fetch patient data from API or sample data
+  const fetchPatientData = async (patientId: string) => {
+    if (!patientId) return;
+    
+    setIsLoadingPatient(true);
+    console.log(`Fetching patient data for ID: ${patientId}`);
+    
+    try {
+      // Check if we're in demo/preview mode
+      const isPreviewMode = window.location.hostname.includes('lovableproject.com');
+      
+      if (isPreviewMode) {
+        console.log('Running in preview mode - using sample data');
+        // Try to find in sample users
+        const extractedId = patientId.replace('user-', '');
+        const sampleUser = SAMPLE_USERS.find(u => 
+          u.id === patientId || u.id === extractedId || `user-${u.id}` === patientId
+        );
+        
+        if (sampleUser) {
+          console.log('Found patient in sample data:', sampleUser);
+          setPatientData(sampleUser);
+        } else {
+          console.log('Patient not found in sample data');
+          setPatientData(null);
+        }
+        setIsLoadingPatient(false);
+        return;
+      }
+      
+      // Not in preview mode, try to fetch from API
+      const API_URL = getApiUrl();
+      let userId = patientId;
+      
+      // Extract numeric ID if it has a prefix
+      if (patientId && patientId.startsWith('user-')) {
+        userId = patientId.replace('user-', '');
+      }
+      
+      console.log(`Requesting user data from API with ID: ${userId}`);
+      const response = await axios.get(`${API_URL}/users/${userId}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Patient data fetched successfully:', response.data);
+      setPatientData(response.data);
+    } catch (error) {
+      console.error('Error fetching patient data:', error);
+      
+      // Fallback to local userData from DataContext
+      const localUser = getUserById(patientId);
+      console.log('Falling back to local user data:', localUser);
+      setPatientData(localUser);
+    } finally {
+      setIsLoadingPatient(false);
+    }
+  };
   
   // Handle 'add' action from URL
   useEffect(() => {
@@ -317,8 +383,8 @@ const MedicalRecords: React.FC = () => {
       return 'Your Medical Records';
     }
     
-    if (selectedPatient) {
-      return `Medical Records for ${selectedPatient.name}`;
+    if (patientData && patientData.name) {
+      return `Medical Records for ${patientData.name}`;
     }
     
     // If no patient found but ID exists, show a cleaner message
@@ -341,7 +407,7 @@ const MedicalRecords: React.FC = () => {
           {selectedPatientId && (
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
               <h2 className="text-xl font-semibold">
-                {getPatientDisplayName()}
+                {isLoadingPatient ? 'Loading patient data...' : getPatientDisplayName()}
               </h2>
               
               <div className="flex flex-wrap gap-2">
@@ -401,10 +467,10 @@ const MedicalRecords: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {editingRecordId ? 'Edit Medical Record' : 'Add New Medical Record'}
-                  {selectedPatient && (
+                  {patientData && patientData.name && (
                     <span className="ml-2 text-base text-gray-500 flex items-center">
                       <User className="h-4 w-4 mr-1" /> 
-                      for <span className="font-semibold ml-1">{selectedPatient.name}</span>
+                      for <span className="font-semibold ml-1">{patientData.name}</span>
                     </span>
                   )}
                 </CardTitle>
@@ -417,7 +483,9 @@ const MedicalRecords: React.FC = () => {
                     <span className="text-sm text-gray-600">
                       Adding medical record for patient: 
                       <span className="font-medium ml-1">
-                        {selectedPatient ? selectedPatient.name : `ID: ${selectedPatientId}`}
+                        {patientData && patientData.name 
+                          ? patientData.name 
+                          : `ID: ${selectedPatientId}`}
                       </span>
                     </span>
                   </div>

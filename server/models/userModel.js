@@ -1,3 +1,4 @@
+
 const { pool } = require('../db/config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -18,9 +19,19 @@ class UserModel {
       let userId = id;
       if (id && id.startsWith('user-')) {
         console.log(`Looking up user with prefixed ID: ${id}`);
+        // Extract the numeric part after the prefix
+        userId = id.replace('user-', '');
+        console.log(`Extracted userId: ${userId}`);
       }
       
       const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+      
+      if (rows.length === 0) {
+        console.log(`No user found with ID: ${userId}`);
+      } else {
+        console.log(`Found user: ${rows[0].name} with ID: ${userId}`);
+      }
+      
       return rows[0];
     } catch (error) {
       console.error('Error fetching user by ID:', error);
