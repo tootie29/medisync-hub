@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { MedicalRecord, SAMPLE_USERS, VitalSigns } from '@/types';
 import { format } from 'date-fns';
-import { Activity, Calendar, FileText, Filter, Award } from 'lucide-react';
+import { Activity, Calendar, FileText, Filter, Award, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -355,12 +355,27 @@ const MedicalRecords: React.FC = () => {
           {(isAddingRecord || editingRecordId) && selectedPatientId && (
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="flex items-center gap-2">
                   {editingRecordId ? 'Edit Medical Record' : 'Add New Medical Record'}
+                  {selectedPatient && (
+                    <span className="ml-2 text-base text-gray-500 flex items-center">
+                      <User className="h-4 w-4 mr-1" /> 
+                      for <span className="font-semibold ml-1">{selectedPatient.name}</span>
+                    </span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit}>
+                  {selectedPatient && (
+                    <div className="bg-gray-50 p-3 rounded-md mb-4 flex items-center">
+                      <User className="h-5 w-5 text-gray-500 mr-2" />
+                      <span className="text-sm text-gray-600">
+                        Adding medical record for patient: 
+                        <span className="font-medium ml-1">{selectedPatient.name}</span>
+                      </span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="height">Height (cm)</Label>

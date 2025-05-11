@@ -48,14 +48,14 @@ const HealthStatusPanel: React.FC<HealthStatusPanelProps> = ({ latestRecord }) =
               <span className="font-medium">{latestRecord.bloodPressure}</span>
             </div>
           )}
-          {/* Add Respiratory Rate display */}
+          {/* Display Respiratory Rate */}
           {latestRecord.vitalSigns?.respiratoryRate && (
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500">Respiratory Rate</span>
               <span className="font-medium">{latestRecord.vitalSigns.respiratoryRate} breaths/min</span>
             </div>
           )}
-          {/* Add Oxygen Saturation display */}
+          {/* Display Oxygen Saturation */}
           {latestRecord.vitalSigns?.oxygenSaturation && (
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500">Oxygen Saturation</span>
