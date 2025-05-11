@@ -56,8 +56,9 @@ const CertificatePage: React.FC = () => {
 
   const displayUserName = user?.name || "Patient";
 
-  // School logo URL
+  // School logos URLs
   const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
+  const collegeLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png"; // Using the same logo temporarily, replace with actual collegeLogo path
 
   return (
     <MainLayout>
@@ -71,14 +72,23 @@ const CertificatePage: React.FC = () => {
             height={height}
             weight={weight}
             date={date}
+            schoolLogo={schoolLogo}
+            collegeLogo={collegeLogo}
           />
         </div>
         <Button variant="default" onClick={handleDownload} className="mt-4 flex items-center gap-2">
-          <img 
-            src={schoolLogo} 
-            alt="School Logo" 
-            className="h-5 w-5 object-contain" 
-          />
+          <div className="flex items-center">
+            <img 
+              src={schoolLogo} 
+              alt="School Logo" 
+              className="h-5 w-5 object-contain" 
+            />
+            <img 
+              src={collegeLogo} 
+              alt="College Logo" 
+              className="h-5 w-5 object-contain ml-1" 
+            />
+          </div>
           Download Certificate
         </Button>
       </div>
