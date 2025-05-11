@@ -13,8 +13,11 @@ import {
   Pill,
   Activity,
   AlertCircle,
+  FileText,
+  FilePlus,
 } from 'lucide-react';
 import { formatDate } from '@/utils/helpers';
+import { Button } from '@/components/ui/button';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -110,6 +113,37 @@ const Dashboard: React.FC = () => {
             })}
           </p>
         </div>
+
+        {/* Quick Actions Panel for Medical Staff */}
+        {isMedicalStaff && (
+          <div className="mt-6 mb-4">
+            <h3 className="text-lg font-semibold mb-3">Quick Actions</h3>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/medical-records">
+                <Button className="flex items-center gap-2">
+                  <FilePlus className="h-5 w-5" />
+                  Add New Medical Record
+                </Button>
+              </Link>
+              
+              <Link to="/appointments">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Manage Appointments
+                </Button>
+              </Link>
+              
+              {isAdmin && (
+                <Link to="/inventory">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Pill className="h-5 w-5" />
+                    Manage Inventory
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           {/* Appointments card - visible to all users */}
@@ -218,7 +252,17 @@ const Dashboard: React.FC = () => {
           {/* Upcoming Appointments section - visible to all users */}
           <Card className="col-span-1 md:col-span-2">
             <CardHeader>
-              <CardTitle>Upcoming Appointments</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Upcoming Appointments</CardTitle>
+                {isMedicalStaff && (
+                  <Link to="/medical-records">
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      All Records
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {upcomingAppointments.length > 0 ? (
@@ -252,9 +296,17 @@ const Dashboard: React.FC = () => {
                           </p>
                           {/* Show patient name for medical staff */}
                           {isMedicalStaff && patientUser && (
-                            <p className="text-sm text-gray-600">
-                              Patient: {patientUser.name}
-                            </p>
+                            <div className="flex justify-between mt-2">
+                              <p className="text-sm text-gray-600">
+                                Patient: {patientUser.name}
+                              </p>
+                              {/* Add quick action button to add medical record */}
+                              <Link to={`/medical-records?patient=${appointment.patientId}`}>
+                                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">
+                                  <FilePlus className="h-3 w-3 mr-1" /> Add Record
+                                </Button>
+                              </Link>
+                            </div>
                           )}
                           {/* Show doctor name for patients */}
                           {isPatient && doctorUser && (
@@ -362,6 +414,15 @@ const Dashboard: React.FC = () => {
         {/* Patient Records Table - only visible to medical staff */}
         {isMedicalStaff && (
           <div className="mt-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Patient Records</h2>
+              <Link to="/medical-records">
+                <Button className="flex items-center gap-2">
+                  <FilePlus className="h-5 w-5" />
+                  Add New Medical Record
+                </Button>
+              </Link>
+            </div>
             <PatientRecordsTable />
           </div>
         )}
