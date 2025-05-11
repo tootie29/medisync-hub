@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
@@ -15,12 +14,16 @@ import {
   AlertCircle,
   FileText,
   FilePlus,
+  Search,
 } from 'lucide-react';
 import { formatDate } from '@/utils/helpers';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { User as UserType } from '@/types';
+import axios from 'axios';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -37,6 +40,9 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isPatientSelectOpen, setIsPatientSelectOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
+  const [allAvailablePatients, setAllAvailablePatients] = useState<UserType[]>([]);
+  const [isLoadingPatients, setIsLoadingPatients] = useState(false);
 
   // Check user roles more explicitly - make sure staff can see proper data
   const isStudent = user?.role === 'student';
@@ -113,14 +119,87 @@ const Dashboard: React.FC = () => {
   // Get medicines with low stock for medical staff
   const lowStockMedicines = medicines.filter(med => med.quantity < 10);
 
-  const handleAddMedicalRecord = () => {
-    console.log("Add medical record button clicked");
+  // Effect to fetch all patients (students and staff) when dialog opens
+  useEffect(() => {
+    if (isPatientSelectOpen) {
+      fetchAllPatients();
+    }
+  }, [isPatientSelectOpen]);
+
+  // Function to fetch all patients from the API
+  const fetchAllPatients = async () => {
+    setIsLoadingPatients(true);
+    console.log("Fetching all patients...");
     
-    if (allPatients.length === 0) {
-      toast.error("No patients available to add records for");
+    const isPreviewMode = window.location.hostname.includes('lovableproject.com');
+    
+    if (isPreviewMode) {
+      // Use sample data in preview mode
+      import('@/types').then(({ SAMPLE_USERS }) => {
+        const patients = SAMPLE_USERS.filter(user => 
+          (user.role === 'student' || user.role === 'staff') &&
+          user.email !== 'student@example.com' && 
+          user.email !== 'staff@example.com'
+        );
+        console.log(`Found ${patients.length} patients in sample data`);
+        setAllAvailablePatients(patients);
+        setIsLoadingPatients(false);
+      });
       return;
     }
     
+    try {
+      // Get API URL using the same logic as in DataContext
+      const getApiUrl = () => {
+        const hostname = window.location.hostname;
+        
+        if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
+          return 'https://api.climasys.entrsolutions.com/api';
+        }
+        
+        const envApiUrl = import.meta.env.VITE_API_URL;
+        if (envApiUrl) {
+          return envApiUrl;
+        }
+        
+        return 'http://localhost:8080/api';
+      };
+      
+      const API_URL = getApiUrl();
+      console.log('Fetching patients from API:', API_URL);
+      
+      const response = await axios.get(`${API_URL}/users`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        timeout: 10000
+      });
+      
+      // Filter to only include students and staff (patients)
+      const patients = response.data.filter((user: UserType) => 
+        user.role === 'student' || user.role === 'staff'
+      );
+      
+      console.log(`Found ${patients.length} patients from API`);
+      setAllAvailablePatients(patients);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+      toast.error('Unable to fetch patients. Please try again later.');
+      
+      // Fallback to patients from appointments if API fails
+      console.log('Falling back to appointment-based patient list');
+      setAllAvailablePatients(allPatients);
+    } finally {
+      setIsLoadingPatients(false);
+    }
+  };
+
+  const handleAddMedicalRecord = () => {
+    console.log("Add medical record button clicked");
+    fetchAllPatients(); // Fetch patients when button is clicked
+    setPatientSearchTerm(''); // Reset search term
     setSelectedPatientId(''); // Reset selection
     setIsPatientSelectOpen(true);
   };
@@ -138,6 +217,12 @@ const Dashboard: React.FC = () => {
     // Use navigate instead of window.location for smoother transitions
     navigate(`/medical-records?patient=${selectedPatientId}`);
   };
+
+  // Filter patients based on search term
+  const filteredPatients = patientSearchTerm
+    ? allAvailablePatients.filter(patient =>
+        patient.name.toLowerCase().includes(patientSearchTerm.toLowerCase()))
+    : allAvailablePatients;
 
   return (
     <MainLayout>
@@ -189,31 +274,63 @@ const Dashboard: React.FC = () => {
 
         {/* Patient Selection Dialog */}
         <Dialog open={isPatientSelectOpen} onOpenChange={setIsPatientSelectOpen}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Select Patient</DialogTitle>
             </DialogHeader>
             <div className="py-4">
+              <div className="relative mb-4">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search patients..."
+                  className="pl-9 w-full"
+                  value={patientSearchTerm}
+                  onChange={(e) => setPatientSearchTerm(e.target.value)}
+                />
+              </div>
+              
               <Label htmlFor="patient-select">Choose a patient to add medical record</Label>
-              <select
-                id="patient-select"
-                className="w-full mt-2 p-2 border border-gray-300 rounded-md"
-                value={selectedPatientId}
-                onChange={(e) => setSelectedPatientId(e.target.value)}
-              >
-                <option value="">Select a patient</option>
-                {allPatients.map((patient) => (
-                  <option key={patient.id} value={patient.id}>
-                    {patient.name}
-                  </option>
-                ))}
-              </select>
+              
+              {isLoadingPatients ? (
+                <div className="flex justify-center items-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-medical-primary"></div>
+                </div>
+              ) : filteredPatients.length > 0 ? (
+                <div className="mt-2 max-h-60 overflow-auto border rounded-md">
+                  {filteredPatients.map((patient) => (
+                    <div 
+                      key={patient.id}
+                      className={`p-3 cursor-pointer transition-colors ${
+                        selectedPatientId === patient.id 
+                          ? 'bg-medical-light text-medical-primary' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={() => setSelectedPatientId(patient.id)}
+                    >
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 mr-2 text-gray-500" />
+                        <div>
+                          <div className="font-medium">{patient.name}</div>
+                          <div className="text-xs text-gray-500 capitalize">{patient.role}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  No patients found matching your search.
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsPatientSelectOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handlePatientSelection}>
+              <Button 
+                onClick={handlePatientSelection}
+                disabled={!selectedPatientId || isLoadingPatients}
+              >
                 Continue
               </Button>
             </DialogFooter>
