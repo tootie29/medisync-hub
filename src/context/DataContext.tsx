@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import axios from 'axios';
 
+// Move this function inside the component or keep it as a standalone non-hook function
 const getApiUrl = () => {
   const isLovablePreview = window.location.hostname.includes('lovableproject.com');
   if (isLovablePreview) {
@@ -29,51 +30,6 @@ const getApiUrl = () => {
   
   return 'http://localhost:8080/api';
 };
-
-const API_URL = getApiUrl();
-console.log('Using API URL in DataContext:', API_URL);
-
-const apiClient = axios.create({
-  baseURL: API_URL || 'http://localhost:8080/api',
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  }
-});
-
-apiClient.interceptors.response.use(
-  response => response,
-  async error => {
-    if (axios.isCancel(error)) {
-      return Promise.reject(error);
-    }
-    
-    if (window.location.hostname.includes('lovableproject.com')) {
-      console.log('API error in preview mode, will fall back to sample data');
-      return Promise.reject(error);
-    }
-    
-    const originalRequest = error.config;
-    
-    if (originalRequest._retryCount >= 3) {
-      console.error('Request failed after multiple retries:', error.message);
-      return Promise.reject(error);
-    }
-    
-    if (originalRequest._retryCount === undefined) {
-      originalRequest._retryCount = 0;
-    }
-    
-    originalRequest._retryCount++;
-    
-    console.log(`Retrying request (${originalRequest._retryCount}/3)...`);
-    
-    const delay = originalRequest._retryCount * 1000;
-    await new Promise(resolve => setTimeout(resolve, delay));
-    
-    return apiClient(originalRequest);
-  }
-);
 
 interface DataContextType {
   medicalRecords: MedicalRecord[];
@@ -113,7 +69,53 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+// Configure API client inside the component to avoid hooks outside components
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const API_URL = getApiUrl();
+  console.log('Using API URL in DataContext:', API_URL);
+  
+  const apiClient = axios.create({
+    baseURL: API_URL || 'http://localhost:8080/api',
+    timeout: 15000,
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+  
+  apiClient.interceptors.response.use(
+    response => response,
+    async error => {
+      if (axios.isCancel(error)) {
+        return Promise.reject(error);
+      }
+      
+      if (window.location.hostname.includes('lovableproject.com')) {
+        console.log('API error in preview mode, will fall back to sample data');
+        return Promise.reject(error);
+      }
+      
+      const originalRequest = error.config;
+      
+      if (originalRequest._retryCount >= 3) {
+        console.error('Request failed after multiple retries:', error.message);
+        return Promise.reject(error);
+      }
+      
+      if (originalRequest._retryCount === undefined) {
+        originalRequest._retryCount = 0;
+      }
+      
+      originalRequest._retryCount++;
+      
+      console.log(`Retrying request (${originalRequest._retryCount}/3)...`);
+      
+      const delay = originalRequest._retryCount * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      return apiClient(originalRequest);
+    }
+  );
+
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
