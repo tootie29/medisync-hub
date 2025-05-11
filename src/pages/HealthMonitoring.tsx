@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -9,7 +8,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, LineChartIcon, Activity, Heart, Wind } from "lucide-react";
+import { PlusCircle, LineChartIcon, Activity, Heart, Wind, Thermometer } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 
@@ -30,12 +29,14 @@ const HealthMonitoring = () => {
     bloodPressureDiastolic: "",
     bloodGlucose: "",
     respiratoryRate: "",
+    oxygenSaturation: "",
   });
   const [patientData, setPatientData] = useState({
     heartRate: [],
     bloodPressure: [],
     bloodGlucose: [],
     respiratoryRate: [],
+    oxygenSaturation: [],
   });
 
   // Transform medical records into chart data format
@@ -54,6 +55,7 @@ const HealthMonitoring = () => {
     const bloodPressureData = [];
     const bloodGlucoseData = [];
     const respiratoryRateData = [];
+    const oxygenSaturationData = [];
 
     sortedRecords.forEach(record => {
       const date = format(new Date(record.date), "yyyy-MM-dd");
@@ -100,6 +102,14 @@ const HealthMonitoring = () => {
           value: record.vitalSigns.respiratoryRate,
         });
       }
+
+      // Add oxygen saturation data if available
+      if (record.vitalSigns?.oxygenSaturation) {
+        oxygenSaturationData.push({
+          date,
+          value: record.vitalSigns.oxygenSaturation,
+        });
+      }
     });
 
     // Reverse the arrays to display oldest to newest in charts
@@ -108,6 +118,7 @@ const HealthMonitoring = () => {
       bloodPressure: bloodPressureData.reverse(),
       bloodGlucose: bloodGlucoseData.reverse(),
       respiratoryRate: respiratoryRateData.reverse(),
+      oxygenSaturation: oxygenSaturationData.reverse(),
     });
   }, [user, medicalRecords]);
 
@@ -141,6 +152,10 @@ const HealthMonitoring = () => {
       const respiratoryRate = Number(newReading.respiratoryRate);
       message = `Respiratory Rate: ${respiratoryRate} breaths/min`;
       vitalSigns = { respiratoryRate };
+    } else if (type === "oxygenSaturation") {
+      const oxygenSaturation = Number(newReading.oxygenSaturation);
+      message = `Oxygen Saturation: ${oxygenSaturation}%`;
+      vitalSigns = { oxygenSaturation };
     }
     
     // If we have a record for today, update it
@@ -198,6 +213,7 @@ const HealthMonitoring = () => {
     bloodPressure: [...healthData.bloodPressure, ...patientData.bloodPressure],
     bloodGlucose: [...healthData.bloodGlucose, ...patientData.bloodGlucose],
     respiratoryRate: [...healthData.respiratoryRate, ...patientData.respiratoryRate],
+    oxygenSaturation: [...healthData.oxygenSaturation, ...patientData.oxygenSaturation],
   };
 
   return (
@@ -211,13 +227,15 @@ const HealthMonitoring = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-8">
+          <TabsList className="grid grid-cols-5 mb-8">
             <TabsTrigger value="heart-rate">Heart Rate</TabsTrigger>
             <TabsTrigger value="blood-pressure">Blood Pressure</TabsTrigger>
             <TabsTrigger value="blood-glucose">Blood Glucose</TabsTrigger>
             <TabsTrigger value="respiratory-rate">Respiratory Rate</TabsTrigger>
+            <TabsTrigger value="oxygen-saturation">Oxygen Saturation</TabsTrigger>
           </TabsList>
 
+          {/* Heart Rate Tab Content */}
           <TabsContent value="heart-rate">
             <Card className="mb-8">
               <CardHeader>
@@ -311,6 +329,7 @@ const HealthMonitoring = () => {
             </Card>
           </TabsContent>
 
+          {/* Blood Pressure Tab Content */}
           <TabsContent value="blood-pressure">
             <Card className="mb-8">
               <CardHeader>
@@ -428,6 +447,7 @@ const HealthMonitoring = () => {
             </Card>
           </TabsContent>
 
+          {/* Blood Glucose Tab Content */}
           <TabsContent value="blood-glucose">
             <Card className="mb-8">
               <CardHeader>
@@ -521,6 +541,7 @@ const HealthMonitoring = () => {
             </Card>
           </TabsContent>
 
+          {/* Respiratory Rate Tab Content */}
           <TabsContent value="respiratory-rate">
             <Card className="mb-8">
               <CardHeader>
@@ -613,6 +634,102 @@ const HealthMonitoring = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Oxygen Saturation Tab Content */}
+          <TabsContent value="oxygen-saturation">
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Oxygen Saturation</CardTitle>
+                <CardDescription>Monitor your SpO2 levels (percentage)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart
+                    data={combinedData.oxygenSaturation}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis domain={[70, 100]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      name="SpO2 %"
+                      stroke="#0ea5e9"
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Historical Oxygen Saturation Data</CardTitle>
+                <CardDescription>Your previous oxygen saturation readings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">Oxygen Saturation (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {patientData.oxygenSaturation.length > 0 ? (
+                        patientData.oxygenSaturation.map((item, index) => (
+                          <tr key={index} className="border-b">
+                            <td className="p-2">{item.date}</td>
+                            <td className="p-2">{item.value}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={2} className="p-2 text-center text-muted-foreground">
+                            No oxygen saturation data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Add New Reading</CardTitle>
+                <CardDescription>Record your current oxygen saturation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-grow">
+                    <label className="text-sm font-medium mb-2 block">Oxygen Saturation (%)</label>
+                    <Input
+                      type="number"
+                      placeholder="Enter oxygen saturation"
+                      min="70"
+                      max="100"
+                      value={newReading.oxygenSaturation}
+                      onChange={(e) => setNewReading({ ...newReading, oxygenSaturation: e.target.value })}
+                    />
+                  </div>
+                  <Button
+                    className="self-end"
+                    onClick={() => handleAddReading("oxygenSaturation")}
+                    disabled={!newReading.oxygenSaturation}
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Reading
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </MainLayout>
@@ -652,6 +769,14 @@ const healthData = {
     { date: "2023-10-22", value: 15 },
     { date: "2023-10-29", value: 16 },
     { date: "2023-11-05", value: 15 },
+  ],
+  oxygenSaturation: [
+    { date: "2023-10-01", value: 98 },
+    { date: "2023-10-08", value: 97 },
+    { date: "2023-10-15", value: 98 },
+    { date: "2023-10-22", value: 96 },
+    { date: "2023-10-29", value: 97 },
+    { date: "2023-11-05", value: 98 },
   ],
 };
 

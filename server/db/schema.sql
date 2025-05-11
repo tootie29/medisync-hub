@@ -1,4 +1,3 @@
-
 -- Create the database
 CREATE DATABASE IF NOT EXISTS medi_hub;
 USE medi_hub;
@@ -65,6 +64,7 @@ CREATE TABLE IF NOT EXISTS vital_signs (
   blood_pressure VARCHAR(20),
   blood_glucose INT,
   respiratory_rate INT,
+  oxygen_saturation INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (medical_record_id) REFERENCES medical_records(id) ON DELETE CASCADE ON UPDATE CASCADE
