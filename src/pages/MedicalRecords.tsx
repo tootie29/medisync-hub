@@ -295,29 +295,7 @@ const MedicalRecords: React.FC = () => {
   return (
     <MainLayout>
       <div className="medical-container">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-3 mb-6">
-          <div>
-            <h1 className="page-title mb-1">Medical Records</h1>
-            {selectedPatient && (
-              <div className="flex items-center text-lg font-medium text-primary">
-                <User className="h-5 w-5 mr-2" />
-                Patient: {selectedPatient.name}
-              </div>
-            )}
-          </div>
-          
-          {isDoctor && selectedPatient && (
-            <Button 
-              onClick={() => {
-                setIsAddingRecord(true);
-                resetForm();
-              }}
-              className="bg-medical-primary hover:bg-medical-secondary"
-            >
-              Add New Record for {selectedPatient.name}
-            </Button>
-          )}
-        </div>
+        <h1 className="page-title">Medical Records</h1>
 
         <div className="mt-6">
           {selectedPatient && (
@@ -372,18 +350,6 @@ const MedicalRecords: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
-
-          {!selectedPatient && !isPatient && (
-            <Card className="mb-6">
-              <CardContent className="flex flex-col items-center justify-center py-8">
-                <User className="h-12 w-12 text-gray-400 mb-3" />
-                <h3 className="text-xl font-semibold mb-2">No Patient Selected</h3>
-                <p className="text-gray-500 text-center max-w-md">
-                  Please select a patient from the dashboard to view or add medical records.
-                </p>
-              </CardContent>
-            </Card>
           )}
 
           {(isAddingRecord || editingRecordId) && selectedPatientId && (
