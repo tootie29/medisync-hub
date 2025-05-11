@@ -1,5 +1,8 @@
 export type UserRole = 'student' | 'staff' | 'head nurse' | 'admin' | 'doctor';
 
+// Define a more specific gender type that includes empty string
+export type Gender = 'male' | 'female' | 'other' | '';
+
 export interface User {
   id: string;
   email: string;
@@ -7,7 +10,7 @@ export interface User {
   role: UserRole;
   phone?: string;
   dateOfBirth?: string;
-  gender?: 'male' | 'female' | 'other';
+  gender?: Gender;
   address?: string;
   emergencyContact?: string;
   studentId?: string;
@@ -46,7 +49,7 @@ export interface MedicalRecord {
   certificateEnabled?: boolean;
   type?: string; // Added the type property
   appointmentId?: string; // Added the appointmentId property
-  gender?: 'male' | 'female' | 'other'; // Added the gender property
+  gender?: Gender; // Updated to use the Gender type
   createdAt: string;
   updatedAt: string;
 }
@@ -68,7 +71,7 @@ export interface CreateMedicalRecordInput {
   bmi?: number; // Added bmi property to match what we're sending
   type?: string; // Added the type property
   appointmentId?: string; // Added the appointmentId property
-  gender?: 'male' | 'female' | 'other'; // Added the gender property
+  gender?: Gender; // Updated to use the Gender type
 }
 
 // Update the Appointment interface to include the "in-progress" status

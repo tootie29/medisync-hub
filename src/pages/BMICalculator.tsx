@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,6 +14,7 @@ import { toast } from "sonner";
 import { getBMICategory, getBMICategoryColor } from '@/utils/helpers';
 import BMICertificate from '@/components/bmi/BMICertificate';
 import html2pdf from 'html2pdf.js';
+import { Gender } from '@/types';
 
 const safeToFixed = (value: any, digits: number = 1): string => {
   if (typeof value === 'number' && !isNaN(value) && value > 0) {
@@ -33,7 +33,7 @@ const BMICalculator: React.FC = () => {
   
   const [height, setHeight] = useState<number>(0);
   const [weight, setWeight] = useState<number>(0);
-  const [gender, setGender] = useState<'male' | 'female' | ''>('');
+  const [gender, setGender] = useState<Gender>('');
   const [bmi, setBmi] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [lastRecord, setLastRecord] = useState<any>(null);
