@@ -29,6 +29,9 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
   // Only display the BMI if it's a valid number
   const displayBmi = calculatedBmi > 0 ? calculatedBmi.toFixed(1) : "0.0";
   
+  // School logo URL
+  const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
+  
   return (
     <div 
       id={id} 
@@ -71,19 +74,21 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
           }}>
             <div style={{ 
               width: '60px', 
-              height: '60px', 
-              borderRadius: '50%', 
-              backgroundColor: '#22c55e', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              marginRight: '15px'
+              height: '60px',
+              marginRight: '15px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 4V4C14.2091 4 16 5.79086 16 8H8C8 5.79086 9.79086 4 12 4Z" fill="white"/>
-                <path d="M18 8H6C4.89543 8 4 8.89543 4 10V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V10C20 8.89543 19.1046 8 18 8Z" fill="white"/>
-                <path d="M12 12V16M12 12L9 14M12 12L15 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <img 
+                src={schoolLogo} 
+                alt="College of Nursing" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain' 
+                }}
+              />
             </div>
             <div>
               <h1 style={{
@@ -271,21 +276,15 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
               position: 'relative',
               overflow: 'hidden'
             }}>
-              <div style={{
-                position: 'absolute',
-                top: '0',
-                left: '0',
-                right: '0',
-                bottom: '0',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#22c55e',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                fontStyle: 'italic'
-              }}>SEAL</div>
+              <img 
+                src={schoolLogo} 
+                alt="College of Nursing Seal" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain'
+                }}
+              />
             </div>
           </div>
           
