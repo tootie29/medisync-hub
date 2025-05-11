@@ -287,54 +287,6 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
             </div>
           </div>
           
-          <div style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            {/* School Logo Seal */}
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              border: '1px solid #22c55e',
-              position: 'relative',
-              overflow: 'hidden',
-              margin: '0 5px'
-            }}>
-              <img 
-                src={schoolLogo || defaultSchoolLogo} 
-                alt="School Seal" 
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
-            
-            {/* College Logo Seal */}
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              border: '1px solid #22c55e',
-              position: 'relative',
-              overflow: 'hidden',
-              margin: '0 5px'
-            }}>
-              <img 
-                src={collegeLogo || defaultCollegeLogo} 
-                alt="College of Nursing Seal" 
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
-          </div>
-          
           <div style={{ textAlign: 'center', flex: '1' }}>
             <div 
               className="signature-line"
