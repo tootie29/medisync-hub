@@ -31,8 +31,9 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
   // Only display the BMI if it's a valid number
   const displayBmi = calculatedBmi > 0 ? calculatedBmi.toFixed(1) : "0.0";
   
-  // Default school logo URL if not provided
-  const defaultLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
+  // Default school and college logo URLs if not provided
+  const defaultSchoolLogo = "/schoollogo.jpeg";
+  const defaultCollegeLogo = "/collegelogo.jpeg";
   
   return (
     <div 
@@ -84,7 +85,7 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
               justifyContent: 'center'
             }}>
               <img 
-                src={schoolLogo || defaultLogo} 
+                src={schoolLogo || defaultSchoolLogo} 
                 alt="School Logo" 
                 style={{ 
                   width: '100%', 
@@ -98,13 +99,14 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
             <div style={{ 
               width: '60px', 
               height: '60px',
+              marginLeft: '10px',
               marginRight: '15px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
               <img 
-                src={collegeLogo || defaultLogo} 
+                src={collegeLogo || defaultCollegeLogo} 
                 alt="College of Nursing" 
                 style={{ 
                   width: '100%', 
@@ -301,7 +303,7 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
               margin: '0 5px'
             }}>
               <img 
-                src={schoolLogo || defaultLogo} 
+                src={schoolLogo || defaultSchoolLogo} 
                 alt="School Seal" 
                 style={{ 
                   width: '100%', 
@@ -322,7 +324,7 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
               margin: '0 5px'
             }}>
               <img 
-                src={collegeLogo || defaultLogo} 
+                src={collegeLogo || defaultCollegeLogo} 
                 alt="College of Nursing Seal" 
                 style={{ 
                   width: '100%', 

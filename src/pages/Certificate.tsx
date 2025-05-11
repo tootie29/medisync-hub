@@ -56,9 +56,9 @@ const CertificatePage: React.FC = () => {
 
   const displayUserName = user?.name || "Patient";
 
-  // School logos URLs
-  const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
-  const collegeLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png"; // Using the same logo temporarily, replace with actual collegeLogo path
+  // School logos URLs - explicitly use schoollogo.jpeg and collegelogo.jpeg
+  const schoolLogo = "/schoollogo.jpeg";
+  const collegeLogo = "/collegelogo.jpeg";
 
   return (
     <MainLayout>
