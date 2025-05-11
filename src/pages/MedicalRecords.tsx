@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -638,6 +637,20 @@ const MedicalRecords: React.FC = () => {
                               <div>
                                 <p className="text-sm text-gray-500">Blood Glucose</p>
                                 <p className="font-medium">{record.vitalSigns.bloodGlucose} mg/dL</p>
+                              </div>
+                            )}
+                            
+                            {record.vitalSigns?.respiratoryRate && (
+                              <div>
+                                <p className="text-sm text-gray-500">Respiratory Rate</p>
+                                <p className="font-medium">{record.vitalSigns.respiratoryRate} breaths/min</p>
+                              </div>
+                            )}
+                            
+                            {record.vitalSigns?.oxygenSaturation && (
+                              <div>
+                                <p className="text-sm text-gray-500">Oxygen Saturation</p>
+                                <p className="font-medium">{record.vitalSigns.oxygenSaturation}%</p>
                               </div>
                             )}
                             
