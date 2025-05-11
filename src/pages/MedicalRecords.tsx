@@ -69,6 +69,7 @@ const MedicalRecords: React.FC = () => {
   console.log("Is patient:", isPatient);
   console.log("Is medical staff:", isMedicalStaff);
   
+  // Set patient ID from URL or current user
   useEffect(() => {
     if (patientIdFromUrl) {
       console.log("Attempting to set patient ID from URL:", patientIdFromUrl);
@@ -79,18 +80,21 @@ const MedicalRecords: React.FC = () => {
     }
   }, [patientIdFromUrl, isPatient, user]);
   
+  // Handle 'add' action from URL
   useEffect(() => {
-    // If the action from URL is 'add', set isAddingRecord to true
     if (actionFromUrl === 'add') {
+      console.log("Setting isAddingRecord to true based on URL action param");
       setIsAddingRecord(true);
       resetForm();
     }
   }, [actionFromUrl]);
   
+  // Look up the selected patient - this handles the case with prefixed IDs
   const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
   console.log("Selected patient:", selectedPatient);
   console.log("Selected patient ID:", selectedPatientId);
   
+  // Get medical records for the selected patient using the ID as provided
   const unsortedMedicalRecords = selectedPatientId 
     ? getMedicalRecordsByPatientId(selectedPatientId)
     : [];
@@ -292,6 +296,7 @@ const MedicalRecords: React.FC = () => {
     return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
   };
 
+  // If doctor and no patient selected/provided, navigate to dashboard
   useEffect(() => {
     if (isDoctor && !selectedPatientId && !patientIdFromUrl) {
       console.log("No patient selected, navigating to dashboard");
@@ -299,6 +304,7 @@ const MedicalRecords: React.FC = () => {
     }
   }, [isDoctor, selectedPatientId, patientIdFromUrl, navigate]);
 
+  // Check for selected patient but no records
   useEffect(() => {
     if (selectedPatientId && unsortedMedicalRecords.length === 0) {
       console.log("Patient selected but no records found:", selectedPatientId);
@@ -313,19 +319,28 @@ const MedicalRecords: React.FC = () => {
     return isMedicalStaff;
   };
 
+  // Show a warning message if patient is undefined but ID is provided
+  const showPatientNotFoundWarning = selectedPatientId && !selectedPatient;
+
   return (
     <MainLayout>
       <div className="medical-container">
         <h1 className="page-title">Medical Records</h1>
 
         <div className="mt-6">
-          {selectedPatient && (
+          {/* Patient information header */}
+          {selectedPatientId && (
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
               <h2 className="text-xl font-semibold">
-                {isPatient ? 'Your Medical Records' : `Medical Records for ${selectedPatient.name}`}
+                {isPatient ? 'Your Medical Records' : (
+                  selectedPatient 
+                    ? `Medical Records for ${selectedPatient.name}`
+                    : `Medical Records for Patient ID: ${selectedPatientId}`
+                )}
               </h2>
               
               <div className="flex flex-wrap gap-2">
+                {/* Only show Add Record button if user is medical staff */}
                 {canAddRecords() && (
                   <Button 
                     onClick={() => {
@@ -339,6 +354,7 @@ const MedicalRecords: React.FC = () => {
                   </Button>
                 )}
                 
+                {/* Sort and view options */}
                 <div className="flex items-center">
                   <label htmlFor="sortOption" className="mr-2 text-sm">Sort by:</label>
                   <select 
@@ -373,7 +389,18 @@ const MedicalRecords: React.FC = () => {
               </div>
             </div>
           )}
+          
+          {/* Show warning if patient ID is provided but patient not found */}
+          {showPatientNotFoundWarning && (
+            <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md mb-4">
+              <p className="text-sm text-yellow-800 flex items-center">
+                <Activity className="h-4 w-4 mr-2" />
+                Patient information not found for ID: {selectedPatientId}, but medical records may still be available.
+              </p>
+            </div>
+          )}
 
+          {/* Form for adding/editing record */}
           {(isAddingRecord || editingRecordId) && selectedPatientId && (
             <Card className="mb-6">
               <CardHeader>
@@ -389,15 +416,18 @@ const MedicalRecords: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit}>
-                  {selectedPatient && (
-                    <div className="bg-gray-50 p-3 rounded-md mb-4 flex items-center">
-                      <User className="h-5 w-5 text-gray-500 mr-2" />
-                      <span className="text-sm text-gray-600">
-                        Adding medical record for patient: 
-                        <span className="font-medium ml-1">{selectedPatient.name}</span>
+                  {/* Patient indicator - show even if patient details not found */}
+                  <div className="bg-gray-50 p-3 rounded-md mb-4 flex items-center">
+                    <User className="h-5 w-5 text-gray-500 mr-2" />
+                    <span className="text-sm text-gray-600">
+                      Adding medical record for patient: 
+                      <span className="font-medium ml-1">
+                        {selectedPatient ? selectedPatient.name : `ID: ${selectedPatientId}`}
                       </span>
-                    </div>
-                  )}
+                    </span>
+                  </div>
+                  
+                  {/* Rest of the form fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="height">Height (cm)</Label>
@@ -615,6 +645,7 @@ const MedicalRecords: React.FC = () => {
             </Card>
           )}
 
+          {/* Medical records display */}
           {medicalRecords.length > 0 ? (
             <>
               {viewMode === 'card' ? (

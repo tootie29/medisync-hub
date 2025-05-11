@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
@@ -115,8 +116,15 @@ const PatientRecordsTable: React.FC = () => {
 
   // Map patient data for display
   const patientData = patientUsers.map(patient => {
-    // Count records for this patient
-    const patientRecords = medicalRecords.filter(record => record.patientId === patient.id);
+    // Count records for this patient - ensure we check both original and prefixed ID formats
+    const patientId = patient.id;
+    const prefixedId = patientId.startsWith('user-') ? patientId : `user-${patientId}`;
+    
+    // Check records for both ID formats
+    const patientRecords = medicalRecords.filter(record => 
+      record.patientId === patientId || record.patientId === prefixedId
+    );
+    
     const recordCount = patientRecords.length;
     
     // Get latest record date
@@ -202,41 +210,48 @@ const PatientRecordsTable: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : filteredPatients.length > 0 ? (
-                filteredPatients.map(patient => (
-                  <TableRow key={patient?.id}>
-                    <TableCell className="font-medium">{patient?.name}</TableCell>
-                    <TableCell className="capitalize">{patient?.role}</TableCell>
-                    <TableCell>{patient?.recordCount}</TableCell>
-                    <TableCell>
-                      {patient?.latestRecordDate 
-                        ? formatDate(patient.latestRecordDate)
-                        : 'N/A'
-                      }
-                    </TableCell>
-                    <TableCell className="text-right flex justify-end gap-2">
-                      <Button asChild size="sm" variant="ghost">
-                        <Link to={`/medical-records?patient=${patient?.id}`}>
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Records
-                        </Link>
-                      </Button>
-                      {/* Only show Add Record button for doctors and head nurses (NOT admin) */}
-                      {isMedicalStaff && (
-                        <Button 
-                          asChild 
-                          size="sm" 
-                          variant="outline"
-                          className="ml-2"
-                        >
-                          <Link to={`/medical-records?patient=${patient?.id}&action=add`}>
-                            <FilePlus className="h-4 w-4 mr-2" />
-                            Add Record
+                filteredPatients.map(patient => {
+                  // Always prefixed patient ID for consistent URL params
+                  const patientUrlId = patient?.id.startsWith('user-') 
+                    ? patient?.id 
+                    : `user-${patient?.id}`;
+                    
+                  return (
+                    <TableRow key={patient?.id}>
+                      <TableCell className="font-medium">{patient?.name}</TableCell>
+                      <TableCell className="capitalize">{patient?.role}</TableCell>
+                      <TableCell>{patient?.recordCount}</TableCell>
+                      <TableCell>
+                        {patient?.latestRecordDate 
+                          ? formatDate(patient.latestRecordDate)
+                          : 'N/A'
+                        }
+                      </TableCell>
+                      <TableCell className="text-right flex justify-end gap-2">
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to={`/medical-records?patient=${patientUrlId}`}>
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Records
                           </Link>
                         </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
+                        {/* Only show Add Record button for doctors and head nurses (NOT admin) */}
+                        {isMedicalStaff && (
+                          <Button 
+                            asChild 
+                            size="sm" 
+                            variant="outline"
+                            className="ml-2"
+                          >
+                            <Link to={`/medical-records?patient=${patientUrlId}&action=add`}>
+                              <FilePlus className="h-4 w-4 mr-2" />
+                              Add Record
+                            </Link>
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">

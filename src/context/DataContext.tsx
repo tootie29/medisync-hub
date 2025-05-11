@@ -184,35 +184,44 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getUserById = (id: string): User | undefined => {
     console.log('Looking up user by ID:', id);
     
-    if (id && id.includes('-')) {
-      console.log('ID contains prefix, checking sample users with or without prefix');
+    if (!id) {
+      console.log('No ID provided to getUserById');
+      return undefined;
+    }
+    
+    // First try exact match
+    const exactMatch = SAMPLE_USERS.find(user => user.id === id);
+    if (exactMatch) {
+      console.log('Found exact user match with ID:', id);
+      return exactMatch;
+    }
+    
+    // If the ID has a prefix like 'user-'
+    if (id.startsWith('user-')) {
+      console.log('ID has user- prefix, trying to find user with numeric part');
+      const numericId = id.replace('user-', '');
       
-      const exactMatch = SAMPLE_USERS.find(user => user.id === id);
-      if (exactMatch) {
-        console.log('Found exact match with prefixed ID:', exactMatch);
-        return exactMatch;
+      // Try to find by numeric part
+      const numericMatch = SAMPLE_USERS.find(user => user.id === numericId);
+      if (numericMatch) {
+        console.log('Found user with numeric ID part:', numericMatch.id);
+        return numericMatch;
       }
       
-      if (id.startsWith('user-')) {
-        const numericId = id.replace('user-', '');
-        const matchingUser = SAMPLE_USERS.find(user => user.id === numericId);
-        
-        if (matchingUser) {
-          console.log('Found matching user by numeric ID part:', matchingUser);
-          return matchingUser;
-        }
-        
-        if (isPreviewMode) {
-          const fallbackUser = SAMPLE_USERS.find(u => u.role === 'student' || u.role === 'staff');
-          if (fallbackUser) {
-            console.log('Using fallback user for preview mode:', fallbackUser);
-            return fallbackUser;
-          }
+      // Special handling for demo purposes - if in preview mode, find any user with matching role
+      if (isPreviewMode || !API_URL) {
+        console.log('In preview mode, trying to find any matching user by role');
+        // For prefixed IDs that match pattern but not found, try to find any student/staff
+        const fallbackUser = SAMPLE_USERS.find(u => u.role === 'student' || u.role === 'staff');
+        if (fallbackUser) {
+          console.log('Using fallback user for preview mode:', fallbackUser.id);
+          return fallbackUser;
         }
       }
     }
     
-    return SAMPLE_USERS.find(user => user.id === id);
+    console.log('No user found for ID:', id);
+    return undefined;
   };
 
   const getMedicalRecordsByPatientId = (patientId: string): MedicalRecord[] => {
