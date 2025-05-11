@@ -8,15 +8,15 @@ import {
   TabsList, 
   TabsTrigger 
 } from '@/components/ui/tabs';
-import { GraduationCap, Users, ArrowLeft, Mail } from 'lucide-react';
-import RegistrationForm from '@/components/forms/RegistrationForm';
+import { Users, ArrowLeft, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import EmailVerification from '@/components/auth/EmailVerification';
 import { useAuth } from '@/context/AuthContext';
+import StaffRegistrationForm from '@/components/forms/StaffRegistrationForm';
 
-const Register: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('student');
+const StaffRegistration: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('doctor');
   const navigate = useNavigate();
   const { verificationEmail } = useAuth();
   const [showVerification, setShowVerification] = useState(false);
@@ -84,56 +84,57 @@ const Register: React.FC = () => {
       </div>
       
       <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold text-medical-primary">REGISTER ACCOUNT</h2>
+        <h2 className="text-2xl font-bold text-medical-primary">MEDICAL STAFF REGISTRATION</h2>
       </div>
       
-      <Tabs defaultValue="student" value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6 bg-medical-light">
+      <Tabs defaultValue="doctor" value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6 bg-medical-light">
           <TabsTrigger 
-            value="student" 
+            value="doctor" 
             className="flex items-center gap-2 data-[state=active]:bg-medical-primary data-[state=active]:text-white"
           >
-            <GraduationCap className="h-4 w-4" />
-            Student
+            <UserCheck className="h-4 w-4" />
+            Doctor
           </TabsTrigger>
           <TabsTrigger 
-            value="staff" 
+            value="head nurse" 
             className="flex items-center gap-2 data-[state=active]:bg-medical-primary data-[state=active]:text-white"
           >
             <Users className="h-4 w-4" />
-            Staff
+            Head Nurse
+          </TabsTrigger>
+          <TabsTrigger 
+            value="admin" 
+            className="flex items-center gap-2 data-[state=active]:bg-medical-primary data-[state=active]:text-white"
+          >
+            <Users className="h-4 w-4" />
+            Admin
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="student">
-          <RegistrationForm role="student" onSuccess={handleSuccess} />
+        <TabsContent value="doctor">
+          <StaffRegistrationForm role="doctor" onSuccess={handleSuccess} />
         </TabsContent>
 
-        <TabsContent value="staff">
-          <RegistrationForm role="staff" onSuccess={handleSuccess} />
+        <TabsContent value="head nurse">
+          <StaffRegistrationForm role="head nurse" onSuccess={handleSuccess} />
+        </TabsContent>
+        
+        <TabsContent value="admin">
+          <StaffRegistrationForm role="admin" onSuccess={handleSuccess} />
         </TabsContent>
 
-        <div className="mt-6 text-sm text-center space-y-2">
-          <div>
-            <Link
-              to="/login"
-              className="font-medium text-medical-primary hover:text-medical-secondary"
-            >
-              Already have an account? Sign in
-            </Link>
-          </div>
-          <div>
-            <Link
-              to="/staff-register"
-              className="font-medium text-medical-primary hover:text-medical-secondary"
-            >
-              Are you a doctor, head nurse or admin? Register here
-            </Link>
-          </div>
+        <div className="mt-6 text-sm text-center">
+          <Link
+            to="/login"
+            className="font-medium text-medical-primary hover:text-medical-secondary"
+          >
+            Already have an account? Sign in
+          </Link>
         </div>
       </Tabs>
     </AuthLayout>
   );
 };
 
-export default Register;
+export default StaffRegistration;

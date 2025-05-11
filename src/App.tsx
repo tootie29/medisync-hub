@@ -9,6 +9,7 @@ import {
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import StaffRegistration from '@/pages/StaffRegistration';
 import Dashboard from '@/pages/Dashboard';
 import Profile from '@/pages/Profile';
 import MedicalRecords from '@/pages/MedicalRecords';
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
   {
     path: "/register",
     element: <Register />,
+  },
+  {
+    path: "/staff-register",
+    element: <StaffRegistration />,
   },
   {
     path: "/dashboard",
