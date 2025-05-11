@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
@@ -59,8 +58,8 @@ const Inventory = () => {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [medicineToDelete, setMedicineToDelete] = useState<string | null>(null);
 
-  // Check user role - only staff, doctor and head nurse can access this page
-  const hasAccess = user && (user.role === "staff" || user.role === "head nurse" || user.role === "doctor");
+  // Check user role - only admin and staff can access this page
+  const hasAccess = user && (user.role === "staff" || user.role === "admin");
   
   // If user doesn't have access, redirect to home page
   if (!hasAccess) {
@@ -154,7 +153,7 @@ const Inventory = () => {
     }
   };
 
-  const canManageInventory = user && (user.role === "staff" || user.role === "head nurse" || user.role === "doctor");
+  const canManageInventory = user && (user.role === "staff" || user.role === "admin");
 
   return (
     <MainLayout>

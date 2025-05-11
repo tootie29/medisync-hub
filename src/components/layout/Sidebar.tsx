@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,8 +24,8 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   // School logo URL
   const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
   
-  // Determine if user can access inventory (staff, doctor or head nurse only)
-  const canAccessInventory = user && (user.role === "staff" || user.role === "head nurse" || user.role === "doctor");
+  // Determine if user can access inventory (admin and staff only)
+  const canAccessInventory = user && (user.role === "staff" || user.role === "admin");
 
   // Determine if user is patient
   const isPatient = user && (user.role === "student" || user.role === "staff");
@@ -64,7 +63,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       name: "Health Monitoring",
       icon: Activity,
     },
-    // Only show inventory to admin and head nurse roles
+    // Only show inventory to admin and staff roles
     ...(canAccessInventory ? [{
       path: "/inventory",
       name: "Inventory",
