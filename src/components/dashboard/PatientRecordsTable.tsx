@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Link } from 'react-router-dom';
-import { Search, ExternalLink, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, ExternalLink, AlertCircle, RefreshCw, FilePlus } from 'lucide-react';
 import { formatDate } from '@/utils/helpers';
 import { User, SAMPLE_USERS } from '@/types';
 import axios from 'axios';
@@ -185,7 +185,7 @@ const PatientRecordsTable: React.FC = () => {
                 <TableHead>Role</TableHead>
                 <TableHead>Record Count</TableHead>
                 <TableHead>Latest Record</TableHead>
-                <TableHead className="text-right">View</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -207,11 +207,22 @@ const PatientRecordsTable: React.FC = () => {
                         : 'N/A'
                       }
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right flex justify-end gap-2">
                       <Button asChild size="sm" variant="ghost">
                         <Link to={`/medical-records?patient=${patient?.id}`}>
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Records
+                        </Link>
+                      </Button>
+                      <Button 
+                        asChild 
+                        size="sm" 
+                        variant="outline"
+                        className="ml-2"
+                      >
+                        <Link to={`/medical-records?patient=${patient?.id}`}>
+                          <FilePlus className="h-4 w-4 mr-2" />
+                          Add Record
                         </Link>
                       </Button>
                     </TableCell>

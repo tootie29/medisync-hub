@@ -294,11 +294,8 @@ const MedicalRecords: React.FC = () => {
 
   // Check whether the current user can add records for this patient
   const canAddRecords = () => {
-    // Medical staff (doctors/admin) can always add records
-    if (isDoctor) return true;
-    
-    // Patients cannot add records
-    return false;
+    // Medical staff (doctors/admin) can always add records for any patient
+    return isDoctor;
   };
 
   return (
@@ -314,7 +311,6 @@ const MedicalRecords: React.FC = () => {
               </h2>
               
               <div className="flex flex-wrap gap-2">
-                {/* Modified: Show Add New Record button for all patients when viewed by medical staff */}
                 {canAddRecords() && (
                   <Button 
                     onClick={() => {
@@ -857,7 +853,7 @@ const MedicalRecords: React.FC = () => {
                     ? "This patient doesn't have any medical records yet." 
                     : "Select a patient to view or add medical records."}
                 </p>
-                {isDoctor && selectedPatientId && (
+                {canAddRecords() && selectedPatientId && (
                   <div className="mt-6">
                     <Button
                       onClick={() => {
