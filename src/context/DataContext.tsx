@@ -107,6 +107,8 @@ interface DataContextType {
   refreshMedicalRecords: () => Promise<void>;
   refreshAppointments: () => Promise<void>;
   refreshMedicines: () => Promise<void>;
+  
+  getApiUrl: () => string | null;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -612,7 +614,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       refreshMedicalRecords,
       refreshAppointments,
-      refreshMedicines
+      refreshMedicines,
+      
+      getApiUrl
     }}>
       {children}
     </DataContext.Provider>
@@ -626,3 +630,5 @@ export const useData = () => {
   }
   return context;
 };
+
+export { getApiUrl };

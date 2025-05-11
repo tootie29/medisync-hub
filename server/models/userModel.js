@@ -15,23 +15,37 @@ class UserModel {
 
   async getById(id) {
     try {
-      // Handle both formats (with or without 'user-' prefix)
+      if (!id) {
+        console.log('No ID provided to getById');
+        return null;
+      }
+
+      // Normalize the ID by removing the 'user-' prefix if it exists
       let userId = id;
-      if (id && id.startsWith('user-')) {
-        console.log(`Looking up user with prefixed ID: ${id}`);
-        // Extract the numeric part after the prefix
+      if (id.startsWith('user-')) {
         userId = id.replace('user-', '');
-        console.log(`Extracted userId: ${userId}`);
       }
       
+      console.log(`Looking up user with ID: ${id}, normalized to: ${userId}`);
+      
+      // First try with the normalized ID
       const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
       
+      // If not found, try with the original ID format
       if (rows.length === 0) {
-        console.log(`No user found with ID: ${userId}`);
-      } else {
-        console.log(`Found user: ${rows[0].name} with ID: ${userId}`);
+        console.log(`No user found with normalized ID: ${userId}, trying with original ID`);
+        const [originalRows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+        
+        if (originalRows.length === 0) {
+          console.log(`No user found with either ID format: ${id}`);
+          return null;
+        }
+        
+        console.log(`Found user with original ID: ${id}, name: ${originalRows[0].name}`);
+        return originalRows[0];
       }
       
+      console.log(`Found user with normalized ID: ${userId}, name: ${rows[0].name}`);
       return rows[0];
     } catch (error) {
       console.error('Error fetching user by ID:', error);

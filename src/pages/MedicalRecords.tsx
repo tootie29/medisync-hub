@@ -118,15 +118,10 @@ const MedicalRecords: React.FC = () => {
       
       // Not in preview mode, try to fetch from API
       const API_URL = getApiUrl();
-      let userId = patientId;
+      console.log(`Requesting user data from API with ID: ${patientId}`);
       
-      // Extract numeric ID if it has a prefix
-      if (patientId && patientId.startsWith('user-')) {
-        userId = patientId.replace('user-', '');
-      }
-      
-      console.log(`Requesting user data from API with ID: ${userId}`);
-      const response = await axios.get(`${API_URL}/users/${userId}`, {
+      // Keep the original ID format when sending to the API
+      const response = await axios.get(`${API_URL}/users/${patientId}`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
@@ -134,7 +129,12 @@ const MedicalRecords: React.FC = () => {
       });
       
       console.log('Patient data fetched successfully:', response.data);
-      setPatientData(response.data);
+      if (response.data) {
+        setPatientData(response.data);
+      } else {
+        console.log('API returned null/empty response');
+        setPatientData(null);
+      }
     } catch (error) {
       console.error('Error fetching patient data:', error);
       
@@ -142,6 +142,10 @@ const MedicalRecords: React.FC = () => {
       const localUser = getUserById(patientId);
       console.log('Falling back to local user data:', localUser);
       setPatientData(localUser);
+      
+      if (!localUser) {
+        toast.error('Could not retrieve patient information');
+      }
     } finally {
       setIsLoadingPatient(false);
     }
@@ -389,6 +393,11 @@ const MedicalRecords: React.FC = () => {
     
     // If no patient found but ID exists, show a cleaner message
     if (selectedPatientId) {
+      // Display a pending message if we're still loading
+      if (isLoadingPatient) {
+        return 'Loading patient information...';
+      }
+      
       // Extract numeric ID part if it exists to make it more readable
       const idDisplay = selectedPatientId.replace('user-', '');
       return `Medical Records for Patient #${idDisplay}`;
