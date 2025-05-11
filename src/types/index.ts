@@ -46,6 +46,7 @@ export interface MedicalRecord {
   certificateEnabled?: boolean;
   type?: string; // Added the type property
   appointmentId?: string; // Added the appointmentId property
+  gender?: 'male' | 'female' | 'other'; // Added the gender property
   createdAt: string;
   updatedAt: string;
 }
@@ -67,6 +68,7 @@ export interface CreateMedicalRecordInput {
   bmi?: number; // Added bmi property to match what we're sending
   type?: string; // Added the type property
   appointmentId?: string; // Added the appointmentId property
+  gender?: 'male' | 'female' | 'other'; // Added the gender property
 }
 
 // Update the Appointment interface to include the "in-progress" status

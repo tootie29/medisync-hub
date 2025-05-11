@@ -40,6 +40,7 @@ class MedicalRecordModel {
         record.updatedAt = record.updated_at;
         record.appointmentId = record.appointment_id || null;
         record.type = record.type || 'General Checkup';
+        record.gender = record.gender || null;
         
         delete record.patient_id;
         delete record.doctor_id;
@@ -98,6 +99,7 @@ class MedicalRecordModel {
       record.updatedAt = record.updated_at;
       record.appointmentId = record.appointment_id || null;
       record.type = record.type || 'General Checkup';
+      record.gender = record.gender || null;
       
       delete record.patient_id;
       delete record.doctor_id;
@@ -153,6 +155,7 @@ class MedicalRecordModel {
         record.updatedAt = record.updated_at;
         record.appointmentId = record.appointment_id || null;
         record.type = record.type || 'General Checkup';
+        record.gender = record.gender || null;
         
         delete record.patient_id;
         delete record.doctor_id;
@@ -219,8 +222,8 @@ class MedicalRecordModel {
       await connection.query(
         `INSERT INTO medical_records 
         (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, 
-        follow_up_date, certificate_enabled, type, appointment_id, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        follow_up_date, certificate_enabled, type, appointment_id, gender, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, 
           recordData.patientId, 
@@ -237,6 +240,7 @@ class MedicalRecordModel {
           certificateEnabled ? 1 : 0,
           visitType,
           appointmentId,
+          recordData.gender || null,
           now,
           now
         ]
@@ -415,6 +419,11 @@ class MedicalRecordModel {
       if (recordData.appointmentId) {
         setClause.push('appointment_id = ?');
         params.push(recordData.appointmentId);
+      }
+      
+      if (recordData.gender) {
+        setClause.push('gender = ?');
+        params.push(recordData.gender);
       }
       
       setClause.push('updated_at = NOW()');
