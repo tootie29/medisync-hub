@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,11 +14,15 @@ import { toast } from 'sonner';
 
 const PatientRecordsTable: React.FC = () => {
   const { medicalRecords } = useData();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(false);
   const [lastFetchAttempt, setLastFetchAttempt] = useState(Date.now());
+
+  // Check if user is medical staff (specifically doctor or head nurse, NOT admin)
+  const isMedicalStaffNotAdmin = user?.role === 'head nurse' || user?.role === 'doctor';
 
   // Function to fetch users from the API
   useEffect(() => {
@@ -214,17 +218,20 @@ const PatientRecordsTable: React.FC = () => {
                           Records
                         </Link>
                       </Button>
-                      <Button 
-                        asChild 
-                        size="sm" 
-                        variant="outline"
-                        className="ml-2"
-                      >
-                        <Link to={`/medical-records?patient=${patient?.id}`}>
-                          <FilePlus className="h-4 w-4 mr-2" />
-                          Add Record
-                        </Link>
-                      </Button>
+                      {/* Only show Add Record button for doctors and head nurse roles */}
+                      {isMedicalStaffNotAdmin && (
+                        <Button 
+                          asChild 
+                          size="sm" 
+                          variant="outline"
+                          className="ml-2"
+                        >
+                          <Link to={`/medical-records?patient=${patient?.id}`}>
+                            <FilePlus className="h-4 w-4 mr-2" />
+                            Add Record
+                          </Link>
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

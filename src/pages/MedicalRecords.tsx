@@ -53,8 +53,11 @@ const MedicalRecords: React.FC = () => {
     }
   });
 
-  const isDoctor = user?.role === 'head nurse' || user?.role === 'admin';
+  const isDoctor = user?.role === 'head nurse' || user?.role === 'doctor';
   const isPatient = user?.role === 'student' || user?.role === 'staff';
+  
+  // Check if user is medical staff (specifically doctor or head nurse, NOT admin)
+  const isMedicalStaffNotAdmin = user?.role === 'head nurse' || user?.role === 'doctor';
   
   console.log("MedicalRecords component rendering");
   console.log("User:", user);
@@ -294,8 +297,8 @@ const MedicalRecords: React.FC = () => {
 
   // Check whether the current user can add records for this patient
   const canAddRecords = () => {
-    // Medical staff (doctors/admin) can always add records for any patient
-    return isDoctor;
+    // Only doctors and head nurse roles can add records (not admin)
+    return isMedicalStaffNotAdmin;
   };
 
   return (
