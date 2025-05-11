@@ -1,13 +1,25 @@
+
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HeartPulse, Calendar, Calculator, ClipboardCheck, Pill } from "lucide-react"; // Changed from Pills to Pill
+import { HeartPulse, Calendar, Calculator, ClipboardCheck, Pill, Home } from "lucide-react";
 
 export default function Index() {
+  // School logo URL (using the existing logo from public/lovable-uploads)
+  const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
+  
   return (
     <div className="medical-container py-12">
-      <h1 className="page-title">MediSync Hub</h1>
-      <p className="mb-8">Your all-in-one platform for managing health records, appointments, and more.</p>
+      <div className="flex flex-col items-center mb-8">
+        <Link to="/" className="mb-4">
+          <img 
+            src={schoolLogo} 
+            alt="College of Nursing" 
+            className="h-24 w-auto"
+          />
+        </Link>
+        <p className="text-center">Your all-in-one platform for managing health records, appointments, and more.</p>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
@@ -85,6 +97,22 @@ export default function Index() {
               <Link to="/health-monitoring" className="flex items-center justify-center gap-2">
                 <HeartPulse className="h-4 w-4" />
                 Monitor Health
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Home</CardTitle>
+            <CardDescription>Return to the main page.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Navigate back to the home page to access all features and services.</p>
+            <Button asChild className="mt-4 w-full bg-medical-primary hover:bg-medical-secondary">
+              <Link to="/" className="flex items-center justify-center gap-2">
+                <Home className="h-4 w-4" />
+                Go Home
               </Link>
             </Button>
           </CardContent>
