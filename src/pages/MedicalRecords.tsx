@@ -47,7 +47,9 @@ const MedicalRecords: React.FC = () => {
     certificateEnabled: false,
     vitalSigns: {
       heartRate: 0,
-      bloodGlucose: 0
+      bloodGlucose: 0,
+      respiratoryRate: 0,
+      oxygenSaturation: 0
     }
   });
 
@@ -150,7 +152,9 @@ const MedicalRecords: React.FC = () => {
         certificateEnabled: record.certificateEnabled !== undefined ? record.certificateEnabled : false,
         vitalSigns: {
           heartRate: record.vitalSigns?.heartRate || 0,
-          bloodGlucose: record.vitalSigns?.bloodGlucose || 0
+          bloodGlucose: record.vitalSigns?.bloodGlucose || 0,
+          respiratoryRate: record.vitalSigns?.respiratoryRate || 0,
+          oxygenSaturation: record.vitalSigns?.oxygenSaturation || 0
         }
       });
       setEditingRecordId(record.id);
@@ -167,7 +171,9 @@ const MedicalRecords: React.FC = () => {
         certificateEnabled: false,
         vitalSigns: {
           heartRate: 0,
-          bloodGlucose: 0
+          bloodGlucose: 0,
+          respiratoryRate: 0,
+          oxygenSaturation: 0
         }
       });
       setEditingRecordId(null);
@@ -240,7 +246,9 @@ const MedicalRecords: React.FC = () => {
             Boolean(formData.certificateEnabled) : isHealthyBmi,
           vitalSigns: {
             heartRate: formData.vitalSigns?.heartRate || 0,
-            bloodGlucose: formData.vitalSigns?.bloodGlucose || 0
+            bloodGlucose: formData.vitalSigns?.bloodGlucose || 0,
+            respiratoryRate: formData.vitalSigns?.respiratoryRate || 0,
+            oxygenSaturation: formData.vitalSigns?.oxygenSaturation || 0
           }
         });
       }
@@ -461,6 +469,48 @@ const MedicalRecords: React.FC = () => {
                             vitalSigns: {
                               ...prev.vitalSigns,
                               bloodGlucose
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="respiratoryRate">Respiratory Rate (breaths/min)</Label>
+                      <Input
+                        id="respiratoryRate"
+                        name="respiratoryRate"
+                        type="number"
+                        value={formData.vitalSigns?.respiratoryRate || ''}
+                        onChange={(e) => {
+                          const respiratoryRate = e.target.value ? Number(e.target.value) : 0;
+                          setFormData(prev => ({
+                            ...prev,
+                            vitalSigns: {
+                              ...prev.vitalSigns,
+                              respiratoryRate
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="oxygenSaturation">Oxygen Saturation (%)</Label>
+                      <Input
+                        id="oxygenSaturation"
+                        name="oxygenSaturation"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.vitalSigns?.oxygenSaturation || ''}
+                        onChange={(e) => {
+                          const oxygenSaturation = e.target.value ? Number(e.target.value) : 0;
+                          setFormData(prev => ({
+                            ...prev,
+                            vitalSigns: {
+                              ...prev.vitalSigns,
+                              oxygenSaturation
                             }
                           }));
                         }}
