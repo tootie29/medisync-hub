@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -309,6 +310,26 @@ const MedicalRecords: React.FC = () => {
     // Only doctors and head nurse roles can add records (not admin)
     return isMedicalStaff;
   };
+  
+  // Format the patient name display - handle both when patient info is found and not found
+  const getPatientDisplayName = () => {
+    if (isPatient) {
+      return 'Your Medical Records';
+    }
+    
+    if (selectedPatient) {
+      return `Medical Records for ${selectedPatient.name}`;
+    }
+    
+    // If no patient found but ID exists, show a cleaner message
+    if (selectedPatientId) {
+      // Extract numeric ID part if it exists to make it more readable
+      const idDisplay = selectedPatientId.replace('user-', '');
+      return `Medical Records for Patient #${idDisplay}`;
+    }
+    
+    return 'Medical Records';
+  };
 
   return (
     <MainLayout>
@@ -320,11 +341,7 @@ const MedicalRecords: React.FC = () => {
           {selectedPatientId && (
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-2">
               <h2 className="text-xl font-semibold">
-                {isPatient ? 'Your Medical Records' : (
-                  selectedPatient 
-                    ? `Medical Records for ${selectedPatient.name}`
-                    : `Medical Records for Patient ${selectedPatientId}`
-                )}
+                {getPatientDisplayName()}
               </h2>
               
               <div className="flex flex-wrap gap-2">
