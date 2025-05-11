@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -88,12 +87,18 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
       setNameError(null);
     }
     
-    // Handle phone input - only allow numbers
+    // Handle phone input - only allow numbers and limit to 11 digits
     if (name === 'phone') {
       // If attempting to enter a letter, don't update the state
       if (value && !validatePhone(value)) {
         return;
       }
+      
+      // Limit to 11 characters
+      if (value.length > 11) {
+        return;
+      }
+      
       setPhoneError(null);
     }
     
@@ -124,6 +129,12 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
     
     if (formData.phone && !validatePhone(formData.phone)) {
       setPhoneError('Phone number should only contain numbers');
+      isValid = false;
+    }
+    
+    // Check if phone number is exactly 11 digits
+    if (formData.phone && formData.phone.length < 11) {
+      setPhoneError('Phone number must be 11 digits');
       isValid = false;
     }
     
@@ -321,7 +332,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
         <h3 className="text-lg font-medium text-medical-primary">Personal Information</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="phone">Phone Number *</Label>
+            <Label htmlFor="phone">Phone Number * (11 digits)</Label>
             <Input
               id="phone"
               name="phone"
@@ -329,6 +340,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
               value={formData.phone}
               onChange={handleChange}
               required
+              maxLength={11} 
+              placeholder="11 digit number"
               className={`auth-input mt-1 ${phoneError ? 'border-red-500' : ''}`}
             />
             {phoneError && <p className="text-red-500 text-sm mt-1">{phoneError}</p>}
