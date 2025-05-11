@@ -64,27 +64,33 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
       <div style={{ position: 'relative', zIndex: '2' }}>
         {/* Logo/Header */}
         <div className="certificate-header" style={{ marginBottom: '30px' }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
+          {/* Logo Section with School and College Logos */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: '20px'
           }}>
-            {/* Certificate Icon */}
+            {/* School Logo */}
             <div style={{
-              width: '60px',
-              height: '60px',
-              marginRight: '15px',
+              width: '100px',
+              height: '100px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: '#22c55e',
-              border: '2px solid #22c55e',
-              borderRadius: '50%'
+              justifyContent: 'center'
             }}>
-              <GraduationCap size={36} />
+              <img 
+                src="/schoollogo.jpeg" 
+                alt="School Logo" 
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain'
+                }} 
+              />
             </div>
             
+            {/* Certificate Title */}
             <div>
               <h1 style={{
                 fontSize: '28px',
@@ -104,6 +110,25 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
               }}>
                 Body Mass Index (BMI) - Healthy Status
               </p>
+            </div>
+            
+            {/* College Logo */}
+            <div style={{
+              width: '100px',
+              height: '100px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <img 
+                src="/collegelogo.jpeg" 
+                alt="College Logo" 
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain'
+                }} 
+              />
             </div>
           </div>
           
