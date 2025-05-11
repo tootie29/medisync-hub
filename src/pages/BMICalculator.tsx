@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -5,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { AlertCircle, ArrowRight, Download, Medal, Lock } from 'lucide-react';
@@ -30,6 +33,7 @@ const BMICalculator: React.FC = () => {
   
   const [height, setHeight] = useState<number>(0);
   const [weight, setWeight] = useState<number>(0);
+  const [gender, setGender] = useState<'male' | 'female' | ''>('');
   const [bmi, setBmi] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [lastRecord, setLastRecord] = useState<any>(null);
@@ -57,6 +61,13 @@ const BMICalculator: React.FC = () => {
         setWeight(latest.weight);
         setCertificateEnabled(latest.certificateEnabled || false);
         
+        // Set gender if available in the record or from user profile
+        if (latest.gender) {
+          setGender(latest.gender as 'male' | 'female');
+        } else if (user.gender === 'male' || user.gender === 'female') {
+          setGender(user.gender);
+        }
+        
         if (typeof latest.bmi === 'number' && latest.bmi > 0) {
           setBmi(latest.bmi);
         } else if (typeof latest.bmi === 'string' && !isNaN(parseFloat(latest.bmi)) && parseFloat(latest.bmi) > 0) {
@@ -72,6 +83,9 @@ const BMICalculator: React.FC = () => {
             setBmi(0);
           }
         }
+      } else if (user.gender === 'male' || user.gender === 'female') {
+        // If no records but user has gender in profile
+        setGender(user.gender);
       }
     }
   }, [isPatient, user?.id, getMedicalRecordsByPatientId]);
@@ -80,6 +94,10 @@ const BMICalculator: React.FC = () => {
     if (!height || !weight) {
       toast.error('Please enter both height and weight');
       return;
+    }
+    
+    if (!gender) {
+      toast.warning('For more accurate results, please select your gender');
     }
     
     const heightInMeters = height / 100;
@@ -154,7 +172,8 @@ const BMICalculator: React.FC = () => {
             patientId: user.id, // Ensure we pass the patient ID
             height,
             weight,
-            bmi, // This should now be properly typed
+            bmi,
+            gender, // Add gender to the record
             date: new Date().toISOString().split('T')[0],
             certificateEnabled: isHealthyBMI
           });
@@ -167,7 +186,8 @@ const BMICalculator: React.FC = () => {
             date: new Date().toISOString().split('T')[0],
             height,
             weight,
-            bmi, // This should now be properly typed
+            bmi,
+            gender, // Add gender to the record
             certificateEnabled: isHealthyBMI
           });
           toast.success('Medical record created successfully');
@@ -242,6 +262,24 @@ const BMICalculator: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 <div>
+                  <Label htmlFor="gender">Gender</Label>
+                  <RadioGroup
+                    value={gender}
+                    onValueChange={(value) => setGender(value as 'male' | 'female')}
+                    className="flex space-x-4 mt-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="male" id="gender-male" />
+                      <Label htmlFor="gender-male">Male</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="female" id="gender-female" />
+                      <Label htmlFor="gender-female">Female</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                <div>
                   <Label htmlFor="height">Height (cm)</Label>
                   <Input
                     id="height"
@@ -271,8 +309,7 @@ const BMICalculator: React.FC = () => {
                     Calculate BMI
                   </Button>
                   
-                  {/* Removed 'Save to Medical Record' button for patients */}
-                  {isDoctor && (
+                  {isPatient && (
                     <Button 
                       className="flex-1"
                       variant="outline"
@@ -345,6 +382,11 @@ const BMICalculator: React.FC = () => {
                   
                   <div className="mt-6 text-left p-4 bg-gray-50 rounded-lg">
                     <h4 className="font-medium mb-2">What your BMI means:</h4>
+                    {gender && (
+                      <p className="text-sm text-blue-600 mb-2">
+                        <strong>Note:</strong> This calculation takes into account that you are {gender === 'male' ? 'a male' : 'a female'}.
+                      </p>
+                    )}
                     {bmi < 18.5 && (
                       <p className="text-sm text-gray-600">
                         Your BMI suggests you may be underweight. It's important to maintain a healthy weight for overall wellbeing. Consider consulting a healthcare professional for personalized advice.
@@ -364,6 +406,21 @@ const BMICalculator: React.FC = () => {
                       <p className="text-sm text-gray-600">
                         Your BMI suggests obesity, which may increase your risk of health problems such as heart disease and type 2 diabetes. We recommend consulting a healthcare professional for personalized advice.
                       </p>
+                    )}
+                    
+                    {gender && (
+                      <div className="mt-3">
+                        <h5 className="font-medium text-sm">Gender-specific considerations:</h5>
+                        {gender === 'male' ? (
+                          <p className="text-sm text-gray-600 mt-1">
+                            Men typically have more muscle mass and less body fat than women, which can affect BMI interpretation. Muscle is denser than fat, so very muscular individuals may have a higher BMI.
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-600 mt-1">
+                            Women naturally have higher body fat percentages than men. This can affect BMI interpretation, as women may have different healthy BMI ranges during certain life stages such as pregnancy or menopause.
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -438,6 +495,33 @@ const BMICalculator: React.FC = () => {
               <p className="text-sm text-gray-500">
                 <strong>Note:</strong> BMI is a screening tool, not a diagnostic tool. Factors like muscle mass, age, sex, ethnicity, and body composition are not accounted for in BMI calculations. Always consult a healthcare provider for personalized health advice.
               </p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-medium mb-2">Gender Differences in BMI Interpretation:</h3>
+                <p className="text-sm text-gray-600 mb-2">
+                  While the BMI calculation is the same for both men and women, there are important physiological differences to consider when interpreting results:
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div className="border rounded-lg p-3">
+                    <h4 className="font-medium text-sm mb-1">Men</h4>
+                    <ul className="text-sm text-gray-600 list-disc pl-4 space-y-1">
+                      <li>Typically have higher muscle mass and lower body fat</li>
+                      <li>May have higher BMI despite healthy body fat percentage</li>
+                      <li>Body fat tends to accumulate around the abdomen</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3">
+                    <h4 className="font-medium text-sm mb-1">Women</h4>
+                    <ul className="text-sm text-gray-600 list-disc pl-4 space-y-1">
+                      <li>Naturally have higher essential body fat</li>
+                      <li>Body fat distribution changes during life stages</li>
+                      <li>Body fat tends to accumulate around hips and thighs</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
