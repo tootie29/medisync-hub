@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import MainLayout from '@/components/layout/MainLayout';
@@ -20,7 +20,6 @@ import { formatDate } from '@/utils/helpers';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 const Dashboard: React.FC = () => {
@@ -35,6 +34,7 @@ const Dashboard: React.FC = () => {
     getUserById
   } = useData();
   
+  const navigate = useNavigate();
   const [isPatientSelectOpen, setIsPatientSelectOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
 
@@ -114,22 +114,29 @@ const Dashboard: React.FC = () => {
   const lowStockMedicines = medicines.filter(med => med.quantity < 10);
 
   const handleAddMedicalRecord = () => {
+    console.log("Add medical record button clicked");
+    
     if (allPatients.length === 0) {
       toast.error("No patients available to add records for");
       return;
     }
+    
+    setSelectedPatientId(''); // Reset selection
     setIsPatientSelectOpen(true);
   };
 
   const handlePatientSelection = () => {
+    console.log("Selected patient ID:", selectedPatientId);
+    
     if (!selectedPatientId) {
       toast.error("Please select a patient");
       return;
     }
     
     setIsPatientSelectOpen(false);
-    // Navigate programmatically or allow the link to take effect
-    window.location.href = `/medical-records?patient=${selectedPatientId}`;
+    
+    // Use navigate instead of window.location for smoother transitions
+    navigate(`/medical-records?patient=${selectedPatientId}`);
   };
 
   return (
@@ -369,11 +376,18 @@ const Dashboard: React.FC = () => {
                                 Patient: {patientUser.name}
                               </p>
                               {/* Add quick action button to add medical record */}
-                              <Link to={`/medical-records?patient=${appointment.patientId}`}>
-                                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">
-                                  <FilePlus className="h-3 w-3 mr-1" /> Add Record
-                                </Button>
-                              </Link>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-7 px-2 text-xs"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSelectedPatientId(appointment.patientId);
+                                  navigate(`/medical-records?patient=${appointment.patientId}`);
+                                }}
+                              >
+                                <FilePlus className="h-3 w-3 mr-1" /> Add Record
+                              </Button>
                             </div>
                           )}
                           {/* Show doctor name for patients */}
