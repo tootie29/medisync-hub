@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { getBMICategory } from '@/utils/helpers';
-import { GraduationCap } from 'lucide-react';
 
 interface BMICertificateProps {
   id?: string;
@@ -10,10 +9,12 @@ interface BMICertificateProps {
   height: number;
   weight: number;
   date: string;
+  schoolLogo?: string;
+  collegeLogo?: string;
 }
 
 const BMICertificate: React.FC<BMICertificateProps> = ({ 
-  id, userName, bmi, height, weight, date
+  id, userName, bmi, height, weight, date, schoolLogo, collegeLogo 
 }) => {
   // If BMI is 0 or invalid, recalculate it from height and weight
   const calculatedBmi = (() => {
@@ -29,6 +30,10 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
   
   // Only display the BMI if it's a valid number
   const displayBmi = calculatedBmi > 0 ? calculatedBmi.toFixed(1) : "0.0";
+  
+  // Default school and college logo URLs if not provided
+  const defaultSchoolLogo = "/schoollogo.jpeg";
+  const defaultCollegeLogo = "/collegelogo.jpeg";
   
   return (
     <div 
@@ -64,33 +69,53 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
       <div style={{ position: 'relative', zIndex: '2' }}>
         {/* Logo/Header */}
         <div className="certificate-header" style={{ marginBottom: '30px' }}>
-          {/* Logo Section with School and College Logos */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
             marginBottom: '20px'
           }}>
             {/* School Logo */}
-            <div style={{
-              width: '100px',
-              height: '100px',
+            <div style={{ 
+              width: '60px', 
+              height: '60px',
+              marginRight: '10px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
               <img 
-                src="/schoollogo.jpeg" 
+                src={schoolLogo || defaultSchoolLogo} 
                 alt="School Logo" 
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain'
-                }} 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain' 
+                }}
               />
             </div>
             
-            {/* Certificate Title */}
+            {/* College Logo */}
+            <div style={{ 
+              width: '60px', 
+              height: '60px',
+              marginLeft: '10px',
+              marginRight: '15px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <img 
+                src={collegeLogo || defaultCollegeLogo} 
+                alt="College of Nursing" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain' 
+                }}
+              />
+            </div>
+            
             <div>
               <h1 style={{
                 fontSize: '28px',
@@ -110,25 +135,6 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
               }}>
                 Body Mass Index (BMI) - Healthy Status
               </p>
-            </div>
-            
-            {/* College Logo */}
-            <div style={{
-              width: '100px',
-              height: '100px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="/collegelogo.jpeg" 
-                alt="College Logo" 
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain'
-                }} 
-              />
             </div>
           </div>
           
@@ -286,34 +292,46 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            {/* Official Seal/Stamp */}
+            {/* School Logo Seal */}
             <div style={{
-              width: '120px',
-              height: '120px',
+              width: '80px',
+              height: '80px',
               borderRadius: '50%',
-              border: '2px solid #22c55e',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto',
-              backgroundColor: 'rgba(240, 253, 244, 0.5)',
-              color: '#22c55e',
-              fontSize: '10px',
-              textTransform: 'uppercase',
+              border: '1px solid #22c55e',
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              margin: '0 5px'
             }}>
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <GraduationCap size={36} />
-                <div style={{ marginTop: '5px', fontSize: '8px', fontWeight: 'bold' }}>OFFICIAL SEAL</div>
-              </div>
+              <img 
+                src={schoolLogo || defaultSchoolLogo} 
+                alt="School Seal" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain'
+                }}
+              />
+            </div>
+            
+            {/* College Logo Seal */}
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              border: '1px solid #22c55e',
+              position: 'relative',
+              overflow: 'hidden',
+              margin: '0 5px'
+            }}>
+              <img 
+                src={collegeLogo || defaultCollegeLogo} 
+                alt="College of Nursing Seal" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain'
+                }}
+              />
             </div>
           </div>
           
