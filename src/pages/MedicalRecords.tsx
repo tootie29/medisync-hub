@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -293,6 +292,15 @@ const MedicalRecords: React.FC = () => {
     }
   }, [selectedPatientId, unsortedMedicalRecords]);
 
+  // Check whether the current user can add records for this patient
+  const canAddRecords = () => {
+    // Medical staff (doctors/admin) can always add records
+    if (isDoctor) return true;
+    
+    // Patients cannot add records
+    return false;
+  };
+
   return (
     <MainLayout>
       <div className="medical-container">
@@ -306,7 +314,8 @@ const MedicalRecords: React.FC = () => {
               </h2>
               
               <div className="flex flex-wrap gap-2">
-                {isDoctor && (
+                {/* Modified: Show Add New Record button for all patients when viewed by medical staff */}
+                {canAddRecords() && (
                   <Button 
                     onClick={() => {
                       setIsAddingRecord(true);
