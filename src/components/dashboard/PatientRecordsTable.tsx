@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
@@ -211,12 +210,10 @@ const PatientRecordsTable: React.FC = () => {
                 </TableRow>
               ) : filteredPatients.length > 0 ? (
                 filteredPatients.map(patient => {
-                  // Always ensure patient ID includes the prefix for URL params
+                  // Always use prefixed patient ID for consistent URL params
                   const patientUrlId = patient?.id.startsWith('user-') 
                     ? patient?.id 
                     : `user-${patient?.id}`;
-                  
-                  console.log(`Patient: ${patient?.name}, ID: ${patient?.id}, URL ID: ${patientUrlId}`);
                     
                   return (
                     <TableRow key={patient?.id}>
