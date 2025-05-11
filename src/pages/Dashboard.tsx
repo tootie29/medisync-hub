@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
@@ -18,6 +18,10 @@ import {
 } from 'lucide-react';
 import { formatDate } from '@/utils/helpers';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -30,6 +34,9 @@ const Dashboard: React.FC = () => {
     getMedicalRecordsByPatientId,
     getUserById
   } = useData();
+  
+  const [isPatientSelectOpen, setIsPatientSelectOpen] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
 
   // Check user roles more explicitly - make sure staff can see proper data
   const isStudent = user?.role === 'student';
@@ -73,6 +80,17 @@ const Dashboard: React.FC = () => {
     })
     .slice(0, 5);
 
+  // Get unique patients from appointments for medical staff to choose from
+  const allPatients = appointments.reduce((uniquePatients, appointment) => {
+    const patientId = appointment.patientId;
+    const patientDetails = getUserById(patientId);
+    
+    if (patientDetails && !uniquePatients.find(p => p.id === patientId)) {
+      uniquePatients.push(patientDetails);
+    }
+    return uniquePatients;
+  }, [] as {id: string, name: string}[]);
+
   // Get medical records for patients only (students and staff)
   const userMedicalRecords = isPatient
     ? getMedicalRecordsByPatientId(user?.id || '')
@@ -94,6 +112,25 @@ const Dashboard: React.FC = () => {
 
   // Get medicines with low stock for medical staff
   const lowStockMedicines = medicines.filter(med => med.quantity < 10);
+
+  const handleAddMedicalRecord = () => {
+    if (allPatients.length === 0) {
+      toast.error("No patients available to add records for");
+      return;
+    }
+    setIsPatientSelectOpen(true);
+  };
+
+  const handlePatientSelection = () => {
+    if (!selectedPatientId) {
+      toast.error("Please select a patient");
+      return;
+    }
+    
+    setIsPatientSelectOpen(false);
+    // Navigate programmatically or allow the link to take effect
+    window.location.href = `/medical-records?patient=${selectedPatientId}`;
+  };
 
   return (
     <MainLayout>
@@ -119,12 +156,10 @@ const Dashboard: React.FC = () => {
           <div className="mt-6 mb-4">
             <h3 className="text-lg font-semibold mb-3">Quick Actions</h3>
             <div className="flex flex-wrap gap-3">
-              <Link to="/medical-records">
-                <Button className="flex items-center gap-2">
-                  <FilePlus className="h-5 w-5" />
-                  Add New Medical Record
-                </Button>
-              </Link>
+              <Button onClick={handleAddMedicalRecord} className="flex items-center gap-2">
+                <FilePlus className="h-5 w-5" />
+                Add New Medical Record
+              </Button>
               
               <Link to="/appointments">
                 <Button variant="outline" className="flex items-center gap-2">
@@ -144,6 +179,39 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Patient Selection Dialog */}
+        <Dialog open={isPatientSelectOpen} onOpenChange={setIsPatientSelectOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Select Patient</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="patient-select">Choose a patient to add medical record</Label>
+              <select
+                id="patient-select"
+                className="w-full mt-2 p-2 border border-gray-300 rounded-md"
+                value={selectedPatientId}
+                onChange={(e) => setSelectedPatientId(e.target.value)}
+              >
+                <option value="">Select a patient</option>
+                {allPatients.map((patient) => (
+                  <option key={patient.id} value={patient.id}>
+                    {patient.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsPatientSelectOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handlePatientSelection}>
+                Continue
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           {/* Appointments card - visible to all users */}
@@ -416,12 +484,10 @@ const Dashboard: React.FC = () => {
           <div className="mt-8">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Patient Records</h2>
-              <Link to="/medical-records">
-                <Button className="flex items-center gap-2">
-                  <FilePlus className="h-5 w-5" />
-                  Add New Medical Record
-                </Button>
-              </Link>
+              <Button onClick={handleAddMedicalRecord} className="flex items-center gap-2">
+                <FilePlus className="h-5 w-5" />
+                Add New Medical Record
+              </Button>
             </div>
             <PatientRecordsTable />
           </div>
