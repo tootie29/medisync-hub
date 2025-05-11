@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +15,7 @@ import {
   UserCircle,
   Activity,
   BadgeCheck,
+  LayoutDashboard,
 } from "lucide-react";
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
@@ -43,6 +43,11 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       path: "/",
       name: "Home",
       icon: Home,
+    },
+    {
+      path: "/dashboard",
+      name: "Dashboard",
+      icon: LayoutDashboard,
     },
     {
       path: "/appointments",
