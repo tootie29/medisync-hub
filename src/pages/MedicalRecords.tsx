@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,6 +65,7 @@ const MedicalRecords: React.FC = () => {
   console.log("Patient ID from URL:", patientIdFromUrl);
   console.log("Is doctor:", isDoctor);
   console.log("Is patient:", isPatient);
+  console.log("Is medical staff not admin:", isMedicalStaffNotAdmin);
   
   useEffect(() => {
     if (patientIdFromUrl) {

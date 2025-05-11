@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
@@ -140,6 +141,8 @@ const PatientRecordsTable: React.FC = () => {
     : patientData;
 
   console.log("Available patients:", filteredPatients.length);
+  console.log("Current user role:", user?.role);
+  console.log("Is medical staff not admin:", isMedicalStaffNotAdmin);
 
   return (
     <Card>
