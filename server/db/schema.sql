@@ -1,3 +1,4 @@
+
 -- Create the database
 CREATE DATABASE IF NOT EXISTS medi_hub;
 USE medi_hub;
@@ -41,10 +42,13 @@ CREATE TABLE IF NOT EXISTS medical_records (
   notes TEXT,
   follow_up_date DATE,
   certificate_enabled BOOLEAN DEFAULT FALSE,
+  type VARCHAR(100),
+  appointment_id VARCHAR(36),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (patient_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+  FOREIGN KEY (doctor_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- Medications for medical records
@@ -78,7 +82,7 @@ CREATE TABLE IF NOT EXISTS appointments (
   date DATE NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
-  status ENUM('pending', 'confirmed', 'cancelled', 'completed') NOT NULL,
+  status ENUM('pending', 'confirmed', 'cancelled', 'completed', 'in-progress') NOT NULL,
   reason TEXT NOT NULL,
   notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
