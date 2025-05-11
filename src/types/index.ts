@@ -1,3 +1,4 @@
+
 export type UserRole = 'student' | 'staff' | 'head nurse' | 'admin' | 'doctor';
 
 export interface User {
@@ -23,6 +24,7 @@ export interface VitalSigns {
   heartRate?: number;
   bloodPressure?: string;
   bloodGlucose?: number;
+  respiratoryRate?: number;
 }
 
 export interface MedicalRecord {
@@ -170,7 +172,8 @@ export const SAMPLE_MEDICAL_RECORDS: MedicalRecord[] = [
     vitalSigns: {
       heartRate: 72,
       bloodPressure: '120/80',
-      bloodGlucose: 95
+      bloodGlucose: 95,
+      respiratoryRate: 16
     },
     certificateEnabled: false,
     createdAt: '2023-03-15T10:30:00Z',
@@ -193,7 +196,8 @@ export const SAMPLE_MEDICAL_RECORDS: MedicalRecord[] = [
     vitalSigns: {
       heartRate: 78,
       bloodPressure: '130/85',
-      bloodGlucose: 100
+      bloodGlucose: 100,
+      respiratoryRate: 18
     },
     certificateEnabled: false,
     createdAt: '2023-04-10T14:15:00Z',

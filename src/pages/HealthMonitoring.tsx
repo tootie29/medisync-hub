@@ -9,7 +9,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, LineChartIcon, Activity, Heart } from "lucide-react";
+import { PlusCircle, LineChartIcon, Activity, Heart, Lungs } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 
@@ -29,11 +29,13 @@ const HealthMonitoring = () => {
     bloodPressureSystolic: "",
     bloodPressureDiastolic: "",
     bloodGlucose: "",
+    respiratoryRate: "",
   });
   const [patientData, setPatientData] = useState({
     heartRate: [],
     bloodPressure: [],
     bloodGlucose: [],
+    respiratoryRate: [],
   });
 
   // Transform medical records into chart data format
@@ -51,6 +53,7 @@ const HealthMonitoring = () => {
     const heartRateData = [];
     const bloodPressureData = [];
     const bloodGlucoseData = [];
+    const respiratoryRateData = [];
 
     sortedRecords.forEach(record => {
       const date = format(new Date(record.date), "yyyy-MM-dd");
@@ -89,6 +92,14 @@ const HealthMonitoring = () => {
           value: record.vitalSigns.bloodGlucose,
         });
       }
+      
+      // Add respiratory rate data if available
+      if (record.vitalSigns?.respiratoryRate) {
+        respiratoryRateData.push({
+          date,
+          value: record.vitalSigns.respiratoryRate,
+        });
+      }
     });
 
     // Reverse the arrays to display oldest to newest in charts
@@ -96,6 +107,7 @@ const HealthMonitoring = () => {
       heartRate: heartRateData.reverse(),
       bloodPressure: bloodPressureData.reverse(),
       bloodGlucose: bloodGlucoseData.reverse(),
+      respiratoryRate: respiratoryRateData.reverse(),
     });
   }, [user, medicalRecords]);
 
@@ -125,6 +137,10 @@ const HealthMonitoring = () => {
       const bloodGlucose = Number(newReading.bloodGlucose);
       message = `Blood Glucose: ${bloodGlucose} mg/dL`;
       vitalSigns = { bloodGlucose };
+    } else if (type === "respiratoryRate") {
+      const respiratoryRate = Number(newReading.respiratoryRate);
+      message = `Respiratory Rate: ${respiratoryRate} breaths/min`;
+      vitalSigns = { respiratoryRate };
     }
     
     // If we have a record for today, update it
@@ -181,6 +197,7 @@ const HealthMonitoring = () => {
     heartRate: [...healthData.heartRate, ...patientData.heartRate],
     bloodPressure: [...healthData.bloodPressure, ...patientData.bloodPressure],
     bloodGlucose: [...healthData.bloodGlucose, ...patientData.bloodGlucose],
+    respiratoryRate: [...healthData.respiratoryRate, ...patientData.respiratoryRate],
   };
 
   return (
@@ -194,10 +211,11 @@ const HealthMonitoring = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mb-8">
+          <TabsList className="grid grid-cols-4 mb-8">
             <TabsTrigger value="heart-rate">Heart Rate</TabsTrigger>
             <TabsTrigger value="blood-pressure">Blood Pressure</TabsTrigger>
             <TabsTrigger value="blood-glucose">Blood Glucose</TabsTrigger>
+            <TabsTrigger value="respiratory-rate">Respiratory Rate</TabsTrigger>
           </TabsList>
 
           <TabsContent value="heart-rate">
@@ -502,6 +520,99 @@ const HealthMonitoring = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="respiratory-rate">
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Respiratory Rate</CardTitle>
+                <CardDescription>Monitor your respiratory rate (breaths per minute)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart
+                    data={combinedData.respiratoryRate}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      name="Breaths/min"
+                      stroke="#6366f1"
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Historical Respiratory Rate Data</CardTitle>
+                <CardDescription>Your previous respiratory rate readings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="p-2 text-left">Date</th>
+                        <th className="p-2 text-left">Respiratory Rate (breaths/min)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {patientData.respiratoryRate.length > 0 ? (
+                        patientData.respiratoryRate.map((item, index) => (
+                          <tr key={index} className="border-b">
+                            <td className="p-2">{item.date}</td>
+                            <td className="p-2">{item.value}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={2} className="p-2 text-center text-muted-foreground">
+                            No respiratory rate data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Add New Reading</CardTitle>
+                <CardDescription>Record your current respiratory rate</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-grow">
+                    <label className="text-sm font-medium mb-2 block">Respiratory Rate (breaths/min)</label>
+                    <Input
+                      type="number"
+                      placeholder="Enter respiratory rate"
+                      value={newReading.respiratoryRate}
+                      onChange={(e) => setNewReading({ ...newReading, respiratoryRate: e.target.value })}
+                    />
+                  </div>
+                  <Button
+                    className="self-end"
+                    onClick={() => handleAddReading("respiratoryRate")}
+                    disabled={!newReading.respiratoryRate}
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Reading
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </MainLayout>
@@ -533,6 +644,14 @@ const healthData = {
     { date: "2023-10-22", value: 94 },
     { date: "2023-10-29", value: 91 },
     { date: "2023-11-05", value: 93 },
+  ],
+  respiratoryRate: [
+    { date: "2023-10-01", value: 16 },
+    { date: "2023-10-08", value: 15 },
+    { date: "2023-10-15", value: 14 },
+    { date: "2023-10-22", value: 15 },
+    { date: "2023-10-29", value: 16 },
+    { date: "2023-11-05", value: 15 },
   ],
 };
 

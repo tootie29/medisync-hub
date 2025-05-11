@@ -1,4 +1,3 @@
-
 const { pool } = require('../db/config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -18,12 +17,17 @@ class MedicalRecordModel {
         record.medications = medications.map(med => med.medication_name);
         
         const [vitalSigns] = await pool.query(
-          'SELECT heart_rate, blood_pressure, blood_glucose FROM vital_signs WHERE medical_record_id = ?',
+          'SELECT heart_rate, blood_pressure, blood_glucose, respiratory_rate FROM vital_signs WHERE medical_record_id = ?',
           [record.id]
         );
         
         if (vitalSigns.length > 0) {
-          record.vitalSigns = vitalSigns[0];
+          record.vitalSigns = {
+            heartRate: vitalSigns[0].heart_rate,
+            bloodPressure: vitalSigns[0].blood_pressure,
+            bloodGlucose: vitalSigns[0].blood_glucose,
+            respiratoryRate: vitalSigns[0].respiratory_rate
+          };
         }
 
         record.patientId = record.patient_id;
@@ -67,7 +71,7 @@ class MedicalRecordModel {
       record.medications = medications.map(med => med.medication_name);
       
       const [vitalSigns] = await pool.query(
-        'SELECT heart_rate, blood_pressure, blood_glucose FROM vital_signs WHERE medical_record_id = ?',
+        'SELECT heart_rate, blood_pressure, blood_glucose, respiratory_rate FROM vital_signs WHERE medical_record_id = ?',
         [id]
       );
       
@@ -75,7 +79,8 @@ class MedicalRecordModel {
         record.vitalSigns = {
           heartRate: vitalSigns[0].heart_rate,
           bloodPressure: vitalSigns[0].blood_pressure,
-          bloodGlucose: vitalSigns[0].blood_glucose
+          bloodGlucose: vitalSigns[0].blood_glucose,
+          respiratoryRate: vitalSigns[0].respiratory_rate
         };
       }
 
@@ -117,7 +122,7 @@ class MedicalRecordModel {
         record.medications = medications.map(med => med.medication_name);
         
         const [vitalSigns] = await pool.query(
-          'SELECT heart_rate, blood_pressure, blood_glucose FROM vital_signs WHERE medical_record_id = ?',
+          'SELECT heart_rate, blood_pressure, blood_glucose, respiratory_rate FROM vital_signs WHERE medical_record_id = ?',
           [record.id]
         );
         
@@ -125,7 +130,8 @@ class MedicalRecordModel {
           record.vitalSigns = {
             heartRate: vitalSigns[0].heart_rate,
             bloodPressure: vitalSigns[0].blood_pressure,
-            bloodGlucose: vitalSigns[0].blood_glucose
+            bloodGlucose: vitalSigns[0].blood_glucose,
+            respiratoryRate: vitalSigns[0].respiratory_rate
           };
         }
 
@@ -229,14 +235,15 @@ class MedicalRecordModel {
       if (recordData.vitalSigns) {
         await connection.query(
           `INSERT INTO vital_signs 
-          (id, medical_record_id, heart_rate, blood_pressure, blood_glucose, created_at, updated_at) 
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          (id, medical_record_id, heart_rate, blood_pressure, blood_glucose, respiratory_rate, created_at, updated_at) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             uuidv4(),
             id,
             recordData.vitalSigns.heartRate || null,
             recordData.vitalSigns.bloodPressure || recordData.bloodPressure || null,
             recordData.vitalSigns.bloodGlucose || null,
+            recordData.vitalSigns.respiratoryRate || null,
             now,
             now
           ]
@@ -443,6 +450,11 @@ class MedicalRecordModel {
             vitalSignsParams.push(recordData.vitalSigns.bloodGlucose);
           }
           
+          if (recordData.vitalSigns.respiratoryRate !== undefined) {
+            vitalSignsUpdateClause.push('respiratory_rate = ?');
+            vitalSignsParams.push(recordData.vitalSigns.respiratoryRate);
+          }
+          
           if (vitalSignsUpdateClause.length > 0) {
             vitalSignsUpdateClause.push('updated_at = NOW()');
             vitalSignsParams.push(id);
@@ -455,14 +467,15 @@ class MedicalRecordModel {
         } else {
           await connection.query(
             `INSERT INTO vital_signs 
-            (id, medical_record_id, heart_rate, blood_pressure, blood_glucose, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+            (id, medical_record_id, heart_rate, blood_pressure, blood_glucose, respiratory_rate, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
               uuidv4(),
               id,
-              recordData.vitalSigns.heartRate,
-              recordData.vitalSigns.bloodPressure || recordData.bloodPressure,
-              recordData.vitalSigns.bloodGlucose
+              recordData.vitalSigns.heartRate || null,
+              recordData.vitalSigns.bloodPressure || recordData.bloodPressure || null,
+              recordData.vitalSigns.bloodGlucose || null,
+              recordData.vitalSigns.respiratoryRate || null
             ]
           );
         }
