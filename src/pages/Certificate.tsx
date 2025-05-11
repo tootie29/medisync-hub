@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import html2pdf from "html2pdf.js";
 import { Button } from "@/components/ui/button";
-import { FilePdf } from "lucide-react";
+import { FileText } from "lucide-react";
 
 const CertificatePage: React.FC = () => {
   const { user } = useAuth();
@@ -72,7 +72,7 @@ const CertificatePage: React.FC = () => {
           />
         </div>
         <Button variant="default" onClick={handleDownload} className="mt-4 flex items-center gap-2">
-          <FilePdf className="h-5 w-5" />
+          <FileText className="h-5 w-5" />
           Download Certificate
         </Button>
       </div>
