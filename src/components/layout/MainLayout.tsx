@@ -23,7 +23,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }, [user, isLoading, navigate]);
 
   // Add some debug logs
-  console.log("MainLayout rendering", { user, isLoading });
+  console.log("MainLayout rendering", { user, isLoading, userRole: user?.role });
 
   if (isLoading) {
     return (

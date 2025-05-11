@@ -298,29 +298,17 @@ const MedicalRecords: React.FC = () => {
 
   // If doctor and no patient selected/provided, navigate to dashboard
   useEffect(() => {
-    if (isDoctor && !selectedPatientId && !patientIdFromUrl) {
+    if (isMedicalStaff && !selectedPatientId && !patientIdFromUrl) {
       console.log("No patient selected, navigating to dashboard");
       navigate('/dashboard');
     }
-  }, [isDoctor, selectedPatientId, patientIdFromUrl, navigate]);
-
-  // Check for selected patient but no records
-  useEffect(() => {
-    if (selectedPatientId && unsortedMedicalRecords.length === 0) {
-      console.log("Patient selected but no records found:", selectedPatientId);
-      const patientExists = SAMPLE_USERS.some(u => u.id === selectedPatientId);
-      console.log("Patient exists in sample data:", patientExists);
-    }
-  }, [selectedPatientId, unsortedMedicalRecords]);
+  }, [isMedicalStaff, selectedPatientId, patientIdFromUrl, navigate]);
 
   // Check whether the current user can add records for this patient
   const canAddRecords = () => {
     // Only doctors and head nurse roles can add records (not admin)
     return isMedicalStaff;
   };
-
-  // Show a warning message if patient is undefined but ID is provided
-  const showPatientNotFoundWarning = selectedPatientId && !selectedPatient;
 
   return (
     <MainLayout>
@@ -335,7 +323,7 @@ const MedicalRecords: React.FC = () => {
                 {isPatient ? 'Your Medical Records' : (
                   selectedPatient 
                     ? `Medical Records for ${selectedPatient.name}`
-                    : `Medical Records for Patient ID: ${selectedPatientId}`
+                    : `Medical Records for Patient ${selectedPatientId}`
                 )}
               </h2>
               
@@ -387,16 +375,6 @@ const MedicalRecords: React.FC = () => {
                   </Button>
                 </div>
               </div>
-            </div>
-          )}
-          
-          {/* Show warning if patient ID is provided but patient not found */}
-          {showPatientNotFoundWarning && (
-            <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md mb-4">
-              <p className="text-sm text-yellow-800 flex items-center">
-                <Activity className="h-4 w-4 mr-2" />
-                Patient information not found for ID: {selectedPatientId}, but medical records may still be available.
-              </p>
             </div>
           )}
 
