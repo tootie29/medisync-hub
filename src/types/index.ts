@@ -1,3 +1,4 @@
+
 export type UserRole = 'student' | 'staff' | 'head nurse' | 'admin' | 'doctor';
 
 export interface User {
@@ -42,7 +43,9 @@ export interface MedicalRecord {
   notes?: string;
   followUpDate?: string;
   vitalSigns?: VitalSigns;
-  certificateEnabled?: boolean; // Add the new property
+  certificateEnabled?: boolean;
+  type?: string; // Added the type property
+  appointmentId?: string; // Added the appointmentId property
   createdAt: string;
   updatedAt: string;
 }
@@ -62,8 +65,11 @@ export interface CreateMedicalRecordInput {
   vitalSigns?: VitalSigns;
   certificateEnabled?: boolean;
   bmi?: number; // Added bmi property to match what we're sending
+  type?: string; // Added the type property
+  appointmentId?: string; // Added the appointmentId property
 }
 
+// Update the Appointment interface to include the "in-progress" status
 export interface Appointment {
   id: string;
   patientId: string;
@@ -71,7 +77,7 @@ export interface Appointment {
   date: string;
   startTime: string;
   endTime: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'in-progress';
   reason: string;
   notes?: string;
   createdAt: string;

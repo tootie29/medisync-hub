@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -10,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { format } from "date-fns";
-import { SAMPLE_USERS } from "@/types";
+import { SAMPLE_USERS, Appointment } from "@/types";
 import { generateTimeSlots } from "@/utils/helpers";
 import { CalendarIcon, Clock, User, AlertCircle, FileText, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -106,7 +105,7 @@ const Appointments = () => {
         date: formattedDate,
         startTime,
         endTime,
-        status: 'pending',
+        status: 'pending', // This remains a valid status
         reason,
         notes: notes || undefined,
       })
@@ -135,7 +134,7 @@ const Appointments = () => {
   };
 
   // Handler for updating appointment status
-  const handleStatusChange = async (appointmentId: string, newStatus: string) => {
+  const handleStatusChange = async (appointmentId: string, newStatus: Appointment['status']) => {
     try {
       console.log(`Updating appointment ${appointmentId} status to ${newStatus}`);
       await updateAppointment(appointmentId, { status: newStatus });

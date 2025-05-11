@@ -71,6 +71,15 @@ exports.updateAppointment = async (req, res) => {
     if (appointmentData.status) {
       console.log(`Status change requested to: ${appointmentData.status}`);
       
+      // Check for valid status transitions
+      const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed', 'in-progress'];
+      if (!validStatuses.includes(appointmentData.status)) {
+        return res.status(400).json({ 
+          message: 'Invalid status value', 
+          allowed: validStatuses 
+        });
+      }
+      
       // You could add additional logic here for specific status transitions
       // For example, if status changes to "completed", you might want to
       // automatically suggest creating a medical record
