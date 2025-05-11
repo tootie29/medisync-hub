@@ -32,8 +32,8 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
   const displayBmi = calculatedBmi > 0 ? calculatedBmi.toFixed(1) : "0.0";
   
   // Default school and college logo URLs if not provided
-  const defaultSchoolLogo = "/schoollogo.jpeg";
-  const defaultCollegeLogo = "/collegelogo.jpeg";
+  const defaultSchoolLogo = "/lovable-uploads/03f574c6-5504-45d4-8d0e-3eb89db37d70.png";
+  const defaultCollegeLogo = "/lovable-uploads/a7ebfcdb-c26c-46e1-a387-dcbc28379e5c.png";
   
   return (
     <div 

@@ -57,9 +57,9 @@ const CertificatePage: React.FC = () => {
 
   const displayUserName = user?.name || "Patient";
 
-  // School logos URLs - explicitly use schoollogo.jpeg and collegelogo.jpeg
-  const schoolLogo = "/schoollogo.jpeg";
-  const collegeLogo = "/collegelogo.jpeg";
+  // Updated logo paths to use the uploaded images
+  const schoolLogo = "/lovable-uploads/03f574c6-5504-45d4-8d0e-3eb89db37d70.png"; // Olivarez College logo
+  const collegeLogo = "/lovable-uploads/a7ebfcdb-c26c-46e1-a387-dcbc28379e5c.png"; // College of Nursing logo
 
   return (
     <MainLayout>
