@@ -1,4 +1,3 @@
-
 export type UserRole = 'student' | 'staff' | 'head nurse' | 'admin' | 'doctor';
 
 export interface User {
@@ -16,6 +15,7 @@ export interface User {
   staffId?: string;
   position?: string;
   faculty?: string;
+  consentGiven?: boolean; // Added the consentGiven property
   createdAt: string;
   updatedAt: string;
 }
