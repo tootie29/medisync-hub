@@ -91,11 +91,11 @@ const Dashboard: React.FC = () => {
     const patientId = appointment.patientId;
     const patientDetails = getUserById(patientId);
     
-    if (patientDetails && !uniquePatients.find(p => p.id === patientId)) {
+    if (patientDetails && !uniquePatients.some(p => p.id === patientId)) {
       uniquePatients.push(patientDetails);
     }
     return uniquePatients;
-  }, [] as {id: string, name: string}[]);
+  }, [] as UserType[]);  // Fix: Use UserType[] instead of a custom type);
 
   // Get medical records for patients only (students and staff)
   const userMedicalRecords = isPatient
