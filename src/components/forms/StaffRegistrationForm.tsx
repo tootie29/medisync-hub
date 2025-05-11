@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -61,7 +60,7 @@ const StaffRegistrationForm: React.FC<StaffRegistrationFormProps> = ({ role, onS
       position: '',
       password: '',
       confirmPassword: '',
-      consent: false,
+      consent: undefined,
     },
   });
 
