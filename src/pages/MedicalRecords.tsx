@@ -64,20 +64,72 @@ const MedicalRecords: React.FC = () => {
   
   useEffect(() => {
     if (patientIdFromUrl) {
-      console.log("Attempting to set patient ID from URL:", patientIdFromUrl);
-      setSelectedPatientId(patientIdFromUrl);
+      // Handle the case where the ID might have a "user-" prefix
+      let cleanPatientId = patientIdFromUrl;
+      console.log("Original patient ID from URL:", patientIdFromUrl);
+      
+      // Set the patient ID regardless of format
+      console.log("Setting selected patient ID to:", cleanPatientId);
+      setSelectedPatientId(cleanPatientId);
     } else if (isPatient && user) {
       console.log("Setting selected patient ID from user:", user.id);
       setSelectedPatientId(user.id);
     }
   }, [patientIdFromUrl, isPatient, user]);
   
-  const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
+  // Function to get user by ID, handling both with and without "user-" prefix
+  const getPatientById = (id: string) => {
+    if (!id) return null;
+    
+    // Try getting the user directly
+    let patient = getUserById(id);
+    
+    // If not found and ID has "user-" prefix, try without it
+    if (!patient && id.startsWith('user-')) {
+      const idWithoutPrefix = id.substring(5); // Remove "user-" prefix
+      patient = getUserById(idWithoutPrefix);
+      console.log("Trying to find patient without prefix:", idWithoutPrefix, patient ? "found" : "not found");
+    }
+    
+    // If not found and ID doesn't have prefix, try with it
+    if (!patient && !id.startsWith('user-')) {
+      const idWithPrefix = `user-${id}`;
+      patient = getUserById(idWithPrefix);
+      console.log("Trying to find patient with prefix:", idWithPrefix, patient ? "found" : "not found");
+    }
+    
+    return patient;
+  };
+  
+  const selectedPatient = selectedPatientId ? getPatientById(selectedPatientId) : null;
   console.log("Selected patient:", selectedPatient);
-  console.log("Selected patient ID:", selectedPatientId);
+  
+  // Get medical records by patient ID, considering both formats
+  const getMedicalRecordsByPatient = (patientId: string) => {
+    if (!patientId) return [];
+    
+    // Try getting records directly
+    let records = getMedicalRecordsByPatientId(patientId);
+    
+    // If empty and ID has "user-" prefix, try without it
+    if (records.length === 0 && patientId.startsWith('user-')) {
+      const idWithoutPrefix = patientId.substring(5);
+      records = getMedicalRecordsByPatientId(idWithoutPrefix);
+      console.log("Trying to find records without prefix:", idWithoutPrefix, records.length > 0 ? "found" : "not found");
+    }
+    
+    // If empty and ID doesn't have prefix, try with it
+    if (records.length === 0 && !patientId.startsWith('user-')) {
+      const idWithPrefix = `user-${patientId}`;
+      records = getMedicalRecordsByPatientId(idWithPrefix);
+      console.log("Trying to find records with prefix:", idWithPrefix, records.length > 0 ? "found" : "not found");
+    }
+    
+    return records;
+  };
   
   const unsortedMedicalRecords = selectedPatientId 
-    ? getMedicalRecordsByPatientId(selectedPatientId)
+    ? getMedicalRecordsByPatient(selectedPatientId)
     : [];
       
   console.log("Unsorted medical records:", unsortedMedicalRecords);
@@ -92,8 +144,6 @@ const MedicalRecords: React.FC = () => {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
     }
   });
-
-  console.log("Sorted medical records:", medicalRecords);
 
   const calculateBmi = (height: number, weight: number): number => {
     if (height > 0 && weight > 0) {
@@ -301,7 +351,13 @@ const MedicalRecords: React.FC = () => {
             {selectedPatient && (
               <div className="flex items-center text-lg font-medium text-primary">
                 <User className="h-5 w-5 mr-2" />
-                Patient: {selectedPatient.name}
+                Patient: {selectedPatient.name} {patientIdFromUrl && <span className="text-sm text-gray-500 ml-2">({patientIdFromUrl})</span>}
+              </div>
+            )}
+            {patientIdFromUrl && !selectedPatient && (
+              <div className="flex items-center text-lg font-medium text-yellow-600">
+                <User className="h-5 w-5 mr-2" />
+                Warning: Patient ID {patientIdFromUrl} not found in the system
               </div>
             )}
           </div>
@@ -382,6 +438,13 @@ const MedicalRecords: React.FC = () => {
                 <p className="text-gray-500 text-center max-w-md">
                   Please select a patient from the dashboard to view or add medical records.
                 </p>
+                {patientIdFromUrl && (
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-yellow-800">
+                      <strong>Note:</strong> Attempted to find patient with ID: {patientIdFromUrl} but no match was found.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -410,6 +473,7 @@ const MedicalRecords: React.FC = () => {
                       </span>
                     </div>
                   )}
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="height">Height (cm)</Label>
@@ -823,84 +887,4 @@ const MedicalRecords: React.FC = () => {
                         return (
                           <TableRow key={record.id}>
                             <TableCell>{format(new Date(record.date), 'PPP')}</TableCell>
-                            <TableCell>{getDoctorName(record.doctorId)}</TableCell>
-                            <TableCell>{displayBmi}</TableCell>
-                            <TableCell>
-                              {isHealthyBmi && record.certificateEnabled 
-                                ? <span className="text-green-500">Available</span>
-                                : <span className="text-gray-400">N/A</span>
-                              }
-                            </TableCell>
-                            <TableCell>{record.diagnosis || 'N/A'}</TableCell>
-                            <TableCell>
-                              {record.followUpDate 
-                                ? format(new Date(record.followUpDate), 'PPP')
-                                : 'None'
-                              }
-                            </TableCell>
-                            {isDoctor && (
-                              <TableCell className="text-right">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="mr-2"
-                                  onClick={() => {
-                                    resetForm(record);
-                                    setIsAddingRecord(true);
-                                  }}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={() => handleDeleteRecord(record.id)}
-                                >
-                                  Delete
-                                </Button>
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </Card>
-              )}
-            </>
-          ) : (
-            <Card className="text-center p-6">
-              <div className="py-8">
-                <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <Activity className="h-6 w-6 text-gray-500" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900">No Medical Records Found</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  {selectedPatientId 
-                    ? "This patient doesn't have any medical records yet." 
-                    : "Select a patient to view or add medical records."}
-                </p>
-                {isDoctor && selectedPatientId && (
-                  <div className="mt-6">
-                    <Button
-                      onClick={() => {
-                        setIsAddingRecord(true);
-                        resetForm();
-                      }}
-                      className="bg-medical-primary hover:bg-medical-secondary"
-                    >
-                      Add First Record
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
-        </div>
-      </div>
-    </MainLayout>
-  );
-};
-
-export default MedicalRecords;
+                            <TableCell>{getDoctorName(record.doctorId
