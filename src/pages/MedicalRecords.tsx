@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -39,7 +40,7 @@ const MedicalRecords: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { medicalRecords, addMedicalRecord, updateMedicalRecord, deleteMedicalRecord } = useData();
+  const { medicalRecords, addMedicalRecord, updateMedicalRecord, deleteMedicalRecord, getApiUrl } = useData();
   const [patient, setPatient] = useState<User | null>(null);
   const [isAddRecordOpen, setIsAddRecordOpen] = useState(false);
   const [isEditRecordOpen, setIsEditRecordOpen] = useState(false);
@@ -73,35 +74,20 @@ const MedicalRecords: React.FC = () => {
       if (!patientId) return;
 
       try {
-        const getApiUrl = () => {
-          const hostname = window.location.hostname;
-          
-          if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
-            console.log('Using production API URL');
-            return 'https://api.climasys.entrsolutions.com/api';
-          }
-          
-          const envApiUrl = import.meta.env.VITE_API_URL;
-          if (envApiUrl) {
-            console.log('Using environment API URL:', envApiUrl);
-            return envApiUrl;
-          }
-          
-          console.log('Using localhost API URL');
-          return 'http://localhost:8080/api';
-        };
-        
         const API_URL = getApiUrl();
         const response = await axios.get(`${API_URL}/users/${patientId}`);
         setPatient(response.data);
         setConnectionError(false);
       } catch (error) {
         console.error('Error fetching patient:', error);
+        // Fix: Add missing createdAt and updatedAt properties
         setPatient({
           id: patientId,
           name: 'Sample Patient',
           email: 'patient@example.com',
           role: 'student',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
         setConnectionError(true);
         toast.error('Unable to connect to the API server. Using sample data instead.');
@@ -109,7 +95,7 @@ const MedicalRecords: React.FC = () => {
     };
 
     fetchPatient();
-  }, [patientId]);
+  }, [patientId, getApiUrl]);
 
   useEffect(() => {
     const handleOnlineStatus = () => setIsOnline(navigator.onLine);
@@ -146,13 +132,15 @@ const MedicalRecords: React.FC = () => {
   const handleAddRecord = async (values: z.infer<typeof formSchema>) => {
     if (!patientId) return;
 
-    const newRecord: MedicalRecord = {
+    const newRecord = {
       id: `record-${Date.now()}`,
       patientId: patientId,
       date: values.date.toISOString(),
       type: values.type,
       notes: values.notes || '',
       certificateEnabled: values.certificateEnabled || false,
+      createdAt: new Date().toISOString(),  // Add required properties
+      updatedAt: new Date().toISOString(),  // Add required properties
     };
 
     try {
@@ -169,7 +157,7 @@ const MedicalRecords: React.FC = () => {
   const handleEditRecord = (record: MedicalRecord) => {
     setSelectedRecord(record);
     form.setValue('date', new Date(record.date));
-    form.setValue('type', record.type);
+    form.setValue('type', record.type || '');
     form.setValue('notes', record.notes || '');
     form.setValue('certificateEnabled', record.certificateEnabled || false);
     setIsEditRecordOpen(true);
@@ -178,7 +166,7 @@ const MedicalRecords: React.FC = () => {
   const handleUpdateRecord = async (values: z.infer<typeof formSchema>) => {
     if (!selectedRecord) return;
 
-    const updatedRecord: MedicalRecord = {
+    const updatedRecord = {
       ...selectedRecord,
       date: values.date.toISOString(),
       type: values.type,
@@ -187,7 +175,8 @@ const MedicalRecords: React.FC = () => {
     };
 
     try {
-      await updateMedicalRecord(updatedRecord);
+      // Fix: Pass both the ID and the updated record
+      await updateMedicalRecord(selectedRecord.id, updatedRecord);
       toast.success('Medical record updated successfully!');
       form.reset();
       setIsEditRecordOpen(false);
@@ -283,7 +272,7 @@ const MedicalRecords: React.FC = () => {
                             <CardHeader>
                               <div className="flex items-center space-x-4">
                                 <FileText className="h-5 w-5 text-gray-500" />
-                                <CardTitle>{record.type}</CardTitle>
+                                <CardTitle>{record.type || 'Medical Record'}</CardTitle>
                               </div>
                             </CardHeader>
                             <CardContent>
@@ -336,7 +325,7 @@ const MedicalRecords: React.FC = () => {
                               <CardHeader>
                                 <div className="flex items-center space-x-4">
                                   <FileText className="h-5 w-5 text-gray-500" />
-                                  <CardTitle>{record.type}</CardTitle>
+                                  <CardTitle>{record.type || 'Medical Record'}</CardTitle>
                                 </div>
                               </CardHeader>
                               <CardContent>

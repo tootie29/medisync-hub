@@ -30,11 +30,11 @@ export interface VitalSigns {
 export interface MedicalRecord {
   id: string;
   patientId: string;
-  doctorId: string;
+  doctorId?: string;  // Made optional to match usage
   date: string;
-  height: number; // in cm
-  weight: number; // in kg
-  bmi: number;
+  height?: number; // Made optional to match usage
+  weight?: number; // Made optional to match usage
+  bmi?: number;  // Made optional to match usage
   bloodPressure?: string;
   temperature?: number; // in Celsius
   diagnosis?: string;
@@ -42,17 +42,18 @@ export interface MedicalRecord {
   notes?: string;
   followUpDate?: string;
   vitalSigns?: VitalSigns;
-  certificateEnabled?: boolean; // Add the new property
+  certificateEnabled?: boolean;
+  type?: string; // Added type property to match usage in MedicalRecords.tsx
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateMedicalRecordInput {
   patientId: string;
-  doctorId: string;
+  doctorId?: string; // Made optional to match usage
   date: string;
-  height: number;
-  weight: number;
+  height?: number; // Made optional to match usage
+  weight?: number; // Made optional to match usage
   bloodPressure?: string;
   temperature?: number;
   diagnosis?: string;
@@ -61,7 +62,8 @@ export interface CreateMedicalRecordInput {
   followUpDate?: string;
   vitalSigns?: VitalSigns;
   certificateEnabled?: boolean;
-  bmi?: number; // Added bmi property to match what we're sending
+  bmi?: number;
+  type?: string; // Added type property to match usage in MedicalRecords.tsx
 }
 
 export interface Appointment {
@@ -177,6 +179,7 @@ export const SAMPLE_MEDICAL_RECORDS: MedicalRecord[] = [
       oxygenSaturation: 98
     },
     certificateEnabled: false,
+    type: 'general',
     createdAt: '2023-03-15T10:30:00Z',
     updatedAt: '2023-03-15T10:30:00Z',
   },
@@ -202,6 +205,7 @@ export const SAMPLE_MEDICAL_RECORDS: MedicalRecord[] = [
       oxygenSaturation: 97
     },
     certificateEnabled: false,
+    type: 'general',
     createdAt: '2023-04-10T14:15:00Z',
     updatedAt: '2023-04-10T14:15:00Z',
   },
