@@ -25,8 +25,8 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   // School logo URL
   const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
   
-  // Determine if user can access inventory (admin or head nurse only)
-  const canAccessInventory = user && (user.role === "admin" || user.role === "head nurse");
+  // Determine if user can access inventory (staff or head nurse only)
+  const canAccessInventory = user && (user.role === "staff" || user.role === "head nurse");
 
   // Determine if user is patient
   const isPatient = user && (user.role === "student" || user.role === "staff");
