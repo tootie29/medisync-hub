@@ -6,7 +6,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import html2pdf from "html2pdf.js";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
 
 const CertificatePage: React.FC = () => {
   const { user } = useAuth();
@@ -57,6 +56,9 @@ const CertificatePage: React.FC = () => {
 
   const displayUserName = user?.name || "Patient";
 
+  // School logo URL
+  const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
+
   return (
     <MainLayout>
       <div className="medical-container flex flex-col items-center space-y-4">
@@ -72,7 +74,11 @@ const CertificatePage: React.FC = () => {
           />
         </div>
         <Button variant="default" onClick={handleDownload} className="mt-4 flex items-center gap-2">
-          <FileText className="h-5 w-5" />
+          <img 
+            src={schoolLogo} 
+            alt="School Logo" 
+            className="h-5 w-5 object-contain" 
+          />
           Download Certificate
         </Button>
       </div>
