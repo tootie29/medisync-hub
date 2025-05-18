@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +31,8 @@ const MedicalRecords: React.FC = () => {
   // Define the role check variables
   const isDoctor = user?.role === 'doctor';
   const isHeadNurse = user?.role === 'head nurse';
-  const isPatient = user?.role === 'patient';
+  // Fix the patient role check - consider students and staff as patients
+  const isPatient = user?.role === 'student' || user?.role === 'staff';
   
   const location = useLocation();
   const navigate = useNavigate();
