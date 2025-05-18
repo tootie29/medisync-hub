@@ -5,16 +5,16 @@ import { Button } from "@/components/ui/button";
 import { HeartPulse, Calendar, Calculator, ClipboardCheck, Pill, Home } from "lucide-react";
 
 export default function Index() {
-  // School logo URL (using the existing logo from public/lovable-uploads)
-  const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
+  // Updated to use Olivarez College logo
+  const collegeLogo = "/lovable-uploads/03f574c6-5504-45d4-8d0e-3eb89db37d70.png";
   
   return (
     <div className="medical-container py-12">
       <div className="flex flex-col items-center mb-8">
         <Link to="/" className="mb-4">
           <img 
-            src={schoolLogo} 
-            alt="College of Nursing" 
+            src={collegeLogo} 
+            alt="Olivarez College" 
             className="h-24 w-auto"
           />
         </Link>
