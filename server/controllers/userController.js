@@ -1,3 +1,4 @@
+
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
@@ -95,7 +96,7 @@ const sendVerificationEmail = async (email, verificationLink) => {
     
     const mailOptions = {
       from: process.env.SMTP_FROM || '"MediSync System" <noreply@medisync.com>',
-      to: email,
+      to: email, // This should be the recipient's email (the user who registered)
       subject: 'Verify your MediSync account',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -118,7 +119,7 @@ const sendVerificationEmail = async (email, verificationLink) => {
     
     console.log('Sending email with options:', {
       from: mailOptions.from,
-      to: mailOptions.to,
+      to: mailOptions.to, // Log the recipient's email for debugging
       subject: mailOptions.subject
     });
     
@@ -239,7 +240,8 @@ exports.createUser = async (req, res) => {
     
     // Only attempt to send email if not in test mode
     if (!isTestEnvironment) {
-      emailResult = await sendVerificationEmail(userData.email, verificationLink);
+      // Always make sure we're sending to the newly registered user's email
+      emailResult = await sendVerificationEmail(userDataForDb.email, verificationLink);
       console.log('Email sending result:', emailResult);
     }
     
@@ -481,6 +483,7 @@ exports.resendVerification = async (req, res) => {
     // Only attempt to send email if not in test mode
     if (!isTestEnvironment) {
       try {
+        // Make sure we're sending to the user's email who needs verification
         emailResult = await sendVerificationEmail(email, verificationLink);
         console.log('Email resending result:', emailResult);
       } catch (error) {
@@ -521,3 +524,4 @@ exports.resendVerification = async (req, res) => {
     });
   }
 };
+
