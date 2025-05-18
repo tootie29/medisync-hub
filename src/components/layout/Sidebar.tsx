@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -74,7 +75,13 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       path: "/certificate",
       name: "Certificate",
       icon: BadgeCheck,
-    }] : [])
+    }] : []),
+    // Add Settings route for all users
+    {
+      path: "/settings",
+      name: "Settings",
+      icon: Settings,
+    }
   ];
 
   return (

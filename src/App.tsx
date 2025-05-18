@@ -20,6 +20,7 @@ import Certificate from '@/pages/Certificate';
 import BMICalculator from '@/pages/BMICalculator';
 import HealthMonitoring from '@/pages/HealthMonitoring';
 import NotFound from '@/pages/NotFound';
+import Settings from '@/pages/Settings';
 
 const router = createBrowserRouter([
   {
@@ -77,6 +78,10 @@ const router = createBrowserRouter([
   {
     path: "/health-monitoring",
     element: <HealthMonitoring />
+  },
+  {
+    path: "/settings",
+    element: <Settings />
   },
   {
     path: "*",
