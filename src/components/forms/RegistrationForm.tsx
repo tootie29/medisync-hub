@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { UserRole } from '@/types';
 import { toast } from "sonner";
-import { UserPlus, User, Loader2, BookOpen, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { User, Loader2, BookOpen, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
 const FACULTY_OPTIONS = [
@@ -26,10 +26,11 @@ const FACULTY_OPTIONS = [
   'TEACHING', 'College', 'Elementary', 'ALS', 'TESDA'
 ];
 
-const RegistrationFormProps = {
+// Fix: Added proper interface definition with correct syntax
+interface RegistrationFormProps {
   role: 'student' | 'staff';
   onSuccess?: (email: string) => void;
-};
+}
 
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) => {
   const { register, isRegistering } = useAuth();
@@ -588,7 +589,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
             </div>
           ) : (
             <div className="flex items-center justify-center">
-              <UserPlus className="mr-2 h-4 w-4" />
+              <User className="mr-2 h-4 w-4" />
               Register
             </div>
           )}
