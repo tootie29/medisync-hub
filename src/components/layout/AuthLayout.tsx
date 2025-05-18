@@ -17,9 +17,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
   const isMobile = useMediaQuery("(max-width: 639px)");
   const isSmallDesktop = useMediaQuery("(min-width: 1024px) and (max-width: 1279px)");
   
-  // Hardcoded logo paths
+  // Only using the primary logo now (School logo)
   const primaryLogoUrl = "/lovable-uploads/f843d17e-c042-4114-8d85-23f87017db35.png"; // School logo
-  const secondaryLogoUrl = "/lovable-uploads/12e46415-ff94-4b60-9eca-349dff03581c.png"; // College logo
 
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
@@ -53,20 +52,13 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
         
         {/* Content positioned to the right of the green columns with appropriate spacing */}
         <div className="text-center z-10 ml-[300px]">
-          {/* Two logos side by side with spacing - responsiveness for small desktop */}
-          <div className="flex justify-center items-center space-x-6 mb-6">
+          {/* Only one logo now (centered) */}
+          <div className="flex justify-center items-center mb-6">
             <div className="flex flex-col justify-center items-center">
               <img 
                 src={primaryLogoUrl} 
-                alt="School Logo" 
-                className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
-              />
-            </div>
-            <div className="flex flex-col justify-center items-center">
-              <img 
-                src={secondaryLogoUrl} 
-                alt="College Logo" 
-                className={`${isSmallDesktop ? 'h-32 w-auto' : 'h-56 w-auto'} object-contain`}
+                alt="Olivarez College Logo" 
+                className={`${isSmallDesktop ? 'h-40 w-auto' : 'h-64 w-auto'} object-contain`}
               />
             </div>
           </div>
@@ -80,45 +72,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
         <div className="olivarez-card w-full max-w-md">
           {/* Mobile and Tablet view */}
           <div className="lg:hidden mb-6 text-center">
-            {/* Responsive logos for different screen sizes */}
+            {/* Single logo for responsive views */}
             <div className="flex justify-center items-center mb-4 px-4">
-              {isTablet ? (
-                // Tablet view - with better spacing and size control
-                <div className="flex justify-center items-center gap-6">
-                  <div className="flex flex-col justify-center">
-                    <img 
-                      src={primaryLogoUrl} 
-                      alt="School Logo" 
-                      className="h-16 w-auto object-contain"
-                    />
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <img 
-                      src={secondaryLogoUrl} 
-                      alt="College Logo" 
-                      className="h-16 w-auto object-contain"
-                    />
-                  </div>
-                </div>
-              ) : (
-                // Mobile view - vertically aligned logos
-                <div className="flex flex-col space-y-3 justify-center items-center">
-                  <div className="flex justify-center">
-                    <img 
-                      src={primaryLogoUrl} 
-                      alt="School Logo" 
-                      className="h-14 w-auto object-contain"
-                    />
-                  </div>
-                  <div className="flex justify-center">
-                    <img 
-                      src={secondaryLogoUrl} 
-                      alt="College Logo" 
-                      className="h-14 w-auto object-contain"
-                    />
-                  </div>
-                </div>
-              )}
+              <div className="flex flex-col justify-center">
+                <img 
+                  src={primaryLogoUrl} 
+                  alt="Olivarez College Logo" 
+                  className={`${isTablet ? 'h-20' : 'h-16'} w-auto object-contain`}
+                />
+              </div>
             </div>
             <h1 className={`font-bold text-medical-primary ${isTablet ? 'text-3xl' : 'text-2xl'}`}>OLIVAREZ CLINIC</h1>
             <p className={`text-gray-700 ${isTablet ? 'text-lg' : 'text-base'}`}>Health at Your Fingertips</p>
