@@ -10,11 +10,12 @@ import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { MedicalRecord, SAMPLE_USERS, VitalSigns } from '@/types';
 import { format } from 'date-fns';
-import { Activity, Calendar, FileText, Filter, Award, User, Plus } from 'lucide-react';
+import { Activity, Calendar, FileText, Filter, Award, User, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
@@ -40,6 +41,7 @@ const MedicalRecords: React.FC = () => {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [patientData, setPatientData] = useState<any>(null);
   const [isLoadingPatient, setIsLoadingPatient] = useState<boolean>(false);
+  const [collapsedRecords, setCollapsedRecords] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState<Partial<MedicalRecord>>({
     height: 0,
     weight: 0,
@@ -58,10 +60,19 @@ const MedicalRecords: React.FC = () => {
     }
   });
 
-  const isDoctor = user?.role === 'doctor';
-  const isHeadNurse = user?.role === 'head nurse';
-  const isPatient = user?.role === 'student' || user?.role === 'staff';
-  
+  // Toggle collapsed state for a specific record
+  const toggleRecordCollapse = (recordId: string) => {
+    setCollapsedRecords(prev => ({
+      ...prev,
+      [recordId]: !prev[recordId]
+    }));
+  };
+
+  // Check if a specific record is collapsed
+  const isRecordCollapsed = (recordId: string): boolean => {
+    return !!collapsedRecords[recordId];
+  };
+
   // Check if user is medical staff (specifically doctor or head nurse, NOT admin)
   const isMedicalStaff = user?.role === 'doctor' || user?.role === 'head nurse';
   
@@ -743,138 +754,166 @@ const MedicalRecords: React.FC = () => {
                     const isHealthyBmi = bmiValue >= 18.5 && bmiValue < 25;
                     
                     return (
-                      <Card key={record.id} className="overflow-hidden">
-                        <CardHeader className="bg-gray-50">
-                          <div className="flex justify-between">
-                            <CardTitle className="text-lg">
-                              Medical Record - {format(new Date(record.date), 'PPP')}
-                            </CardTitle>
-                            {isDoctor && (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    resetForm(record);
-                                    setIsAddingRecord(true);
-                                  }}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={() => handleDeleteRecord(record.id)}
-                                >
-                                  Delete
-                                </Button>
+                      <Collapsible 
+                        key={record.id}
+                        open={!isRecordCollapsed(record.id)}
+                        className="bg-white rounded-lg shadow-sm overflow-hidden"
+                      >
+                        <Card className="border-0 shadow-none">
+                          <CardHeader className="bg-gray-50 pb-2">
+                            <div className="flex justify-between items-center">
+                              <div className="flex-1">
+                                <CardTitle className="text-lg">
+                                  Medical Record - {format(new Date(record.date), 'PPP')}
+                                </CardTitle>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  {doctor ? `Examined by Dr. ${doctor.name}` : 'Self-recorded'}
+                                  <span className="mx-2">•</span>
+                                  Last updated: {format(new Date(record.updatedAt), 'PPP')}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                          <div className="text-sm text-gray-500 mt-1">
-                            {doctor ? `Examined by Dr. ${doctor.name}` : 'Self-recorded'}
-                            <span className="mx-2">•</span>
-                            Last updated: {format(new Date(record.updatedAt), 'PPP')}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4">
-                            <div>
-                              <p className="text-sm text-gray-500">Height</p>
-                              <p className="font-medium">{record.height} cm</p>
+                              
+                              <div className="flex gap-2 items-center">
+                                {isDoctor && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        resetForm(record);
+                                        setIsAddingRecord(true);
+                                      }}
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-red-500 hover:text-red-700"
+                                      onClick={() => handleDeleteRecord(record.id)}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </>
+                                )}
+                                <CollapsibleTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => toggleRecordCollapse(record.id)}
+                                    aria-label={isRecordCollapsed(record.id) ? "Expand" : "Collapse"}
+                                  >
+                                    {isRecordCollapsed(record.id) ? (
+                                      <ChevronDown className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronUp className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </CollapsibleTrigger>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Weight</p>
-                              <p className="font-medium">{record.weight} kg</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">BMI</p>
-                              <p className="font-medium">{displayBmi}</p>
-                            </div>
-                            
-                            {isHealthyBmi && (
-                              <div>
-                                <p className="text-sm text-gray-500">Certificate</p>
-                                <p className="font-medium text-green-500">
-                                  {record.certificateEnabled ? "Available" : "Not enabled"}
-                                </p>
+                          </CardHeader>
+                          
+                          <CollapsibleContent>
+                            <CardContent className="pt-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4">
+                                <div>
+                                  <p className="text-sm text-gray-500">Height</p>
+                                  <p className="font-medium">{record.height} cm</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-500">Weight</p>
+                                  <p className="font-medium">{record.weight} kg</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-500">BMI</p>
+                                  <p className="font-medium">{displayBmi}</p>
+                                </div>
+                                
+                                {isHealthyBmi && (
+                                  <div>
+                                    <p className="text-sm text-gray-500">Certificate</p>
+                                    <p className="font-medium text-green-500">
+                                      {record.certificateEnabled ? "Available" : "Not enabled"}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {(record.bloodPressure || record.vitalSigns?.bloodPressure) && (
+                                  <div>
+                                    <p className="text-sm text-gray-500">Blood Pressure</p>
+                                    <p className="font-medium">{record.vitalSigns?.bloodPressure || record.bloodPressure}</p>
+                                  </div>
+                                )}
+                                
+                                {record.temperature && (
+                                  <div>
+                                    <p className="text-sm text-gray-500">Temperature</p>
+                                    <p className="font-medium">{record.temperature} °C</p>
+                                  </div>
+                                )}
+                                
+                                {record.vitalSigns?.heartRate && (
+                                  <div>
+                                    <p className="text-sm text-gray-500">Heart Rate</p>
+                                    <p className="font-medium">{record.vitalSigns.heartRate} BPM</p>
+                                  </div>
+                                )}
+                                
+                                {record.vitalSigns?.bloodGlucose && (
+                                  <div>
+                                    <p className="text-sm text-gray-500">Blood Glucose</p>
+                                    <p className="font-medium">{record.vitalSigns.bloodGlucose} mg/dL</p>
+                                  </div>
+                                )}
+                                
+                                {record.vitalSigns?.respiratoryRate && (
+                                  <div>
+                                    <p className="text-sm text-gray-500">Respiratory Rate</p>
+                                    <p className="font-medium">{record.vitalSigns.respiratoryRate} breaths/min</p>
+                                  </div>
+                                )}
+                                
+                                {record.vitalSigns?.oxygenSaturation && (
+                                  <div>
+                                    <p className="text-sm text-gray-500">Oxygen Saturation</p>
+                                    <p className="font-medium">{record.vitalSigns.oxygenSaturation}%</p>
+                                  </div>
+                                )}
+                                
+                                {doctor && (
+                                  <div>
+                                    <p className="text-sm text-gray-500">Attending Doctor</p>
+                                    <p className="font-medium">Dr. {doctor.name}</p>
+                                  </div>
+                                )}
+                                {record.diagnosis && (
+                                  <div className="md:col-span-2">
+                                    <p className="text-sm text-gray-500">Diagnosis</p>
+                                    <p className="font-medium">{record.diagnosis}</p>
+                                  </div>
+                                )}
+                                <div className="md:col-span-2">
+                                  <p className="text-sm text-gray-500">Medications</p>
+                                  <p className="font-medium">{formatMedications(record.medications)}</p>
+                                </div>
+                                {record.notes && (
+                                  <div className="md:col-span-2">
+                                    <p className="text-sm text-gray-500">Notes</p>
+                                    <p className="font-medium whitespace-pre-wrap">{record.notes}</p>
+                                  </div>
+                                )}
+                                {record.followUpDate && (
+                                  <div>
+                                    <p className="text-sm text-gray-500">Follow-up Date</p>
+                                    <p className="font-medium">{format(new Date(record.followUpDate), 'PPP')}</p>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                            
-                            {(record.bloodPressure || record.vitalSigns?.bloodPressure) && (
-                              <div>
-                                <p className="text-sm text-gray-500">Blood Pressure</p>
-                                <p className="font-medium">{record.vitalSigns?.bloodPressure || record.bloodPressure}</p>
-                              </div>
-                            )}
-                            
-                            {record.temperature && (
-                              <div>
-                                <p className="text-sm text-gray-500">Temperature</p>
-                                <p className="font-medium">{record.temperature} °C</p>
-                              </div>
-                            )}
-                            
-                            {record.vitalSigns?.heartRate && (
-                              <div>
-                                <p className="text-sm text-gray-500">Heart Rate</p>
-                                <p className="font-medium">{record.vitalSigns.heartRate} BPM</p>
-                              </div>
-                            )}
-                            
-                            {record.vitalSigns?.bloodGlucose && (
-                              <div>
-                                <p className="text-sm text-gray-500">Blood Glucose</p>
-                                <p className="font-medium">{record.vitalSigns.bloodGlucose} mg/dL</p>
-                              </div>
-                            )}
-                            
-                            {record.vitalSigns?.respiratoryRate && (
-                              <div>
-                                <p className="text-sm text-gray-500">Respiratory Rate</p>
-                                <p className="font-medium">{record.vitalSigns.respiratoryRate} breaths/min</p>
-                              </div>
-                            )}
-                            
-                            {record.vitalSigns?.oxygenSaturation && (
-                              <div>
-                                <p className="text-sm text-gray-500">Oxygen Saturation</p>
-                                <p className="font-medium">{record.vitalSigns.oxygenSaturation}%</p>
-                              </div>
-                            )}
-                            
-                            {doctor && (
-                              <div>
-                                <p className="text-sm text-gray-500">Attending Doctor</p>
-                                <p className="font-medium">Dr. {doctor.name}</p>
-                              </div>
-                            )}
-                            {record.diagnosis && (
-                              <div className="md:col-span-2">
-                                <p className="text-sm text-gray-500">Diagnosis</p>
-                                <p className="font-medium">{record.diagnosis}</p>
-                              </div>
-                            )}
-                            <div className="md:col-span-2">
-                              <p className="text-sm text-gray-500">Medications</p>
-                              <p className="font-medium">{formatMedications(record.medications)}</p>
-                            </div>
-                            {record.notes && (
-                              <div className="md:col-span-2">
-                                <p className="text-sm text-gray-500">Notes</p>
-                                <p className="font-medium whitespace-pre-wrap">{record.notes}</p>
-                              </div>
-                            )}
-                            {record.followUpDate && (
-                              <div>
-                                <p className="text-sm text-gray-500">Follow-up Date</p>
-                                <p className="font-medium">{format(new Date(record.followUpDate), 'PPP')}</p>
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
+                            </CardContent>
+                          </CollapsibleContent>
+                        </Card>
+                      </Collapsible>
                     );
                   })}
                 </div>

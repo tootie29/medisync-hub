@@ -1,10 +1,12 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { SAMPLE_USERS } from '@/types';
-import { Medal, Download } from 'lucide-react';
+import { Medal, Download, ChevronUp, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import html2pdf from 'html2pdf.js';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface MedicalHistoryCardProps {
   userMedicalRecords: any[];
@@ -15,6 +17,21 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
   userMedicalRecords, 
   getBMICategoryColor 
 }) => {
+  const [collapsedRecords, setCollapsedRecords] = useState<Record<string, boolean>>({});
+  
+  // Toggle collapsed state for a specific record
+  const toggleRecordCollapse = (recordId: string) => {
+    setCollapsedRecords(prev => ({
+      ...prev,
+      [recordId]: !prev[recordId]
+    }));
+  };
+
+  // Check if a specific record is collapsed
+  const isRecordCollapsed = (recordId: string): boolean => {
+    return !!collapsedRecords[recordId];
+  };
+
   const calculateBmi = (height: number, weight: number): number => {
     if (height > 0 && weight > 0) {
       const heightInMeters = height / 100;
@@ -198,81 +215,108 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
               const hasCertificate = record.certificateEnabled && calculatedBmi >= 18.5 && calculatedBmi < 25;
                 
               return (
-                <div key={record.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between">
-                    <div>
-                      <h3 className="font-medium flex items-center">
-                        {record.diagnosis || 'General Checkup'}
-                        {hasCertificate && (
-                          <Medal className="h-4 w-4 ml-2 text-green-600" aria-label="Health Certificate Available" />
-                        )}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {format(new Date(record.date), 'MMMM d, yyyy')}
-                      </p>
-                      {doctor && (
+                <Collapsible 
+                  key={record.id} 
+                  className="border rounded-lg"
+                  open={!isRecordCollapsed(record.id)}
+                >
+                  <div className="p-4">
+                    <div className="flex justify-between">
+                      <div>
+                        <h3 className="font-medium flex items-center">
+                          {record.diagnosis || 'General Checkup'}
+                          {hasCertificate && (
+                            <Medal className="h-4 w-4 ml-2 text-green-600" aria-label="Health Certificate Available" />
+                          )}
+                        </h3>
                         <p className="text-sm text-gray-500">
-                          Doctor: {doctor.name}
+                          {format(new Date(record.date), 'MMMM d, yyyy')}
                         </p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm">
-                        <span className="text-gray-500">Height:</span> {record.height} cm
-                      </p>
-                      <p className="text-sm">
-                        <span className="text-gray-500">Weight:</span> {record.weight} kg
-                      </p>
-                      <p className="text-sm">
-                        <span className={getBMICategoryColor(calculatedBmi)}>
-                          BMI: {safeToFixed(calculatedBmi, 1, record.height, record.weight)}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {record.vitalSigns && (
-                    <div className="mt-2 border-t pt-2">
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">Vital Signs:</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        {record.vitalSigns.heartRate && (
-                          <p className="text-sm">
-                            <span className="text-gray-500">Heart Rate:</span> {record.vitalSigns.heartRate} BPM
-                          </p>
-                        )}
-                        {record.vitalSigns.bloodPressure && (
-                          <p className="text-sm">
-                            <span className="text-gray-500">Blood Pressure:</span> {record.vitalSigns.bloodPressure}
-                          </p>
-                        )}
-                        {record.vitalSigns.bloodGlucose && (
-                          <p className="text-sm">
-                            <span className="text-gray-500">Blood Glucose:</span> {record.vitalSigns.bloodGlucose} mg/dL
+                        {doctor && (
+                          <p className="text-sm text-gray-500">
+                            Doctor: {doctor.name}
                           </p>
                         )}
                       </div>
+                      <div className="flex items-start gap-2">
+                        <div className="text-right">
+                          <p className="text-sm">
+                            <span className="text-gray-500">Height:</span> {record.height} cm
+                          </p>
+                          <p className="text-sm">
+                            <span className="text-gray-500">Weight:</span> {record.weight} kg
+                          </p>
+                          <p className="text-sm">
+                            <span className={getBMICategoryColor(calculatedBmi)}>
+                              BMI: {safeToFixed(calculatedBmi, 1, record.height, record.weight)}
+                            </span>
+                          </p>
+                        </div>
+                        <CollapsibleTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="mt-1"
+                            onClick={() => toggleRecordCollapse(record.id)}
+                            aria-label={isRecordCollapsed(record.id) ? "Expand" : "Collapse"}
+                          >
+                            {isRecordCollapsed(record.id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronUp className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </CollapsibleTrigger>
+                      </div>
                     </div>
-                  )}
+                  </div>
                   
-                  {record.notes && (
-                    <div className="mt-2 pt-2 border-t">
-                      <p className="text-sm text-gray-700">{record.notes}</p>
+                  <CollapsibleContent>
+                    <div className="px-4 pb-4">
+                      {record.vitalSigns && (
+                        <div className="mt-2 border-t pt-2">
+                          <h4 className="text-sm font-medium text-gray-700 mb-1">Vital Signs:</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            {record.vitalSigns.heartRate && (
+                              <p className="text-sm">
+                                <span className="text-gray-500">Heart Rate:</span> {record.vitalSigns.heartRate} BPM
+                              </p>
+                            )}
+                            {record.vitalSigns.bloodPressure && (
+                              <p className="text-sm">
+                                <span className="text-gray-500">Blood Pressure:</span> {record.vitalSigns.bloodPressure}
+                              </p>
+                            )}
+                            {record.vitalSigns.bloodGlucose && (
+                              <p className="text-sm">
+                                <span className="text-gray-500">Blood Glucose:</span> {record.vitalSigns.bloodGlucose} mg/dL
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {record.notes && (
+                        <div className="mt-2 pt-2 border-t">
+                          <p className="text-sm text-gray-700">{record.notes}</p>
+                        </div>
+                      )}
+                      
+                      {hasCertificate && (
+                        <div className="mt-3 pt-3 border-t">
+                          <Button 
+                            variant="outline" 
+                            className="w-full text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 flex items-center justify-center"
+                            onClick={() => downloadCertificate(record)}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Health Certificate
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {hasCertificate && (
-                    <div className="mt-3 pt-3 border-t">
-                      <Button 
-                        variant="outline" 
-                        className="w-full text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 flex items-center justify-center"
-                        onClick={() => downloadCertificate(record)}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Health Certificate
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
           
