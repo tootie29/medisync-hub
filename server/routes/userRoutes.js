@@ -10,6 +10,9 @@ router.get('/role/:role', userController.getUsersByRole);
 router.get('/verify/:token', userController.verifyEmail);
 router.post('/resend-verification', userController.resendVerification);
 
+// Check if email exists
+router.get('/check-email/:email', userController.checkEmailAvailability);
+
 // Get all users
 router.get('/', userController.getAllUsers);
 

@@ -1,4 +1,3 @@
-
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
@@ -525,5 +524,30 @@ exports.resendVerification = async (req, res) => {
       // Include a verification link even when there's an error, as a fallback
       verificationLink: error.verificationLink
     });
+  }
+};
+
+// New function to check if an email is already registered
+exports.checkEmailAvailability = async (req, res) => {
+  try {
+    const email = req.params.email;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    
+    console.log('Checking email availability for:', email);
+    const user = await userModel.getUserByEmail(email);
+    
+    if (user) {
+      console.log('Email already exists:', email);
+      return res.status(200).json({ available: false });
+    }
+    
+    console.log('Email is available:', email);
+    res.status(200).json({ available: true });
+  } catch (error) {
+    console.error('Error checking email availability:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

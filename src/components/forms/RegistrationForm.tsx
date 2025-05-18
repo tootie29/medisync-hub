@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -15,12 +14,8 @@ import {
 } from '@/components/ui/select';
 import { UserRole } from '@/types';
 import { toast } from "sonner";
-import { UserPlus, User, Loader2, BookOpen, Eye, EyeOff } from 'lucide-react';
-
-interface RegistrationFormProps {
-  role: 'student' | 'staff';
-  onSuccess?: (email: string) => void;
-}
+import { UserPlus, User, Loader2, BookOpen, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import axios from 'axios';
 
 const FACULTY_OPTIONS = [
   'Radiology', 'Nursing', 'Business', 'Information Technology', 
@@ -31,6 +26,11 @@ const FACULTY_OPTIONS = [
   'TEACHING', 'College', 'Elementary', 'ALS', 'TESDA'
 ];
 
+const RegistrationFormProps = {
+  role: 'student' | 'staff';
+  onSuccess?: (email: string) => void;
+};
+
 const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) => {
   const { register, isRegistering } = useAuth();
   const navigate = useNavigate();
@@ -38,6 +38,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -106,6 +108,11 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
       setPhoneError(null);
     }
     
+    // Clear email error when email is changed
+    if (name === 'email') {
+      setEmailError(null);
+    }
+    
     // Always update the state for other fields
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -119,12 +126,55 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
     setFormData((prev) => ({ ...prev, consentGiven: checked }));
   };
 
-  const validateForm = () => {
+  const checkEmailAvailability = async (email: string) => {
+    if (!email) return true;
+    
+    try {
+      setIsCheckingEmail(true);
+      setEmailError(null);
+      
+      const isPreviewMode = window.location.hostname.includes('lovableproject.com');
+      
+      if (isPreviewMode) {
+        // In preview mode, check local storage for registered users
+        const storedUsers = localStorage.getItem('medisyncRegisteredUsers');
+        if (storedUsers) {
+          const users = JSON.parse(storedUsers);
+          const emailExists = users.some((user: any) => user.email === email);
+          
+          if (emailExists) {
+            setEmailError('This email is already registered');
+            return false;
+          }
+          return true;
+        }
+        return true;
+      }
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+      const response = await axios.get(`${apiUrl}/users/check-email/${encodeURIComponent(email)}`);
+      
+      if (response.data.available === false) {
+        setEmailError('This email is already registered');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking email availability:', error);
+      return true; // In case of error, allow the form submission and let the server handle it
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
+
+  const validateForm = async () => {
     let isValid = true;
     
     // Reset error states
     setNameError(null);
     setPhoneError(null);
+    setEmailError(null);
     
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       toast.error('Please fill in all required fields');
@@ -181,6 +231,14 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
       toast.error('You must agree to the Privacy Policy and Terms & Conditions');
       isValid = false;
     }
+    
+    // Check if email is already in use
+    if (formData.email && isValid) {
+      const emailAvailable = await checkEmailAvailability(formData.email);
+      if (!emailAvailable) {
+        isValid = false;
+      }
+    }
 
     return isValid;
   };
@@ -188,7 +246,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
     
     try {
       const result = await register(
@@ -257,16 +315,29 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
 
           <div>
             <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              autoComplete="email"
-              className="auth-input mt-1"
-            />
+            <div className="relative">
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                autoComplete="email"
+                className={`auth-input mt-1 ${emailError ? 'border-red-500' : ''}`}
+              />
+              {isCheckingEmail && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-medical-primary" />
+                </div>
+              )}
+            </div>
+            {emailError && (
+              <div className="flex items-center text-red-500 text-sm mt-1">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                {emailError}
+              </div>
+            )}
           </div>
 
           <div>

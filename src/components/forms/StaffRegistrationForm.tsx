@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 interface StaffRegistrationFormProps {
   role: 'doctor' | 'head nurse' | 'admin';
@@ -49,6 +51,8 @@ const formSchema = z.object({
 
 const StaffRegistrationForm: React.FC<StaffRegistrationFormProps> = ({ role, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const { register, isRegistering } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -64,7 +68,70 @@ const StaffRegistrationForm: React.FC<StaffRegistrationFormProps> = ({ role, onS
     },
   });
 
+  // Function to check if email is already in use
+  const checkEmailAvailability = async (email: string) => {
+    if (!email) return true;
+    
+    try {
+      setIsCheckingEmail(true);
+      setEmailError(null);
+      
+      const isPreviewMode = window.location.hostname.includes('lovableproject.com');
+      
+      if (isPreviewMode) {
+        // In preview mode, check local storage for registered users
+        const storedUsers = localStorage.getItem('medisyncRegisteredUsers');
+        if (storedUsers) {
+          const users = JSON.parse(storedUsers);
+          const emailExists = users.some((user: any) => user.email === email);
+          
+          if (emailExists) {
+            setEmailError('This email is already registered');
+            return false;
+          }
+          return true;
+        }
+        return true;
+      }
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+      const response = await axios.get(`${apiUrl}/users/check-email/${encodeURIComponent(email)}`);
+      
+      if (response.data.available === false) {
+        setEmailError('This email is already registered');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking email availability:', error);
+      return true; // In case of error, allow submission and let server handle it
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
+
+  // Watch for email changes
+  const emailValue = form.watch('email');
+  React.useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (emailValue && form.formState.errors.email === undefined) {
+        checkEmailAvailability(emailValue);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [emailValue]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Check email availability before submitting
+    if (values.email) {
+      const emailAvailable = await checkEmailAvailability(values.email);
+      if (!emailAvailable) {
+        return; // Stop submission if email is already in use
+      }
+    }
+
     setIsLoading(true);
     try {
       const { confirmPassword, consent, ...userData } = values;
@@ -111,10 +178,33 @@ const StaffRegistrationForm: React.FC<StaffRegistrationFormProps> = ({ role, onS
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="doctor@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
+              <div className="relative">
+                <FormControl>
+                  <Input 
+                    type="email" 
+                    placeholder="doctor@example.com" 
+                    {...field} 
+                    className={emailError ? 'border-red-500' : ''}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      setEmailError(null);
+                    }}
+                  />
+                </FormControl>
+                {isCheckingEmail && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <Loader2 className="h-4 w-4 animate-spin text-medical-primary" />
+                  </div>
+                )}
+              </div>
+              {emailError ? (
+                <div className="flex items-center text-red-500 text-sm mt-1">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  {emailError}
+                </div>
+              ) : (
+                <FormMessage />
+              )}
             </FormItem>
           )}
         />
@@ -199,7 +289,7 @@ const StaffRegistrationForm: React.FC<StaffRegistrationFormProps> = ({ role, onS
         <Button 
           type="submit" 
           className="w-full bg-medical-primary hover:bg-medical-secondary" 
-          disabled={isLoading || isRegistering}
+          disabled={isLoading || isRegistering || isCheckingEmail || !!emailError}
         >
           {(isLoading || isRegistering) ? 'Registering...' : 'Register'}
         </Button>
