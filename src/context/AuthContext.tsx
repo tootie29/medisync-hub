@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -34,7 +33,11 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (userData: Partial<User>, password: string) => Promise<{ requiresVerification?: boolean, verificationLink?: string }>;
+  register: (userData: Partial<User>, password: string) => Promise<{ 
+    requiresVerification?: boolean, 
+    verificationLink?: string,
+    requiresManualVerification?: boolean
+  }>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   isRegistering: boolean;
   resendVerification: (email: string) => Promise<{ 
@@ -42,6 +45,7 @@ interface AuthContextType {
     emailSent?: boolean;
     emailPreviewUrl?: string;
     success?: boolean;
+    requiresManualVerification?: boolean;
   }>;
   verificationEmail: string | null;
   setVerificationEmail: (email: string | null) => void;
@@ -302,6 +306,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         return { 
           requiresVerification: true,
+          requiresManualVerification: true, 
           verificationLink
         };
       }
@@ -311,6 +316,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Set the email for verification
       setVerificationEmail(userData.email || null);
+      
+      // Check if manual verification is required due to email system being unavailable
+      if (response.data.requiresManualVerification) {
+        toast.warning('Account created but email verification system is currently offline. Please contact an administrator.');
+        
+        return { 
+          requiresVerification: true,
+          requiresManualVerification: true, 
+          verificationLink: response.data.verificationLink
+        };
+      }
       
       toast.success('Registration successful! Please verify your email before logging in.');
 
@@ -433,6 +449,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       const response = await apiClient.post('/users/resend-verification', { email });
+      
+      // Check if manual verification is required
+      if (response.data.requiresManualVerification) {
+        toast.warning('Email verification system is currently offline. Please contact an administrator.');
+        
+        return { 
+          requiresManualVerification: true,
+          verificationLink: response.data.verificationLink,
+          success: false
+        };
+      }
       
       toast.success('Verification email sent. Please check your inbox.');
       

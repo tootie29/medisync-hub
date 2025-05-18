@@ -1,53 +1,74 @@
+
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
-const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config();
 
 // Create email transporter based on environment
-const getEmailTransporter = () => {
-  // Check if SMTP settings are available
-  if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
-    console.log('Using SMTP configuration for email');
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
-  }
-  
-  console.log('No SMTP configuration found, using ethereal test account');
-  // If no SMTP settings, create a test account with Ethereal
-  return new Promise((resolve, reject) => {
-    nodemailer.createTestAccount().then(testAccount => {
-      console.log('Created Ethereal test account:', testAccount.user);
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
+const getEmailTransporter = async () => {
+  try {
+    // First try to require nodemailer - this will fail if not installed
+    const nodemailer = require('nodemailer');
+    
+    // Check if SMTP settings are available
+    if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
+      console.log('Using SMTP configuration for email');
+      return nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        secure: process.env.SMTP_SECURE === 'true',
         auth: {
-          user: testAccount.user,
-          pass: testAccount.pass
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
         }
       });
-      resolve(transporter);
-    }).catch(error => {
-      console.error('Failed to create test email account:', error);
-      reject(error);
+    }
+    
+    console.log('No SMTP configuration found, using ethereal test account');
+    // If no SMTP settings, create a test account with Ethereal
+    return new Promise((resolve, reject) => {
+      nodemailer.createTestAccount().then(testAccount => {
+        console.log('Created Ethereal test account:', testAccount.user);
+        const transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass
+          }
+        });
+        resolve(transporter);
+      }).catch(error => {
+        console.error('Failed to create test email account:', error);
+        reject(error);
+      });
     });
-  });
+  } catch (error) {
+    console.error('Nodemailer is not installed or not available:', error.message);
+    // Return null if nodemailer is not available
+    return null;
+  }
 };
 
 // Function to send verification email
 const sendVerificationEmail = async (email, verificationLink) => {
   try {
     const transporter = await getEmailTransporter();
+    
+    // If transporter is null, nodemailer is not available
+    if (!transporter) {
+      console.error('Email functionality is not available - nodemailer not installed');
+      return { 
+        success: false, 
+        error: 'Email functionality is not available. Please install nodemailer package.',
+        requiresManualVerification: true
+      };
+    }
+    
+    const nodemailer = require('nodemailer'); // Should be available at this point
     
     const mailOptions = {
       from: process.env.SMTP_FROM || '"MediSync System" <noreply@medisync.com>',
@@ -89,7 +110,8 @@ const sendVerificationEmail = async (email, verificationLink) => {
     console.error('Error sending verification email:', error);
     return { 
       success: false, 
-      error: error.message || 'Failed to send verification email' 
+      error: error.message || 'Failed to send verification email',
+      requiresManualVerification: true
     };
   }
 };
@@ -182,6 +204,18 @@ exports.createUser = async (req, res) => {
     
     // Don't send the password back in the response
     const { password, ...userWithoutPassword } = newUser;
+    
+    // Special case for missing nodemailer dependency
+    if (emailResult.requiresManualVerification) {
+      return res.status(201).json({
+        ...userWithoutPassword,
+        message: 'Registration successful but email verification system is currently offline. Please contact admin to verify your account.',
+        verificationLink, // Include the link so admins can manually verify
+        emailSent: false,
+        requiresManualVerification: true
+      });
+    }
+    
     res.status(201).json({
       ...userWithoutPassword,
       message: 'Registration successful! Please verify your email.',
@@ -405,6 +439,16 @@ exports.resendVerification = async (req, res) => {
     if (!isTestEnvironment) {
       emailResult = await sendVerificationEmail(email, verificationLink);
       console.log('Email resending result:', emailResult);
+    }
+    
+    // Special case for missing nodemailer dependency
+    if (emailResult.requiresManualVerification) {
+      return res.json({ 
+        message: 'Email verification system is currently offline. Please contact admin to verify your account.',
+        verificationLink, // Include the link so admins can manually verify
+        emailSent: false,
+        requiresManualVerification: true
+      });
     }
     
     res.json({ 

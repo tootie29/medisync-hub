@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Mail, Loader2, Info, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Mail, Loader2, Info, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 
 interface EmailVerificationProps {
   email: string | null;
@@ -20,7 +20,12 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
   const [verificationInfo, setVerificationInfo] = useState<string | null>(null);
   const [autoVerified, setAutoVerified] = useState(false);
   const [countdown, setCountdown] = useState(5);
-  const [emailDetails, setEmailDetails] = useState<{previewUrl?: string; success: boolean} | null>(null);
+  const [emailDetails, setEmailDetails] = useState<{
+    previewUrl?: string; 
+    success: boolean;
+    requiresManualVerification?: boolean;
+    verificationLink?: string;
+  } | null>(null);
   
   const isPreviewMode = window.location.hostname.includes('lovableproject.com');
 
@@ -57,6 +62,13 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
       // For preview mode, show the verification link directly
       if (isPreviewMode && result.verificationLink) {
         setVerificationInfo(`Since this is a preview environment, your account will be automatically verified in a few seconds. If not, you can visit this verification link: ${result.verificationLink}`);
+      } else if (result.requiresManualVerification) {
+        // Case where manual verification is required
+        setEmailDetails({
+          success: false,
+          requiresManualVerification: true,
+          verificationLink: result.verificationLink
+        });
       } else if (result.emailSent) {
         // For production mode with real email sending
         setEmailDetails({
@@ -106,7 +118,27 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           </div>
         )}
         
-        {!isPreviewMode && (
+        {!isPreviewMode && emailDetails?.requiresManualVerification && (
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 mr-2" />
+              <div className="text-sm text-amber-700">
+                <p>
+                  <strong>Manual Verification Required:</strong> The email verification system is currently 
+                  unavailable (nodemailer is not installed on the server). Please contact your administrator 
+                  to verify your account manually using the following verification link:
+                </p>
+                {emailDetails.verificationLink && (
+                  <div className="mt-2 p-2 bg-amber-100 rounded text-xs overflow-x-auto break-all">
+                    {emailDetails.verificationLink}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {!isPreviewMode && !emailDetails?.requiresManualVerification && (
           <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
             <div className="flex items-start">
               <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-2" />
@@ -139,7 +171,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           </div>
         )}
         
-        {emailDetails && (
+        {emailDetails && !emailDetails.requiresManualVerification && (
           <div className={`mt-4 p-3 ${emailDetails.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'} rounded-md`}>
             <div className="flex items-start">
               {emailDetails.success ? (
