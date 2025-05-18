@@ -16,6 +16,7 @@ import MedicalRecords from '@/pages/MedicalRecords';
 import Appointments from '@/pages/Appointments';
 import Inventory from '@/pages/Inventory';
 import VerifyEmail from '@/pages/VerifyEmail';
+import ResetPassword from '@/pages/ResetPassword';
 import Certificate from '@/pages/Certificate';
 import BMICalculator from '@/pages/BMICalculator';
 import HealthMonitoring from '@/pages/HealthMonitoring';
@@ -66,6 +67,10 @@ const router = createBrowserRouter([
   {
     path: "/verify/:token", 
     element: <VerifyEmail /> 
+  },
+  {
+    path: "/reset-password/:token", 
+    element: <ResetPassword /> 
   },
   {
     path: "/certificate",

@@ -212,6 +212,89 @@ class UserModel {
       throw error;
     }
   }
+  
+  async generateResetToken(email) {
+    try {
+      // Find user by email
+      const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+      
+      if (rows.length === 0) {
+        return { success: false, message: 'No account found with that email address' };
+      }
+      
+      // Generate a random token
+      const token = Math.random().toString(36).substring(2, 15) + 
+                    Math.random().toString(36).substring(2, 15);
+      
+      // Token expires in 1 hour
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 1);
+      
+      // Update the user with the new reset token
+      await pool.query(
+        'UPDATE users SET reset_password_token = ?, reset_token_expiry = ? WHERE id = ?',
+        [token, expiry, rows[0].id]
+      );
+      
+      return { 
+        success: true, 
+        token,
+        email: rows[0].email,
+        userId: rows[0].id
+      };
+    } catch (error) {
+      console.error('Error generating reset token:', error);
+      throw error;
+    }
+  }
+  
+  async validateResetToken(token) {
+    try {
+      // Check if the token exists and is not expired
+      const [rows] = await pool.query(
+        'SELECT * FROM users WHERE reset_password_token = ? AND reset_token_expiry > NOW()',
+        [token]
+      );
+      
+      if (rows.length === 0) {
+        return { success: false, message: 'Invalid or expired reset token' };
+      }
+      
+      return { 
+        success: true, 
+        userId: rows[0].id,
+        email: rows[0].email 
+      };
+    } catch (error) {
+      console.error('Error validating reset token:', error);
+      throw error;
+    }
+  }
+  
+  async resetPassword(token, newPassword) {
+    try {
+      // Validate the token first
+      const validation = await this.validateResetToken(token);
+      
+      if (!validation.success) {
+        return validation;
+      }
+      
+      // Update the user's password
+      await pool.query(
+        'UPDATE users SET password = ?, reset_password_token = NULL, reset_token_expiry = NULL WHERE id = ?',
+        [newPassword, validation.userId]
+      );
+      
+      return { 
+        success: true, 
+        message: 'Password has been reset successfully' 
+      };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new UserModel();

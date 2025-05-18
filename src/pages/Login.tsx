@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
 import { AlertCircle, ArrowLeft, User, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import EmailVerification from '@/components/auth/EmailVerification';
+import ForgotPassword from '@/components/auth/ForgotPassword';
 
 const Login: React.FC = () => {
   const { login, verificationEmail, setVerificationEmail } = useAuth();
@@ -19,14 +21,21 @@ const Login: React.FC = () => {
   const [connectivityError, setConnectivityError] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   const [showVerification, setShowVerification] = React.useState(false);
+  const [showForgotPassword, setShowForgotPassword] = React.useState(false);
 
   // Get URL parameters for email verification
   const searchParams = new URLSearchParams(location.search);
   const verified = searchParams.get('verified');
   const verificationMessage = searchParams.get('message');
   const verifiedEmail = searchParams.get('email');
+  const forgotParam = searchParams.get('forgot');
 
   React.useEffect(() => {
+    // Show forgot password form if the forgot parameter is present
+    if (forgotParam === 'true') {
+      setShowForgotPassword(true);
+    }
+    
     // Show toast message based on verification result
     if (verified === 'true') {
       toast.success('Email verified successfully! You can now log in.');
@@ -36,7 +45,7 @@ const Login: React.FC = () => {
     } else if (verified === 'false' && verificationMessage) {
       toast.error(verificationMessage);
     }
-  }, [verified, verificationMessage, verifiedEmail]);
+  }, [verified, verificationMessage, verifiedEmail, forgotParam]);
 
   React.useEffect(() => {
     // If there's a verification email, show the verification screen
@@ -99,6 +108,7 @@ const Login: React.FC = () => {
 
   const handleBackToLogin = () => {
     setShowVerification(false);
+    setShowForgotPassword(false);
     setVerificationEmail(null);
   };
 
@@ -106,6 +116,20 @@ const Login: React.FC = () => {
     return (
       <AuthLayout>
         <EmailVerification email={email} onBack={handleBackToLogin} />
+      </AuthLayout>
+    );
+  }
+  
+  if (showForgotPassword) {
+    return (
+      <AuthLayout>
+        <ForgotPassword 
+          onBack={handleBackToLogin} 
+          onSuccess={(email) => {
+            // Store the email for when they return to login
+            setEmail(email);
+          }}
+        />
       </AuthLayout>
     );
   }
@@ -185,6 +209,15 @@ const Login: React.FC = () => {
               tabIndex={-1}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          <div className="flex justify-end mt-1">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm text-medical-primary hover:text-medical-secondary"
+            >
+              Forgot password?
             </button>
           </div>
         </div>

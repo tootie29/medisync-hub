@@ -13,6 +13,11 @@ router.post('/resend-verification', userController.resendVerification);
 // Check if email exists
 router.get('/check-email/:email', userController.checkEmailAvailability);
 
+// Password reset routes
+router.post('/forgot-password', userController.forgotPassword);
+router.post('/reset-password', userController.resetPassword);
+router.get('/validate-reset-token/:token', userController.validateResetToken);
+
 // Get all users
 router.get('/', userController.getAllUsers);
 

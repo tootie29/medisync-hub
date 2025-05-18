@@ -158,6 +158,91 @@ const sendVerificationEmail = async (recipientEmail, verificationLink) => {
   }
 };
 
+// Function to send password reset email
+const sendPasswordResetEmail = async (recipientEmail, resetLink) => {
+  try {
+    console.log(`Attempting to send password reset email to RECIPIENT: ${recipientEmail}`);
+    console.log(`Reset link: ${resetLink}`);
+    
+    const transporter = await getEmailTransporter();
+    
+    // If transporter is null, nodemailer is not available
+    if (!transporter) {
+      console.error('Email functionality is not available - nodemailer not installed');
+      return { 
+        success: false, 
+        error: 'Email functionality is not available. Please install nodemailer package.',
+        requiresManualReset: true
+      };
+    }
+    
+    const nodemailer = require('nodemailer');
+    
+    // Ensure we're explicitly setting the recipient to the user's email address
+    const mailOptions = {
+      from: process.env.SMTP_FROM || '"MediSync System" <noreply@medisync.com>',
+      to: recipientEmail,
+      subject: 'Reset your MediSync password',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0d6efd;">MediSync Password Reset</h2>
+          <p>You requested to reset your password. Click the link below to set a new password:</p>
+          <p>
+            <a 
+              href="${resetLink}" 
+              style="background-color: #0d6efd; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;"
+            >
+              Reset Password
+            </a>
+          </p>
+          <p>If you did not request a password reset, please ignore this email.</p>
+          <p>This link will expire in 1 hour.</p>
+          <p>Best regards,<br>MediSync Team</p>
+        </div>
+      `
+    };
+    
+    console.log('Sending password reset email with options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sending result:', info);
+    
+    // If using Ethereal, log the preview URL
+    if (info.ethereal) {
+      console.log('Email preview URL:', nodemailer.getTestMessageUrl(info));
+      return {
+        success: true,
+        previewUrl: nodemailer.getTestMessageUrl(info)
+      };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    console.error('Error details:', {
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode,
+      response: error.response
+    });
+    return { 
+      success: false, 
+      error: error.message || 'Failed to send password reset email',
+      errorDetails: {
+        code: error.code,
+        command: error.command,
+        responseCode: error.responseCode,
+        response: error.response
+      },
+      requiresManualReset: true
+    };
+  }
+};
+
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await userModel.getAll();
@@ -548,6 +633,101 @@ exports.checkEmailAvailability = async (req, res) => {
     res.status(200).json({ available: true });
   } catch (error) {
     console.error('Error checking email availability:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// New endpoint for forgot password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    
+    console.log('Forgot password request for email:', email);
+    
+    // Generate reset token
+    const result = await userModel.generateResetToken(email);
+    
+    if (!result.success) {
+      return res.status(404).json({ message: result.message });
+    }
+    
+    // Create reset link
+    const resetLink = `${req.protocol}://${req.get('host')}/reset-password/${result.token}`;
+    console.log('Reset link:', resetLink);
+    
+    // In development or testing, use a more direct approach for reset
+    const isTestEnvironment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    
+    let emailResult = { success: false };
+    
+    // Only attempt to send email if not in test mode
+    if (!isTestEnvironment) {
+      emailResult = await sendPasswordResetEmail(result.email, resetLink);
+      console.log('Email sending result:', emailResult);
+    }
+    
+    // Special case for missing nodemailer dependency
+    if (emailResult.requiresManualReset) {
+      return res.status(200).json({
+        message: 'Password reset link generated but email system is currently offline. Please use the link provided.',
+        resetLink,
+        emailSent: false,
+        requiresManualReset: true
+      });
+    }
+    
+    res.status(200).json({
+      message: 'Password reset instructions sent to your email.',
+      resetLink: isTestEnvironment ? resetLink : undefined,
+      emailSent: emailResult.success,
+      emailPreviewUrl: emailResult.previewUrl
+    });
+  } catch (error) {
+    console.error('Error in forgotPassword controller:', error);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      resetLink: error.resetLink
+    });
+  }
+};
+
+// Validate reset token
+exports.validateResetToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const result = await userModel.validateResetToken(token);
+    
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error validating reset token:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Reset password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+    
+    const result = await userModel.resetPassword(token, password);
+    
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+    
+    res.status(200).json({ message: result.message });
+  } catch (error) {
+    console.error('Error in resetPassword controller:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
