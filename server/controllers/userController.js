@@ -1,4 +1,3 @@
-
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
@@ -75,9 +74,9 @@ const getEmailTransporter = async () => {
 };
 
 // Function to send verification email
-const sendVerificationEmail = async (email, verificationLink) => {
+const sendVerificationEmail = async (recipientEmail, verificationLink) => {
   try {
-    console.log(`Attempting to send verification email to: ${email}`);
+    console.log(`Attempting to send verification email to RECIPIENT: ${recipientEmail}`);
     console.log(`Verification link: ${verificationLink}`);
     
     const transporter = await getEmailTransporter();
@@ -94,9 +93,10 @@ const sendVerificationEmail = async (email, verificationLink) => {
     
     const nodemailer = require('nodemailer'); // Should be available at this point
     
+    // CRITICAL FIX: Ensure we're using the recipientEmail (user's email) as the "to" field
     const mailOptions = {
       from: process.env.SMTP_FROM || '"MediSync System" <noreply@medisync.com>',
-      to: email, // This should be the recipient's email (the user who registered)
+      to: recipientEmail, // Use the parameter passed to this function - this should be the registering user's email
       subject: 'Verify your MediSync account',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -240,7 +240,7 @@ exports.createUser = async (req, res) => {
     
     // Only attempt to send email if not in test mode
     if (!isTestEnvironment) {
-      // Always make sure we're sending to the newly registered user's email
+      // CRITICAL FIX: Make sure we're using the user's email address, not the sender's
       emailResult = await sendVerificationEmail(userDataForDb.email, verificationLink);
       console.log('Email sending result:', emailResult);
     }
@@ -483,7 +483,8 @@ exports.resendVerification = async (req, res) => {
     // Only attempt to send email if not in test mode
     if (!isTestEnvironment) {
       try {
-        // Make sure we're sending to the user's email who needs verification
+        // CRITICAL FIX: Make sure we're sending to the user's email who needs verification
+        // Use the email from the request since that's the one the user provided
         emailResult = await sendVerificationEmail(email, verificationLink);
         console.log('Email resending result:', emailResult);
       } catch (error) {
@@ -524,4 +525,3 @@ exports.resendVerification = async (req, res) => {
     });
   }
 };
-

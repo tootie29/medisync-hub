@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Mail, Loader2, Info, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Mail, Loader2, Info, CheckCircle, AlertTriangle, AlertCircle, ArrowLeft } from 'lucide-react';
 
 interface EmailVerificationProps {
   email: string | null;
@@ -105,9 +105,9 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
   return (
     <div className="w-full space-y-6">
       <div className="text-center">
-        <Mail className="mx-auto h-12 w-12 text-medical-primary" />
-        <h2 className="mt-2 text-2xl font-bold text-medical-primary">Verify Your Email</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <Mail className="mx-auto h-12 w-12 text-green-600" />
+        <h2 className="mt-2 text-2xl font-bold text-green-700">Verify Your Email</h2>
+        <p className="mt-1 text-gray-600">
           We've sent a verification link to your email address.
           Please check your inbox and click on the link to verify your account.
         </p>
@@ -131,7 +131,27 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           </div>
         )}
         
-        {!isPreviewMode && emailDetails?.requiresManualVerification && (
+        {!isPreviewMode && (
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+            <div className="flex items-start">
+              <Info className="h-5 w-5 text-amber-600 mt-0.5 mr-2" />
+              <div className="text-sm text-amber-700">
+                <p className="font-medium">Email Configuration Required:</p>
+                <p>For email verification to work properly, the server needs to be configured with SMTP settings in the .env file:</p>
+                <pre className="mt-2 p-2 bg-amber-100 rounded text-xs overflow-x-auto">
+                  SMTP_HOST=your-smtp-server.com<br />
+                  SMTP_PORT=587<br />
+                  SMTP_USER=your-username<br />
+                  SMTP_PASS=your-password<br />
+                  SMTP_SECURE=false<br />
+                  SMTP_FROM=noreply@yourcompany.com
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {emailDetails?.requiresManualVerification && (
           <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
             <div className="flex items-start">
               <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 mr-2" />
@@ -151,34 +171,6 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
                     <p><strong>Error details:</strong> {JSON.stringify(emailDetails.errorDetails)}</p>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {!isPreviewMode && !emailDetails?.requiresManualVerification && !autoVerified && !emailDetails?.success && (
-          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
-            <div className="flex items-start">
-              <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-2" />
-              <div className="text-sm text-amber-700">
-                <p>
-                  <strong>Email Configuration Required:</strong> For email verification to work properly, 
-                  the server needs to be configured with SMTP settings in the .env file:
-                </p>
-                <pre className="mt-1 p-2 bg-amber-100 rounded text-xs overflow-x-auto">
-                  SMTP_HOST=your-smtp-server.com<br />
-                  SMTP_PORT=587<br />
-                  SMTP_USER=your-username<br />
-                  SMTP_PASS=your-password<br />
-                  SMTP_SECURE=false<br />
-                  SMTP_FROM=noreply@yourcompany.com
-                </pre>
-                <p className="mt-2 text-xs">
-                  <strong>Note:</strong> For Gmail accounts, you need to use an App Password instead of your regular password.
-                  <a href="https://support.google.com/accounts/answer/185833" target="_blank" rel="noopener noreferrer" className="block underline ml-1">
-                    Learn how to create an App Password
-                  </a>
-                </p>
               </div>
             </div>
           </div>
@@ -269,18 +261,17 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           )}
         </Button>
 
-        {resent && !verificationInfo && !autoVerified && !emailDetails && (
-          <div className="rounded-md bg-green-50 p-4 mt-4">
-            <div className="flex">
-              <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
-                  Verification email sent! Please check your inbox.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
+        <div className="mt-4 text-center">
+          <button
+            onClick={onBack}
+            className="flex items-center mx-auto text-sm font-medium text-green-700 hover:underline"
+            type="button"
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Back to Login
+          </button>
+        </div>
+
         {verificationInfo && (
           <div className="rounded-md bg-blue-50 p-4 mt-4">
             <div className="flex">
@@ -292,16 +283,6 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
             </div>
           </div>
         )}
-
-        <div className="mt-4 text-center">
-          <button
-            onClick={onBack}
-            className="text-sm font-medium text-green-700 hover:underline"
-            type="button"
-          >
-            Back to Login
-          </button>
-        </div>
       </div>
     </div>
   );
