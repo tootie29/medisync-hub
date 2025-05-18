@@ -655,8 +655,40 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ message: result.message });
     }
     
-    // Create reset link
-    const resetLink = `${req.protocol}://${req.get('host')}/reset-password/${result.token}`;
+    // FIXED: Create reset link properly pointing to the frontend URL instead of the API
+    // Determine the correct frontend URL
+    let frontendUrl = process.env.FRONTEND_URL;
+    
+    // Try to determine frontend URL from request origin
+    const origin = req.headers.origin;
+    
+    // If origin exists and it's not the API domain, use it as the frontend URL
+    if (origin && !origin.includes('api.')) {
+      frontendUrl = origin;
+    } 
+    // If we still don't have a frontend URL, construct it from the host
+    else if (!frontendUrl) {
+      const host = req.get('host') || '';
+      const apiSubdomain = host.startsWith('api.');
+      
+      if (apiSubdomain) {
+        // Remove 'api.' prefix for the frontend domain
+        frontendUrl = `${req.protocol}://${host.replace('api.', '')}`;
+      } else {
+        // Use the current host if it doesn't have 'api.' in it
+        frontendUrl = `${req.protocol}://${host}`;
+      }
+    }
+    
+    // Ensure we have a proper URL with no double slashes
+    if (frontendUrl.endsWith('/')) {
+      frontendUrl = frontendUrl.slice(0, -1);
+    }
+    
+    console.log('Using frontend URL for reset link:', frontendUrl);
+    
+    // Create proper reset link pointing to the frontend
+    const resetLink = `${frontendUrl}/reset-password/${result.token}`;
     console.log('Reset link:', resetLink);
     
     // In development or testing, use a more direct approach for reset
