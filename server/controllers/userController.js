@@ -178,10 +178,10 @@ const sendPasswordResetEmail = async (recipientEmail, resetLink) => {
     
     const nodemailer = require('nodemailer');
     
-    // Ensure we're explicitly setting the recipient to the user's email address
+    // FIXED: Ensure we're explicitly setting the recipient to the user's email address
     const mailOptions = {
       from: process.env.SMTP_FROM || '"MediSync System" <noreply@medisync.com>',
-      to: recipientEmail,
+      to: recipientEmail, // This should be the email of the user who requested the reset
       subject: 'Reset your MediSync password',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -204,7 +204,7 @@ const sendPasswordResetEmail = async (recipientEmail, resetLink) => {
     
     console.log('Sending password reset email with options:', {
       from: mailOptions.from,
-      to: mailOptions.to,
+      to: mailOptions.to, // Log the recipient's email for debugging
       subject: mailOptions.subject
     });
     
@@ -666,7 +666,8 @@ exports.forgotPassword = async (req, res) => {
     
     // Only attempt to send email if not in test mode
     if (!isTestEnvironment) {
-      emailResult = await sendPasswordResetEmail(result.email, resetLink);
+      // FIXED: Make sure we're sending to the user's email who requested the reset
+      emailResult = await sendPasswordResetEmail(email, resetLink);
       console.log('Email sending result:', emailResult);
     }
     
