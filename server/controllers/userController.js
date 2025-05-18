@@ -10,19 +10,40 @@ const getEmailTransporter = async () => {
   try {
     // First try to require nodemailer - this will fail if not installed
     const nodemailer = require('nodemailer');
+    console.log('Nodemailer package successfully loaded');
     
     // Check if SMTP settings are available
     if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
-      console.log('Using SMTP configuration for email');
-      return nodemailer.createTransport({
+      console.log('SMTP configuration found:', {
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        secure: process.env.SMTP_SECURE === 'true',
+        user: process.env.SMTP_USER ? 'Provided' : 'Missing',
+        pass: process.env.SMTP_PASS ? 'Provided' : 'Missing'
+      });
+      
+      const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         secure: process.env.SMTP_SECURE === 'true',
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
-        }
+        },
+        // Add debug option to see detailed SMTP communication logs
+        debug: true
       });
+      
+      console.log('Testing SMTP connection...');
+      try {
+        // Test the connection before returning the transporter
+        await transporter.verify();
+        console.log('SMTP connection verified successfully');
+        return transporter;
+      } catch (smtpError) {
+        console.error('SMTP connection test failed:', smtpError);
+        throw smtpError;
+      }
     }
     
     console.log('No SMTP configuration found, using ethereal test account');
@@ -46,7 +67,7 @@ const getEmailTransporter = async () => {
       });
     });
   } catch (error) {
-    console.error('Nodemailer is not installed or not available:', error.message);
+    console.error('Nodemailer setup error:', error.message);
     // Return null if nodemailer is not available
     return null;
   }
@@ -55,6 +76,9 @@ const getEmailTransporter = async () => {
 // Function to send verification email
 const sendVerificationEmail = async (email, verificationLink) => {
   try {
+    console.log(`Attempting to send verification email to: ${email}`);
+    console.log(`Verification link: ${verificationLink}`);
+    
     const transporter = await getEmailTransporter();
     
     // If transporter is null, nodemailer is not available
@@ -92,8 +116,14 @@ const sendVerificationEmail = async (email, verificationLink) => {
       `
     };
     
+    console.log('Sending email with options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+    
     const info = await transporter.sendMail(mailOptions);
-    console.log('Verification email sent:', info.messageId);
+    console.log('Email sending result:', info);
     
     // If using Ethereal, log the preview URL
     if (info.ethereal) {
@@ -107,9 +137,21 @@ const sendVerificationEmail = async (email, verificationLink) => {
     return { success: true };
   } catch (error) {
     console.error('Error sending verification email:', error);
+    console.error('Error details:', {
+      code: error.code,
+      command: error.command,
+      responseCode: error.responseCode,
+      response: error.response
+    });
     return { 
       success: false, 
       error: error.message || 'Failed to send verification email',
+      errorDetails: {
+        code: error.code,
+        command: error.command,
+        responseCode: error.responseCode,
+        response: error.response
+      },
       requiresManualVerification: true
     };
   }
@@ -451,13 +493,14 @@ exports.resendVerification = async (req, res) => {
       }
     }
     
-    // Special case for missing nodemailer dependency
-    if (emailResult.requiresManualVerification) {
+    // Special case for missing nodemailer dependency or failed email sending
+    if (emailResult.requiresManualVerification || !emailResult.success) {
       return res.json({ 
-        message: 'Email verification system is currently offline. Please use the verification link provided.',
+        message: 'Email verification system could not send the email. Please use the verification link provided.',
         verificationLink, // Include the link so users can manually verify
         emailSent: false,
-        requiresManualVerification: true
+        requiresManualVerification: true,
+        errorDetails: emailResult.errorDetails || null
       });
     }
     

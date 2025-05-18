@@ -46,6 +46,7 @@ interface AuthContextType {
     emailPreviewUrl?: string;
     success?: boolean;
     requiresManualVerification?: boolean;
+    errorDetails?: string;
   }>;
   verificationEmail: string | null;
   setVerificationEmail: (email: string | null) => void;
@@ -448,16 +449,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
       
+      console.log('Sending verification request to:', `${API_URL}/users/resend-verification`);
       const response = await apiClient.post('/users/resend-verification', { email });
+      console.log('Resend verification API response:', response.data);
       
       // Check if manual verification is required
       if (response.data.requiresManualVerification) {
-        toast.warning('Email verification system is currently offline. Please contact an administrator.');
+        toast.warning('Email verification system could not send the email. Please use the manual verification link.');
         
         return { 
           requiresManualVerification: true,
           verificationLink: response.data.verificationLink,
-          success: false
+          success: false,
+          errorDetails: response.data.errorDetails
         };
       }
       
@@ -472,15 +476,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Resend verification error:', error);
       let errorMessage = 'Failed to resend verification email';
+      let errorDetails = null;
       
       if (axios.isAxiosError(error) && error.response) {
         errorMessage = error.response.data?.message || errorMessage;
+        errorDetails = error.response.data?.errorDetails || null;
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
       
       toast.error(errorMessage);
-      throw error;
+      
+      return {
+        success: false,
+        errorDetails
+      };
     } finally {
       setIsLoading(false);
     }

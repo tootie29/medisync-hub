@@ -25,6 +25,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
     success: boolean;
     requiresManualVerification?: boolean;
     verificationLink?: string;
+    errorDetails?: any;
   } | null>(null);
   
   const isPreviewMode = window.location.hostname.includes('lovableproject.com');
@@ -71,9 +72,10 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
         setEmailDetails({
           success: false,
           requiresManualVerification: true,
-          verificationLink: result.verificationLink
+          verificationLink: result.verificationLink,
+          errorDetails: result.errorDetails
         });
-        toast.warning('Email system is not available. Please use the manual verification link.');
+        toast.warning('Email system could not send verification email. Please use the manual verification link.');
       } else if (result.emailSent) {
         // For production mode with real email sending
         setEmailDetails({
@@ -84,7 +86,8 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
       } else {
         // Email sending failed
         setEmailDetails({
-          success: false
+          success: false,
+          errorDetails: result.errorDetails
         });
         toast.error('Failed to send verification email.');
       }
@@ -135,12 +138,17 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
               <div className="text-sm text-amber-700">
                 <p>
                   <strong>Manual Verification Required:</strong> The email verification system is currently 
-                  unavailable (nodemailer is not installed on the server). Please contact your administrator 
-                  to verify your account manually using the following verification link:
+                  unable to send emails. This could be due to SMTP configuration issues or server limitations.
+                  Please use the manual verification link below:
                 </p>
                 {emailDetails.verificationLink && (
                   <div className="mt-2 p-2 bg-amber-100 rounded text-xs overflow-x-auto break-all">
                     {emailDetails.verificationLink}
+                  </div>
+                )}
+                {emailDetails.errorDetails && (
+                  <div className="mt-2 text-xs">
+                    <p><strong>Error details:</strong> {JSON.stringify(emailDetails.errorDetails)}</p>
                   </div>
                 )}
               </div>
@@ -165,6 +173,12 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
                   SMTP_SECURE=false<br />
                   SMTP_FROM=noreply@yourcompany.com
                 </pre>
+                <p className="mt-2 text-xs">
+                  <strong>Note:</strong> For Gmail accounts, you need to use an App Password instead of your regular password.
+                  <a href="https://support.google.com/accounts/answer/185833" target="_blank" rel="noopener noreferrer" className="block underline ml-1">
+                    Learn how to create an App Password
+                  </a>
+                </p>
               </div>
             </div>
           </div>
@@ -209,7 +223,17 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
                     )}
                   </>
                 ) : (
-                  <p className="text-red-700">Failed to send verification email. Please try again or contact support if the issue persists.</p>
+                  <>
+                    <p className="text-red-700">Failed to send verification email. Please try again or contact support if the issue persists.</p>
+                    {emailDetails.errorDetails && (
+                      <details className="mt-2 p-2 bg-red-50 rounded text-xs">
+                        <summary className="font-medium">Error details</summary>
+                        <pre className="mt-1 text-xs overflow-x-auto whitespace-pre-wrap">
+                          {JSON.stringify(emailDetails.errorDetails, null, 2)}
+                        </pre>
+                      </details>
+                    )}
+                  </>
                 )}
               </div>
             </div>
