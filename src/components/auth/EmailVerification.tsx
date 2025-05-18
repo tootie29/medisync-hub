@@ -55,35 +55,45 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
     }
 
     setIsResending(true);
+    setEmailDetails(null); // Reset previous results
+    
     try {
+      console.log('Resending verification email to:', inputEmail);
       const result = await resendVerification(inputEmail);
+      console.log('Resend verification result:', result);
       setResent(true);
       
       // For preview mode, show the verification link directly
       if (isPreviewMode && result.verificationLink) {
         setVerificationInfo(`Since this is a preview environment, your account will be automatically verified in a few seconds. If not, you can visit this verification link: ${result.verificationLink}`);
       } else if (result.requiresManualVerification) {
-        // Case where manual verification is required
+        // Case where manual verification is required (no nodemailer)
         setEmailDetails({
           success: false,
           requiresManualVerification: true,
           verificationLink: result.verificationLink
         });
+        toast.warning('Email system is not available. Please use the manual verification link.');
       } else if (result.emailSent) {
         // For production mode with real email sending
         setEmailDetails({
           success: true,
           previewUrl: result.emailPreviewUrl
         });
+        toast.success('Verification email sent successfully!');
       } else {
         // Email sending failed
         setEmailDetails({
           success: false
         });
+        toast.error('Failed to send verification email.');
       }
     } catch (error) {
       console.error('Failed to resend verification:', error);
       toast.error('Failed to resend verification email. Please try again.');
+      setEmailDetails({
+        success: false
+      });
     } finally {
       setIsResending(false);
     }
@@ -138,7 +148,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
           </div>
         )}
         
-        {!isPreviewMode && !emailDetails?.requiresManualVerification && (
+        {!isPreviewMode && !emailDetails?.requiresManualVerification && !autoVerified && !emailDetails?.success && (
           <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
             <div className="flex items-start">
               <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-2" />
@@ -222,7 +232,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
 
         <Button
           onClick={handleResendVerification}
-          className="w-full bg-medical-secondary hover:bg-medical-primary"
+          className="w-full bg-green-600 hover:bg-green-700 text-white"
           disabled={isResending || !inputEmail || autoVerified}
         >
           {isResending ? (
@@ -262,7 +272,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
         <div className="mt-4 text-center">
           <button
             onClick={onBack}
-            className="text-sm font-medium text-medical-primary hover:underline"
+            className="text-sm font-medium text-green-700 hover:underline"
             type="button"
           >
             Back to Login

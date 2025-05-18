@@ -1,4 +1,3 @@
-
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
@@ -414,6 +413,7 @@ exports.resendVerification = async (req, res) => {
       return res.status(400).json({ message: 'Email is required' });
     }
     
+    console.log('Resend verification request for email:', email);
     const user = await userModel.getUserByEmail(email);
     
     if (!user) {
@@ -429,6 +429,7 @@ exports.resendVerification = async (req, res) => {
     
     // Create verification link
     const verificationLink = `${req.protocol}://${req.get('host')}/api/users/verify/${token}`;
+    console.log('New verification link generated:', verificationLink);
     
     // In development or testing, use a more direct approach for email verification
     const isTestEnvironment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
@@ -437,21 +438,30 @@ exports.resendVerification = async (req, res) => {
     
     // Only attempt to send email if not in test mode
     if (!isTestEnvironment) {
-      emailResult = await sendVerificationEmail(email, verificationLink);
-      console.log('Email resending result:', emailResult);
+      try {
+        emailResult = await sendVerificationEmail(email, verificationLink);
+        console.log('Email resending result:', emailResult);
+      } catch (error) {
+        console.error('Error sending verification email:', error);
+        emailResult = { 
+          success: false, 
+          error: error.message, 
+          requiresManualVerification: true 
+        };
+      }
     }
     
     // Special case for missing nodemailer dependency
     if (emailResult.requiresManualVerification) {
       return res.json({ 
-        message: 'Email verification system is currently offline. Please contact admin to verify your account.',
-        verificationLink, // Include the link so admins can manually verify
+        message: 'Email verification system is currently offline. Please use the verification link provided.',
+        verificationLink, // Include the link so users can manually verify
         emailSent: false,
         requiresManualVerification: true
       });
     }
     
-    res.json({ 
+    res.json({
       message: 'Verification email sent! Please check your inbox.',
       verificationLink: isTestEnvironment ? verificationLink : undefined,
       emailSent: emailResult.success,
@@ -459,6 +469,12 @@ exports.resendVerification = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in resendVerification controller:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      requiresManualVerification: true,
+      // Include a verification link even when there's an error, as a fallback
+      verificationLink: error.verificationLink
+    });
   }
 };
