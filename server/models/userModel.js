@@ -230,18 +230,50 @@ class UserModel {
       const expiry = new Date();
       expiry.setHours(expiry.getHours() + 1);
       
-      // Update the user with the new reset token
-      await pool.query(
-        'UPDATE users SET reset_password_token = ?, reset_token_expiry = ? WHERE id = ?',
-        [token, expiry, rows[0].id]
-      );
-      
-      return { 
-        success: true, 
-        token,
-        email: rows[0].email,
-        userId: rows[0].id
-      };
+      try {
+        // Check if the reset_password_token column exists in the users table
+        const [columns] = await pool.query('SHOW COLUMNS FROM users LIKE ?', ['reset_password_token']);
+        
+        if (columns.length === 0) {
+          console.error('Column reset_password_token does not exist in users table');
+          // Attempt to add the columns if they don't exist
+          try {
+            await pool.query(`
+              ALTER TABLE users 
+              ADD COLUMN reset_password_token VARCHAR(100) DEFAULT NULL,
+              ADD COLUMN reset_token_expiry TIMESTAMP DEFAULT NULL
+            `);
+            console.log('Added reset_password_token and reset_token_expiry columns to users table');
+          } catch (alterError) {
+            console.error('Failed to add columns to users table:', alterError);
+            return { 
+              success: false, 
+              message: 'Password reset functionality is not available. Database schema needs to be updated.',
+              error: alterError.message
+            };
+          }
+        }
+        
+        // Update the user with the new reset token
+        await pool.query(
+          'UPDATE users SET reset_password_token = ?, reset_token_expiry = ? WHERE id = ?',
+          [token, expiry, rows[0].id]
+        );
+        
+        return { 
+          success: true, 
+          token,
+          email: rows[0].email,
+          userId: rows[0].id
+        };
+      } catch (dbError) {
+        console.error('Database error while setting reset token:', dbError);
+        return { 
+          success: false,
+          message: 'Failed to generate reset token due to database error',
+          error: dbError.message
+        };
+      }
     } catch (error) {
       console.error('Error generating reset token:', error);
       throw error;
@@ -250,6 +282,17 @@ class UserModel {
   
   async validateResetToken(token) {
     try {
+      // Check if the reset_password_token column exists
+      const [columns] = await pool.query('SHOW COLUMNS FROM users LIKE ?', ['reset_password_token']);
+      
+      if (columns.length === 0) {
+        console.error('Column reset_password_token does not exist in users table');
+        return { 
+          success: false, 
+          message: 'Password reset functionality is not available. Database schema needs to be updated.'
+        };
+      }
+      
       // Check if the token exists and is not expired
       const [rows] = await pool.query(
         'SELECT * FROM users WHERE reset_password_token = ? AND reset_token_expiry > NOW()',
@@ -267,12 +310,27 @@ class UserModel {
       };
     } catch (error) {
       console.error('Error validating reset token:', error);
-      throw error;
+      return { 
+        success: false, 
+        message: 'Failed to validate token due to database error',
+        error: error.message
+      };
     }
   }
   
   async resetPassword(token, newPassword) {
     try {
+      // Check if the reset_password_token column exists
+      const [columns] = await pool.query('SHOW COLUMNS FROM users LIKE ?', ['reset_password_token']);
+      
+      if (columns.length === 0) {
+        console.error('Column reset_password_token does not exist in users table');
+        return { 
+          success: false, 
+          message: 'Password reset functionality is not available. Database schema needs to be updated.'
+        };
+      }
+      
       // Validate the token first
       const validation = await this.validateResetToken(token);
       
@@ -292,7 +350,11 @@ class UserModel {
       };
     } catch (error) {
       console.error('Error resetting password:', error);
-      throw error;
+      return {
+        success: false,
+        message: 'Failed to reset password due to database error',
+        error: error.message
+      };
     }
   }
 }

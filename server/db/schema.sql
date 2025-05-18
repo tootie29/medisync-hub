@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified BOOLEAN DEFAULT FALSE,
   verification_token VARCHAR(100),
   token_expiry TIMESTAMP,
+  reset_password_token VARCHAR(100),
+  reset_token_expiry TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
