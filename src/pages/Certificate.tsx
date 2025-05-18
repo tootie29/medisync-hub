@@ -57,9 +57,8 @@ const CertificatePage: React.FC = () => {
 
   const displayUserName = user?.name || "Patient";
 
-  // Updated logo paths to use the uploaded images
+  // Updated to only use the school logo
   const schoolLogo = "/lovable-uploads/03f574c6-5504-45d4-8d0e-3eb89db37d70.png"; // Olivarez College logo
-  const collegeLogo = "/lovable-uploads/a7ebfcdb-c26c-46e1-a387-dcbc28379e5c.png"; // College of Nursing logo
 
   return (
     <MainLayout>
@@ -74,7 +73,6 @@ const CertificatePage: React.FC = () => {
             weight={weight}
             date={date}
             schoolLogo={schoolLogo}
-            collegeLogo={collegeLogo}
           />
         </div>
         <Button variant="default" onClick={handleDownload} className="mt-4 flex items-center gap-2">

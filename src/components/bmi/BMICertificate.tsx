@@ -10,11 +10,10 @@ interface BMICertificateProps {
   weight: number;
   date: string;
   schoolLogo?: string;
-  collegeLogo?: string;
 }
 
 const BMICertificate: React.FC<BMICertificateProps> = ({ 
-  id, userName, bmi, height, weight, date, schoolLogo, collegeLogo 
+  id, userName, bmi, height, weight, date, schoolLogo
 }) => {
   // If BMI is 0 or invalid, recalculate it from height and weight
   const calculatedBmi = (() => {
@@ -31,9 +30,8 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
   // Only display the BMI if it's a valid number
   const displayBmi = calculatedBmi > 0 ? calculatedBmi.toFixed(1) : "0.0";
   
-  // Default school and college logo URLs if not provided
+  // Default school logo URL if not provided
   const defaultSchoolLogo = "/lovable-uploads/03f574c6-5504-45d4-8d0e-3eb89db37d70.png";
-  const defaultCollegeLogo = "/lovable-uploads/a7ebfcdb-c26c-46e1-a387-dcbc28379e5c.png";
   
   return (
     <div 
@@ -77,9 +75,9 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
           }}>
             {/* School Logo */}
             <div style={{ 
-              width: '60px', 
-              height: '60px',
-              marginRight: '10px',
+              width: '70px', 
+              height: '70px',
+              marginRight: '15px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -87,27 +85,6 @@ const BMICertificate: React.FC<BMICertificateProps> = ({
               <img 
                 src={schoolLogo || defaultSchoolLogo} 
                 alt="School Logo" 
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  objectFit: 'contain' 
-                }}
-              />
-            </div>
-            
-            {/* College Logo */}
-            <div style={{ 
-              width: '60px', 
-              height: '60px',
-              marginLeft: '10px',
-              marginRight: '15px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src={collegeLogo || defaultCollegeLogo} 
-                alt="College of Nursing" 
                 style={{ 
                   width: '100%', 
                   height: '100%', 
