@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +28,11 @@ const MedicalRecords: React.FC = () => {
     getUserById,
     getApiUrl
   } = useData();
+  
+  // Define the role check variables
+  const isDoctor = user?.role === 'doctor';
+  const isHeadNurse = user?.role === 'head nurse';
+  const isPatient = user?.role === 'patient';
   
   const location = useLocation();
   const navigate = useNavigate();
