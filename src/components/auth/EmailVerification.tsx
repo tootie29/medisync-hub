@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Mail, Loader2, Info, CheckCircle, AlertTriangle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Mail, Loader2, Info, CheckCircle, AlertTriangle, AlertCircle, ArrowLeft, ExternalLink } from 'lucide-react';
 
 interface EmailVerificationProps {
   email: string | null;
@@ -163,7 +163,15 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
                 </p>
                 {emailDetails.verificationLink && (
                   <div className="mt-2 p-2 bg-amber-100 rounded text-xs overflow-x-auto break-all">
-                    {emailDetails.verificationLink}
+                    <a 
+                      href={emailDetails.verificationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline flex items-center"
+                    >
+                      {emailDetails.verificationLink}
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </a>
                   </div>
                 )}
                 {emailDetails.errorDetails && (
@@ -200,6 +208,7 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
                   <>
                     <p className="font-medium text-green-700">Email sent successfully!</p>
                     <p>Please check your inbox and spam folders for the verification link.</p>
+                    <p className="mt-1 font-medium">Email sent to: <span className="text-blue-600">{inputEmail}</span></p>
                     {emailDetails.previewUrl && (
                       <>
                         <p className="mt-2">Using test email service. View the email at:</p>
@@ -207,9 +216,10 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) 
                           href={emailDetails.previewUrl} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline break-all"
+                          className="text-blue-600 hover:underline break-all flex items-center"
                         >
                           {emailDetails.previewUrl}
+                          <ExternalLink className="h-3 w-3 ml-1" />
                         </a>
                       </>
                     )}

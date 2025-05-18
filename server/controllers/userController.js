@@ -1,3 +1,4 @@
+
 const userModel = require('../models/userModel');
 const { v4: uuidv4 } = require('uuid');
 const dotenv = require('dotenv');
@@ -91,12 +92,12 @@ const sendVerificationEmail = async (recipientEmail, verificationLink) => {
       };
     }
     
-    const nodemailer = require('nodemailer'); // Should be available at this point
+    const nodemailer = require('nodemailer');
     
-    // CRITICAL FIX: Ensure we're using the recipientEmail (user's email) as the "to" field
+    // Ensure we're explicitly setting the recipient to the user's email address
     const mailOptions = {
       from: process.env.SMTP_FROM || '"MediSync System" <noreply@medisync.com>',
-      to: recipientEmail, // Use the parameter passed to this function - this should be the registering user's email
+      to: recipientEmail, // This should be the registering user's email
       subject: 'Verify your MediSync account',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -240,7 +241,8 @@ exports.createUser = async (req, res) => {
     
     // Only attempt to send email if not in test mode
     if (!isTestEnvironment) {
-      // CRITICAL FIX: Make sure we're using the user's email address, not the sender's
+      // FIXED: Make sure we're using the user's email address, not the admin email
+      // This is the critical fix - ensure the email is sent to the registering user
       emailResult = await sendVerificationEmail(userDataForDb.email, verificationLink);
       console.log('Email sending result:', emailResult);
     }
@@ -483,8 +485,8 @@ exports.resendVerification = async (req, res) => {
     // Only attempt to send email if not in test mode
     if (!isTestEnvironment) {
       try {
-        // CRITICAL FIX: Make sure we're sending to the user's email who needs verification
-        // Use the email from the request since that's the one the user provided
+        // FIXED: Make sure we're sending to the user's email who needs verification
+        // This is the critical fix - ensure the email is sent to the user who requested verification
         emailResult = await sendVerificationEmail(email, verificationLink);
         console.log('Email resending result:', emailResult);
       } catch (error) {
