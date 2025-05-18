@@ -47,6 +47,7 @@ const MedicalRecords: React.FC = () => {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [patientData, setPatientData] = useState<any>(null);
   const [isLoadingPatient, setIsLoadingPatient] = useState<boolean>(false);
+  // Initialize collapsedRecords state with all records collapsed (true) by default
   const [collapsedRecords, setCollapsedRecords] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState<Partial<MedicalRecord>>({
     height: 0,
@@ -102,6 +103,19 @@ const MedicalRecords: React.FC = () => {
       setPatientData(user);
     }
   }, [patientIdFromUrl, isPatient, user]);
+
+  // Initialize collapsedRecords when medical records are loaded
+  useEffect(() => {
+    if (selectedPatientId) {
+      const records = getMedicalRecordsByPatientId(selectedPatientId);
+      // Set all records to be collapsed by default
+      const initialCollapsedState: Record<string, boolean> = {};
+      records.forEach(record => {
+        initialCollapsedState[record.id] = true; // true means collapsed
+      });
+      setCollapsedRecords(initialCollapsedState);
+    }
+  }, [selectedPatientId, getMedicalRecordsByPatientId]);
   
   // Fetch patient data from API or sample data
   const fetchPatientData = async (patientId: string) => {

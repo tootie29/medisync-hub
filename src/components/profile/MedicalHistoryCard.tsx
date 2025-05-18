@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { SAMPLE_USERS } from '@/types';
@@ -17,7 +17,17 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
   userMedicalRecords, 
   getBMICategoryColor 
 }) => {
+  // Initialize collapsedRecords state with all records collapsed (true) by default
   const [collapsedRecords, setCollapsedRecords] = useState<Record<string, boolean>>({});
+  
+  // Initialize all records as collapsed when the component mounts
+  useEffect(() => {
+    const initialCollapsedState: Record<string, boolean> = {};
+    userMedicalRecords.forEach(record => {
+      initialCollapsedState[record.id] = true; // true means collapsed
+    });
+    setCollapsedRecords(initialCollapsedState);
+  }, [userMedicalRecords]);
   
   // Toggle collapsed state for a specific record
   const toggleRecordCollapse = (recordId: string) => {
