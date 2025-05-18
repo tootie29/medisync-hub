@@ -22,8 +22,8 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   const { user } = useAuth();
   const { getMedicalRecordsByPatientId } = useData();
   
-  // School logo URL
-  const schoolLogo = "/lovable-uploads/fe32ce98-8225-4ebe-b003-1473350d3f51.png";
+  // Updated to use Olivarez College logo
+  const schoolLogo = "/lovable-uploads/03f574c6-5504-45d4-8d0e-3eb89db37d70.png";
   
   // Determine if user can access inventory (admin and staff only)
   const canAccessInventory = user && (user.role === "staff" || user.role === "admin");
@@ -96,7 +96,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
           {isSidebarOpen ? (
             <img 
               src={schoolLogo} 
-              alt="College of Nursing" 
+              alt="Olivarez College" 
               className="h-12 w-auto"
             />
           ) : null}

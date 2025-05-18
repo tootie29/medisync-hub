@@ -31,8 +31,8 @@ const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
   
-  // College logo URL
-  const collegeLogo = "/lovable-uploads/aa4d5983-d176-4536-a23d-35d1ffed0482.png";
+  // Updated to use Olivarez College logo
+  const collegeLogo = "/lovable-uploads/03f574c6-5504-45d4-8d0e-3eb89db37d70.png";
 
   const handleLogout = () => {
     logout();
@@ -63,7 +63,7 @@ const Navbar: React.FC = () => {
               >
                 <img 
                   src={collegeLogo} 
-                  alt="College of Nursing" 
+                  alt="Olivarez College" 
                   className="h-10 w-auto mr-2"
                 />
               </Link>
