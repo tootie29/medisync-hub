@@ -110,9 +110,9 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
               <p className="text-sm text-green-700 mt-1">
                 We've sent password reset instructions to <strong>{email}</strong>
               </p>
-              {resetLink && isPreviewMode && (
+              {resetLink && (
                 <div className="mt-2 p-2 bg-green-100 rounded text-sm">
-                  <p className="font-medium">Preview Mode: Use this link to reset your password:</p>
+                  <p className="font-medium">If you don't receive the email, use this link to reset your password:</p>
                   <a 
                     href={resetLink} 
                     className="text-blue-600 underline break-all block mt-1"
@@ -144,7 +144,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSuccess }) =>
                 setIsSuccess(false);
                 setResetLink(null);
               }}
-              className="flex-1 bg-medical-primary"
+              className="flex-1 bg-green-600 hover:bg-green-700"
             >
               Try Again
             </Button>
