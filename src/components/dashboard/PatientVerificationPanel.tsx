@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,6 +52,8 @@ const PatientVerificationPanel: React.FC<PatientVerificationPanelProps> = ({ cla
 
     try {
       const API_URL = getApiUrl();
+      console.log('Fetching unverified patients from:', API_URL);
+      
       const response = await axios.get(`${API_URL}/users`, {
         headers: {
           'Accept': 'application/json',
@@ -61,12 +62,15 @@ const PatientVerificationPanel: React.FC<PatientVerificationPanelProps> = ({ cla
         timeout: 10000
       });
 
+      console.log('All users from API:', response.data);
+
       // Filter for unverified patients (students and staff)
       const unverified = response.data.filter((user: UserType) => 
         (user.role === 'student' || user.role === 'staff') &&
         !user.email_verified
       );
 
+      console.log('Filtered unverified patients:', unverified);
       setUnverifiedPatients(unverified);
     } catch (error) {
       console.error('Error fetching unverified patients:', error);
@@ -80,14 +84,20 @@ const PatientVerificationPanel: React.FC<PatientVerificationPanelProps> = ({ cla
   // Verify a patient manually
   const verifyPatient = async (patientId: string) => {
     setIsVerifying(prev => ({ ...prev, [patientId]: true }));
+    console.log('Verifying patient with ID:', patientId);
 
     try {
       const API_URL = getApiUrl();
       
-      // Ensure we're sending the correct property name that the backend expects
-      await axios.put(`${API_URL}/users/${patientId}`, {
-        email_verified: true  // This matches what the backend userController expects
-      }, {
+      // Send the correct property name that matches the backend userController
+      const updateData = {
+        emailVerified: true  // This matches the camelCase property the backend expects
+      };
+      
+      console.log('Sending update request to:', `${API_URL}/users/${patientId}`);
+      console.log('Update data:', updateData);
+      
+      const response = await axios.put(`${API_URL}/users/${patientId}`, updateData, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -95,12 +105,15 @@ const PatientVerificationPanel: React.FC<PatientVerificationPanelProps> = ({ cla
         timeout: 10000
       });
 
+      console.log('Update response:', response.data);
+
       // Remove the patient from the unverified list
       setUnverifiedPatients(prev => prev.filter(patient => patient.id !== patientId));
       
       toast.success('Patient verified successfully');
     } catch (error) {
       console.error('Error verifying patient:', error);
+      console.error('Error details:', error.response?.data || error.message);
       toast.error('Failed to verify patient');
     } finally {
       setIsVerifying(prev => ({ ...prev, [patientId]: false }));
@@ -110,11 +123,14 @@ const PatientVerificationPanel: React.FC<PatientVerificationPanelProps> = ({ cla
   // Reject/delete a patient registration
   const rejectPatient = async (patientId: string) => {
     setIsVerifying(prev => ({ ...prev, [patientId]: true }));
+    console.log('Rejecting patient with ID:', patientId);
 
     try {
       const API_URL = getApiUrl();
       
-      await axios.delete(`${API_URL}/users/${patientId}`, {
+      console.log('Sending delete request to:', `${API_URL}/users/${patientId}`);
+      
+      const response = await axios.delete(`${API_URL}/users/${patientId}`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -122,12 +138,15 @@ const PatientVerificationPanel: React.FC<PatientVerificationPanelProps> = ({ cla
         timeout: 10000
       });
 
+      console.log('Delete response:', response.data);
+
       // Remove the patient from the unverified list
       setUnverifiedPatients(prev => prev.filter(patient => patient.id !== patientId));
       
       toast.success('Patient registration rejected');
     } catch (error) {
       console.error('Error rejecting patient:', error);
+      console.error('Error details:', error.response?.data || error.message);
       toast.error('Failed to reject patient');
     } finally {
       setIsVerifying(prev => ({ ...prev, [patientId]: false }));
