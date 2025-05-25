@@ -84,9 +84,9 @@ const PatientVerificationPanel: React.FC<PatientVerificationPanelProps> = ({ cla
     try {
       const API_URL = getApiUrl();
       
-      // Update the user to mark as verified
+      // Ensure we're sending the correct property name that the backend expects
       await axios.put(`${API_URL}/users/${patientId}`, {
-        email_verified: true
+        email_verified: true  // This matches what the backend userController expects
       }, {
         headers: {
           'Accept': 'application/json',
