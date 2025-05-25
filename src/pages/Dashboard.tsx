@@ -5,6 +5,7 @@ import { useData } from '@/context/DataContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PatientRecordsTable from '@/components/dashboard/PatientRecordsTable';
+import PatientVerificationPanel from '@/components/dashboard/PatientVerificationPanel';
 import {
   Calendar,
   Clock,
@@ -242,6 +243,13 @@ const Dashboard: React.FC = () => {
             })}
           </p>
         </div>
+
+        {/* Patient Verification Panel for Medical Staff */}
+        {isMedicalStaff && (
+          <div className="mt-6">
+            <PatientVerificationPanel />
+          </div>
+        )}
 
         {/* Quick Actions Panel for Medical Staff */}
         {isMedicalStaff && (
