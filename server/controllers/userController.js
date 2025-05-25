@@ -385,38 +385,7 @@ exports.updateUser = async (req, res) => {
       consentGiven: userData.consent_given || userData.consentGiven
     };
     
-    const [result] = await pool.query(
-      `UPDATE users SET 
-        email = IFNULL(?, email), 
-        name = IFNULL(?, name), 
-        role = IFNULL(?, role), 
-        phone = IFNULL(?, phone), 
-        date_of_birth = IFNULL(?, date_of_birth), 
-        gender = IFNULL(?, gender), 
-        address = IFNULL(?, address), 
-        emergency_contact = IFNULL(?, emergency_contact), 
-        student_id = IFNULL(?, student_id), 
-        department = IFNULL(?, department), 
-        staff_id = IFNULL(?, staff_id), 
-        position = IFNULL(?, position),
-        faculty = IFNULL(?, faculty),
-        password = IFNULL(?, password),
-        email_verified = IFNULL(?, email_verified),
-        verification_token = ?,
-        token_expiry = ?,
-        consent_given = IFNULL(?, consent_given)
-      WHERE id = ?`,
-      [
-        userDataForDb.email, userDataForDb.name, userDataForDb.role, userDataForDb.phone, 
-        userDataForDb.dateOfBirth, userDataForDb.gender, userDataForDb.address, 
-        userDataForDb.emergencyContact, userDataForDb.studentId, userDataForDb.department, 
-        userDataForDb.staffId, userDataForDb.position, userDataForDb.faculty, userDataForDb.password,
-        userDataForDb.emailVerified, userDataForDb.verificationToken, userDataForDb.tokenExpiry, 
-        userDataForDb.consentGiven, userId
-      ]
-    );
-
-    const updatedUser = await userModel.getById(userId);
+    const updatedUser = await userModel.update(userId, userDataForDb);
     
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });

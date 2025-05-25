@@ -126,7 +126,8 @@ class UserModel {
         ]
       );
 
-      return { id, ...userData };
+      // Return the updated user data
+      return await this.getById(id);
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
