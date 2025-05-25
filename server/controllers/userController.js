@@ -379,6 +379,9 @@ exports.updateUser = async (req, res) => {
       position: userData.position,
       faculty: userData.faculty,
       password: userData.password,
+      emailVerified: userData.emailVerified || userData.email_verified,
+      verificationToken: userData.verificationToken || userData.verification_token,
+      tokenExpiry: userData.tokenExpiry || userData.token_expiry,
       consentGiven: userData.consent_given || userData.consentGiven
     };
     
