@@ -19,6 +19,7 @@ export interface User {
   position?: string;
   faculty?: string;
   consentGiven?: boolean; // Added the consentGiven property
+  email_verified?: boolean; // Added email verification status
   createdAt: string;
   updatedAt: string;
 }

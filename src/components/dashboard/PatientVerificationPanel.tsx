@@ -212,17 +212,17 @@ const PatientVerificationPanel: React.FC<PatientVerificationPanelProps> = ({ cla
                         </div>
                       )}
                       
-                      {patient.student_id && (
+                      {patient.studentId && (
                         <div className="flex items-center gap-1">
                           <User className="h-4 w-4" />
-                          Student ID: {patient.student_id}
+                          Student ID: {patient.studentId}
                         </div>
                       )}
                       
-                      {patient.staff_id && (
+                      {patient.staffId && (
                         <div className="flex items-center gap-1">
                           <User className="h-4 w-4" />
-                          Staff ID: {patient.staff_id}
+                          Staff ID: {patient.staffId}
                         </div>
                       )}
                       
