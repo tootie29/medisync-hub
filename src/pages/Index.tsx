@@ -40,8 +40,8 @@ export default function Index() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Medical Records</CardTitle>
-            <CardDescription>View and manage your medical records.</CardDescription>
+            <CardTitle>Orange Card</CardTitle>
+            <CardDescription>View and manage your orange card records.</CardDescription>
           </CardHeader>
           <CardContent>
             <p>Access your medical history, lab results, and other important health information.</p>
