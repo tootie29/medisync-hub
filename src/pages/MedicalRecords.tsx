@@ -8,14 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
-import { MedicalRecord, SAMPLE_USERS, VitalSigns } from '@/types';
+import { MedicalRecord, SAMPLE_USERS, VitalSigns, Vaccination } from '@/types';
 import { format } from 'date-fns';
-import { Activity, Calendar, FileText, Filter, Award, User, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Activity, Calendar, FileText, Filter, Award, User, Plus, ChevronDown, ChevronUp, Syringe } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import VaccinationForm from '@/components/medical/VaccinationForm';
 
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
@@ -59,6 +60,7 @@ const MedicalRecords: React.FC = () => {
     medications: [],
     followUpDate: '',
     certificateEnabled: false,
+    vaccinations: [],
     vitalSigns: {
       heartRate: 0,
       bloodGlucose: 0,
@@ -271,6 +273,7 @@ const MedicalRecords: React.FC = () => {
         medications: record.medications || [],
         followUpDate: record.followUpDate || '',
         certificateEnabled: record.certificateEnabled !== undefined ? record.certificateEnabled : false,
+        vaccinations: record.vaccinations || [],
         vitalSigns: {
           heartRate: record.vitalSigns?.heartRate || 0,
           bloodGlucose: record.vitalSigns?.bloodGlucose || 0,
@@ -290,6 +293,7 @@ const MedicalRecords: React.FC = () => {
         medications: [],
         followUpDate: '',
         certificateEnabled: false,
+        vaccinations: [],
         vitalSigns: {
           heartRate: 0,
           bloodGlucose: 0,
@@ -321,6 +325,7 @@ const MedicalRecords: React.FC = () => {
     try {
       console.log('Submitting form with certificateEnabled:', formData.certificateEnabled);
       console.log('Selected patient ID:', selectedPatientId);
+      console.log('Vaccinations:', formData.vaccinations);
       
       if (editingRecordId) {
         console.log('Updating record:', editingRecordId);
@@ -328,14 +333,16 @@ const MedicalRecords: React.FC = () => {
           ...formData,
           patientId: selectedPatientId,
           bmi: calculatedBmi,
-          certificateEnabled: Boolean(formData.certificateEnabled)
+          certificateEnabled: Boolean(formData.certificateEnabled),
+          vaccinations: formData.vaccinations || []
         });
         
         updateMedicalRecord(editingRecordId, {
           ...formData,
           patientId: selectedPatientId,
           bmi: calculatedBmi,
-          certificateEnabled: Boolean(formData.certificateEnabled)
+          certificateEnabled: Boolean(formData.certificateEnabled),
+          vaccinations: formData.vaccinations || []
         });
         setEditingRecordId(null);
       } else {
@@ -349,6 +356,7 @@ const MedicalRecords: React.FC = () => {
           weight: formData.weight,
           certificateEnabled: formData.certificateEnabled !== undefined ? 
             Boolean(formData.certificateEnabled) : isHealthyBmi,
+          vaccinations: formData.vaccinations || []
         });
         
         addMedicalRecord({
@@ -365,6 +373,7 @@ const MedicalRecords: React.FC = () => {
           followUpDate: formData.followUpDate,
           certificateEnabled: formData.certificateEnabled !== undefined ? 
             Boolean(formData.certificateEnabled) : isHealthyBmi,
+          vaccinations: formData.vaccinations || [],
           vitalSigns: {
             heartRate: formData.vitalSigns?.heartRate || 0,
             bloodGlucose: formData.vitalSigns?.bloodGlucose || 0,
@@ -728,6 +737,17 @@ const MedicalRecords: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Add Vaccination Form */}
+                  <div className="mt-6 border-t pt-6">
+                    <VaccinationForm
+                      vaccinations={formData.vaccinations || []}
+                      onVaccinationsChange={(vaccinations) => 
+                        setFormData(prev => ({ ...prev, vaccinations }))
+                      }
+                      disabled={false}
+                    />
+                  </div>
+
                   <div className="flex justify-end gap-2 mt-6">
                     <Button
                       type="button"
@@ -927,6 +947,37 @@ const MedicalRecords: React.FC = () => {
                                   <div>
                                     <p className="text-sm text-gray-500">Follow-up Date</p>
                                     <p className="font-medium">{format(new Date(record.followUpDate), 'PPP')}</p>
+                                  </div>
+                                )}
+                                
+                                {/* Display vaccinations if they exist */}
+                                {record.vaccinations && record.vaccinations.length > 0 && (
+                                  <div className="md:col-span-2 mt-4 border-t pt-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <Syringe className="h-4 w-4 text-blue-500" />
+                                      <p className="text-sm text-gray-500 font-medium">Vaccinations</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {record.vaccinations.map((vaccination, index) => (
+                                        <div key={vaccination.id || index} className="bg-green-50 p-3 rounded-md border-l-4 border-l-green-500">
+                                          <div className="flex justify-between items-start">
+                                            <div>
+                                              <p className="font-medium text-green-800">{vaccination.name}</p>
+                                              <p className="text-sm text-green-600">
+                                                Date: {format(new Date(vaccination.dateAdministered), 'PPP')}
+                                                {vaccination.doseNumber && ` • Dose: ${vaccination.doseNumber}`}
+                                              </p>
+                                              {vaccination.manufacturer && (
+                                                <p className="text-sm text-green-600">Manufacturer: {vaccination.manufacturer}</p>
+                                              )}
+                                              {vaccination.administeredBy && (
+                                                <p className="text-sm text-green-600">Administered by: {vaccination.administeredBy}</p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>

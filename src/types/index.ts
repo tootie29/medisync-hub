@@ -1,25 +1,28 @@
-export type UserRole = 'student' | 'staff' | 'head nurse' | 'admin' | 'doctor';
-
-// Define a more specific gender type that includes empty string
-export type Gender = 'male' | 'female' | 'other' | '';
-
 export interface User {
   id: string;
-  email: string;
   name: string;
-  role: UserRole;
-  phone?: string;
-  dateOfBirth?: string;
-  gender?: Gender;
+  email: string;
+  role: 'admin' | 'doctor' | 'student' | 'staff' | 'head nurse';
+  gender?: 'male' | 'female' | 'other';
+  birthDate?: string;
   address?: string;
-  emergencyContact?: string;
-  studentId?: string;
-  department?: string;
-  staffId?: string;
-  position?: string;
-  faculty?: string;
-  consentGiven?: boolean; // Added the consentGiven property
-  email_verified?: boolean; // Added email verification status
+  phone?: string;
+  profilePicture?: string;
+  medicalHistory?: string;
+  allergies?: string[];
+  insuranceProvider?: string;
+  insurancePolicyNumber?: string;
+}
+
+export interface Appointment {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  date: string;
+  time: string;
+  type: string;
+  notes?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
   createdAt: string;
   updatedAt: string;
 }
@@ -32,263 +35,204 @@ export interface VitalSigns {
   oxygenSaturation?: number;
 }
 
+export const SAMPLE_USERS: User[] = [
+  {
+    id: 'user-1',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    role: 'student',
+    gender: 'male',
+    birthDate: '2002-04-03',
+    address: '123 Highland, Silang, Cavite',
+    phone: '09123456789',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'None',
+    allergies: ['None'],
+    insuranceProvider: 'None',
+    insurancePolicyNumber: 'None',
+  },
+  {
+    id: 'user-2',
+    name: 'Jane Smith',
+    email: 'jane.smith@example.com',
+    role: 'doctor',
+    gender: 'female',
+    birthDate: '1985-08-15',
+    address: '456 Lowland, Dasmarinas, Cavite',
+    phone: '09987654321',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'None',
+    allergies: ['None'],
+    insuranceProvider: 'None',
+    insurancePolicyNumber: 'None',
+  },
+  {
+    id: 'user-3',
+    name: 'Alice Johnson',
+    email: 'alice.johnson@example.com',
+    role: 'staff',
+    gender: 'female',
+    birthDate: '1990-02-20',
+    address: '789 Midlands, General Trias, Cavite',
+    phone: '09234567890',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'None',
+    allergies: ['Pollen'],
+    insuranceProvider: 'MediShield',
+    insurancePolicyNumber: 'MS12345',
+  },
+  {
+    id: 'user-4',
+    name: 'Bob Williams',
+    email: 'bob.williams@example.com',
+    role: 'admin',
+    gender: 'male',
+    birthDate: '1978-11-10',
+    address: '101 Seashore, Tanza, Cavite',
+    phone: '09345678901',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'Hypertension',
+    allergies: ['Dust'],
+    insuranceProvider: 'HealthFirst',
+    insurancePolicyNumber: 'HF67890',
+  },
+  {
+    id: 'user-5',
+    name: 'Charlie Brown',
+    email: 'charlie.brown@example.com',
+    role: 'student',
+    gender: 'male',
+    birthDate: '2001-06-25',
+    address: '222 Lakeside, Naic, Cavite',
+    phone: '09456789012',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'Asthma',
+    allergies: ['Peanuts'],
+    insuranceProvider: 'CarePlus',
+    insurancePolicyNumber: 'CP23456',
+  },
+  {
+    id: 'user-6',
+    name: 'Diana Miller',
+    email: 'diana.miller@example.com',
+    role: 'head nurse',
+    gender: 'female',
+    birthDate: '1982-09-01',
+    address: '333 Riverside, Maragondon, Cavite',
+    phone: '09567890123',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'None',
+    allergies: ['None'],
+    insuranceProvider: 'None',
+    insurancePolicyNumber: 'None',
+  },
+  {
+    id: 'user-7',
+    name: 'Ethan Davis',
+    email: 'ethan.davis@example.com',
+    role: 'staff',
+    gender: 'male',
+    birthDate: '1995-03-18',
+    address: '444 Hilltop, Ternate, Cavite',
+    phone: '09678901234',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'Diabetes',
+    allergies: ['Shellfish'],
+    insuranceProvider: 'SecureHealth',
+    insurancePolicyNumber: 'SH34567',
+  },
+  {
+    id: 'user-8',
+    name: 'Fiona White',
+    email: 'fiona.white@example.com',
+    role: 'student',
+    gender: 'female',
+    birthDate: '2003-07-07',
+    address: '555 Valleyview, Alfonso, Cavite',
+    phone: '09789012345',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'None',
+    allergies: ['Latex'],
+    insuranceProvider: 'FamilyCare',
+    insurancePolicyNumber: 'FC45678',
+  },
+  {
+    id: 'user-9',
+    name: 'George Green',
+    email: 'george.green@example.com',
+    role: 'doctor',
+    gender: 'male',
+    birthDate: '1975-12-24',
+    address: '666 Forestside, Magallanes, Cavite',
+    phone: '09890123456',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'None',
+    allergies: ['None'],
+    insuranceProvider: 'None',
+    insurancePolicyNumber: 'None',
+  },
+  {
+    id: 'user-10',
+    name: 'Hannah Black',
+    email: 'hannah.black@example.com',
+    role: 'head nurse',
+    gender: 'female',
+    birthDate: '1988-04-12',
+    address: '777 Oceanfront, Rosario, Cavite',
+    phone: '09012345678',
+    profilePicture: '/placeholder-profile.jpg',
+    medicalHistory: 'None',
+    allergies: ['None'],
+    insuranceProvider: 'None',
+    insurancePolicyNumber: 'None',
+  },
+];
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  unit: string;
+  expiryDate?: string;
+  supplier?: string;
+  costPerUnit?: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Vaccination {
+  id: string;
+  name: string;
+  dateAdministered: string;
+  doseNumber?: number;
+  manufacturer?: string;
+  lotNumber?: string;
+  administeredBy?: string;
+  notes?: string;
+}
+
 export interface MedicalRecord {
   id: string;
   patientId: string;
   doctorId: string;
   date: string;
-  height: number; // in cm
-  weight: number; // in kg
-  bmi: number;
-  bloodPressure?: string;
-  temperature?: number; // in Celsius
-  diagnosis?: string;
-  medications?: string[];
-  notes?: string;
-  followUpDate?: string;
-  vitalSigns?: VitalSigns;
-  certificateEnabled?: boolean;
-  type?: string; // Added the type property
-  appointmentId?: string; // Added the appointmentId property
-  gender?: Gender; // Updated to use the Gender type
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateMedicalRecordInput {
-  patientId: string;
-  doctorId: string;
-  date: string;
   height: number;
   weight: number;
+  bmi?: number;
   bloodPressure?: string;
   temperature?: number;
   diagnosis?: string;
+  notes?: string;
   medications?: string[];
-  notes?: string;
   followUpDate?: string;
-  vitalSigns?: VitalSigns;
   certificateEnabled?: boolean;
-  bmi?: number; // Added bmi property to match what we're sending
-  type?: string; // Added the type property
-  appointmentId?: string; // Added the appointmentId property
-  gender?: Gender; // Updated to use the Gender type
-}
-
-// Update the Appointment interface to include the "in-progress" status
-export interface Appointment {
-  id: string;
-  patientId: string;
-  doctorId?: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'in-progress';
-  reason: string;
-  notes?: string;
+  vitalSigns?: VitalSigns;
   createdAt: string;
   updatedAt: string;
+  appointmentId?: string;
+  type?: string;
+  gender?: string;
+  vaccinations?: Vaccination[];
 }
-
-export interface Medicine {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  threshold: number;
-  unit: string;
-  description?: string;
-  dosage?: string;
-  expiryDate?: string;
-  supplier?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export const ROLES: UserRole[] = ['student', 'staff', 'head nurse', 'admin', 'doctor'];
-
-export const SAMPLE_USERS: User[] = [
-  {
-    id: '1',
-    email: 'admin@example.com',
-    name: 'Admin User',
-    role: 'admin',
-    phone: '123-456-7890',
-    dateOfBirth: '1980-01-01',
-    gender: 'male',
-    address: '123 Admin St',
-    emergencyContact: 'Jane Admin: 123-456-7890',
-    createdAt: '2023-01-01T00:00:00Z',
-    updatedAt: '2023-01-01T00:00:00Z',
-  },
-  {
-    id: '2',
-    email: 'doctor@example.com',
-    name: 'Head Nurse Smith',
-    role: 'head nurse',
-    phone: '123-456-7891',
-    dateOfBirth: '1975-05-15',
-    gender: 'female',
-    address: '456 Doctor Ave',
-    emergencyContact: 'John Smith: 123-456-7892',
-    createdAt: '2023-01-02T00:00:00Z',
-    updatedAt: '2023-01-02T00:00:00Z',
-  },
-  {
-    id: '3',
-    email: 'student@example.com',
-    name: 'John Student',
-    role: 'student',
-    phone: '123-456-7893',
-    dateOfBirth: '2000-10-20',
-    gender: 'male',
-    address: '789 Student Blvd',
-    emergencyContact: 'Mary Student: 123-456-7894',
-    studentId: '12345',
-    department: 'Engineering',
-    createdAt: '2023-01-03T00:00:00Z',
-    updatedAt: '2023-01-03T00:00:00Z',
-  },
-  {
-    id: '4',
-    email: 'staff@example.com',
-    name: 'Sarah Staff',
-    role: 'staff',
-    phone: '123-456-7895',
-    dateOfBirth: '1990-08-12',
-    gender: 'female',
-    address: '101 Staff Road',
-    emergencyContact: 'Mike Staff: 123-456-7896',
-    staffId: '67890',
-    position: 'Nurse',
-    createdAt: '2023-01-04T00:00:00Z',
-    updatedAt: '2023-01-04T00:00:00Z',
-  },
-];
-
-export const SAMPLE_MEDICAL_RECORDS: MedicalRecord[] = [
-  {
-    id: '1',
-    patientId: '3',
-    doctorId: '2',
-    date: '2023-03-15',
-    height: 175,
-    weight: 70,
-    bmi: 22.9,
-    bloodPressure: '120/80',
-    temperature: 36.6,
-    diagnosis: 'Common cold',
-    medications: ['Paracetamol', 'Vitamin C'],
-    notes: 'Patient should rest and drink plenty of fluids.',
-    followUpDate: '2023-03-22',
-    vitalSigns: {
-      heartRate: 72,
-      bloodPressure: '120/80',
-      bloodGlucose: 95,
-      respiratoryRate: 16,
-      oxygenSaturation: 98
-    },
-    certificateEnabled: false,
-    createdAt: '2023-03-15T10:30:00Z',
-    updatedAt: '2023-03-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    patientId: '4',
-    doctorId: '2',
-    date: '2023-04-10',
-    height: 165,
-    weight: 65,
-    bmi: 23.9,
-    bloodPressure: '130/85',
-    temperature: 37.2,
-    diagnosis: 'Mild fever',
-    medications: ['Ibuprofen'],
-    notes: 'Monitor temperature for the next 48 hours.',
-    followUpDate: '2023-04-17',
-    vitalSigns: {
-      heartRate: 78,
-      bloodPressure: '130/85',
-      bloodGlucose: 100,
-      respiratoryRate: 18,
-      oxygenSaturation: 97
-    },
-    certificateEnabled: false,
-    createdAt: '2023-04-10T14:15:00Z',
-    updatedAt: '2023-04-10T14:15:00Z',
-  },
-];
-
-export const SAMPLE_APPOINTMENTS: Appointment[] = [
-  {
-    id: '1',
-    patientId: '3',
-    doctorId: '2',
-    date: '2023-05-20',
-    startTime: '10:00',
-    endTime: '10:30',
-    status: 'confirmed',
-    reason: 'Follow-up checkup',
-    notes: 'Bring previous prescription.',
-    createdAt: '2023-05-10T09:00:00Z',
-    updatedAt: '2023-05-10T09:00:00Z',
-  },
-  {
-    id: '2',
-    patientId: '4',
-    doctorId: '2',
-    date: '2023-05-21',
-    startTime: '11:00',
-    endTime: '11:30',
-    status: 'pending',
-    reason: 'Annual physical examination',
-    notes: '',
-    createdAt: '2023-05-12T13:45:00Z',
-    updatedAt: '2023-05-12T13:45:00Z',
-  },
-];
-
-export const SAMPLE_MEDICINES: Medicine[] = [
-  {
-    id: '1',
-    name: 'Paracetamol',
-    category: 'Painkillers',
-    quantity: 100,
-    threshold: 20,
-    unit: 'tablets',
-    description: 'Pain reliever and fever reducer',
-    dosage: '500mg',
-    expiryDate: '2024-06-30',
-    supplier: 'PharmaCorp',
-    createdAt: '2023-01-15T08:00:00Z',
-    updatedAt: '2023-01-15T08:00:00Z',
-  },
-  {
-    id: '2',
-    name: 'Ibuprofen',
-    category: 'Anti-inflammatory',
-    quantity: 50,
-    threshold: 15,
-    unit: 'tablets',
-    description: 'Non-steroidal anti-inflammatory drug',
-    dosage: '400mg',
-    expiryDate: '2024-08-15',
-    supplier: 'MediSupply',
-    createdAt: '2023-01-20T10:15:00Z',
-    updatedAt: '2023-01-20T10:15:00Z',
-  },
-  {
-    id: '3',
-    name: 'Amoxicillin',
-    category: 'Antibiotics',
-    quantity: 30,
-    threshold: 10,
-    unit: 'capsules',
-    description: 'Antibiotic medication',
-    dosage: '250mg',
-    expiryDate: '2023-12-31',
-    supplier: 'PharmaCorp',
-    createdAt: '2023-02-01T14:30:00Z',
-    updatedAt: '2023-02-01T14:30:00Z',
-  },
-];

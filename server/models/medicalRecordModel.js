@@ -42,6 +42,22 @@ class MedicalRecordModel {
         record.type = record.type || 'General Checkup';
         record.gender = record.gender || null;
         
+        // Get vaccinations for this record
+        const [vaccinations] = await pool.query(
+          'SELECT * FROM vaccinations WHERE medical_record_id = ?',
+          [record.id]
+        );
+        record.vaccinations = vaccinations.map(vac => ({
+          id: vac.id,
+          name: vac.name,
+          dateAdministered: vac.date_administered,
+          doseNumber: vac.dose_number,
+          manufacturer: vac.manufacturer,
+          lotNumber: vac.lot_number,
+          administeredBy: vac.administered_by,
+          notes: vac.notes
+        }));
+        
         delete record.patient_id;
         delete record.doctor_id;
         delete record.blood_pressure;
@@ -101,6 +117,22 @@ class MedicalRecordModel {
       record.type = record.type || 'General Checkup';
       record.gender = record.gender || null;
       
+      // Get vaccinations for this record
+      const [vaccinations] = await pool.query(
+        'SELECT * FROM vaccinations WHERE medical_record_id = ?',
+        [id]
+      );
+      record.vaccinations = vaccinations.map(vac => ({
+        id: vac.id,
+        name: vac.name,
+        dateAdministered: vac.date_administered,
+        doseNumber: vac.dose_number,
+        manufacturer: vac.manufacturer,
+        lotNumber: vac.lot_number,
+        administeredBy: vac.administered_by,
+        notes: vac.notes
+      }));
+      
       delete record.patient_id;
       delete record.doctor_id;
       delete record.blood_pressure;
@@ -156,6 +188,22 @@ class MedicalRecordModel {
         record.appointmentId = record.appointment_id || null;
         record.type = record.type || 'General Checkup';
         record.gender = record.gender || null;
+        
+        // Get vaccinations for this record
+        const [vaccinations] = await pool.query(
+          'SELECT * FROM vaccinations WHERE medical_record_id = ?',
+          [record.id]
+        );
+        record.vaccinations = vaccinations.map(vac => ({
+          id: vac.id,
+          name: vac.name,
+          dateAdministered: vac.date_administered,
+          doseNumber: vac.dose_number,
+          manufacturer: vac.manufacturer,
+          lotNumber: vac.lot_number,
+          administeredBy: vac.administered_by,
+          notes: vac.notes
+        }));
         
         delete record.patient_id;
         delete record.doctor_id;
@@ -274,6 +322,30 @@ class MedicalRecordModel {
             now
           ]
         );
+      }
+      
+      // Handle vaccinations if provided
+      if (recordData.vaccinations && recordData.vaccinations.length > 0) {
+        for (const vaccination of recordData.vaccinations) {
+          await connection.query(
+            `INSERT INTO vaccinations 
+            (id, medical_record_id, name, date_administered, dose_number, manufacturer, lot_number, administered_by, notes, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              vaccination.id || uuidv4(),
+              id,
+              vaccination.name,
+              vaccination.dateAdministered,
+              vaccination.doseNumber || 1,
+              vaccination.manufacturer || null,
+              vaccination.lotNumber || null,
+              vaccination.administeredBy || null,
+              vaccination.notes || null,
+              now,
+              now
+            ]
+          );
+        }
       }
       
       await connection.commit();
@@ -530,6 +602,34 @@ class MedicalRecordModel {
         }
       }
       
+      if (recordData.vaccinations) {
+        // Delete existing vaccinations
+        await connection.query(
+          'DELETE FROM vaccinations WHERE medical_record_id = ?',
+          [id]
+        );
+        
+        // Insert new vaccinations
+        for (const vaccination of recordData.vaccinations) {
+          await connection.query(
+            `INSERT INTO vaccinations 
+            (id, medical_record_id, name, date_administered, dose_number, manufacturer, lot_number, administered_by, notes, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            [
+              vaccination.id || uuidv4(),
+              id,
+              vaccination.name,
+              vaccination.dateAdministered,
+              vaccination.doseNumber || 1,
+              vaccination.manufacturer || null,
+              vaccination.lotNumber || null,
+              vaccination.administeredBy || null,
+              vaccination.notes || null
+            ]
+          );
+        }
+      }
+      
       await connection.commit();
       console.log('Transaction committed successfully');
       
@@ -560,6 +660,12 @@ class MedicalRecordModel {
       
       await connection.query(
         'DELETE FROM vital_signs WHERE medical_record_id = ?',
+        [id]
+      );
+      
+      // Delete vaccinations
+      await connection.query(
+        'DELETE FROM vaccinations WHERE medical_record_id = ?',
         [id]
       );
       
