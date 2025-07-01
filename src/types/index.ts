@@ -1,10 +1,14 @@
+export type UserRole = 'admin' | 'doctor' | 'student' | 'staff' | 'head nurse';
+export type Gender = 'male' | 'female' | 'other';
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'doctor' | 'student' | 'staff' | 'head nurse';
-  gender?: 'male' | 'female' | 'other';
+  role: UserRole;
+  gender?: Gender;
   birthDate?: string;
+  dateOfBirth?: string;
   address?: string;
   phone?: string;
   profilePicture?: string;
@@ -12,6 +16,17 @@ export interface User {
   allergies?: string[];
   insuranceProvider?: string;
   insurancePolicyNumber?: string;
+  emergencyContact?: string;
+  studentId?: string;
+  department?: string;
+  staffId?: string;
+  position?: string;
+  faculty?: string;
+  email_verified?: boolean;
+  emailVerified?: boolean;
+  consentGiven?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Appointment {
@@ -20,9 +35,12 @@ export interface Appointment {
   doctorId: string;
   date: string;
   time: string;
+  startTime?: string;
+  endTime?: string;
   type: string;
   notes?: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  reason?: string;
+  status: 'scheduled' | 'completed' | 'cancelled' | 'pending' | 'confirmed' | 'in-progress';
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +51,44 @@ export interface VitalSigns {
   bloodGlucose?: number;
   respiratoryRate?: number;
   oxygenSaturation?: number;
+}
+
+export interface Medicine {
+  id: string;
+  name: string;
+  description?: string;
+  dosage?: string;
+  frequency?: string;
+  instructions?: string;
+  sideEffects?: string[];
+  category?: string;
+  manufacturer?: string;
+  expiryDate?: string;
+  quantity?: number;
+  unit?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateMedicalRecordInput {
+  patientId: string;
+  doctorId: string;
+  date: string;
+  height: number;
+  weight: number;
+  bmi?: number;
+  bloodPressure?: string;
+  temperature?: number;
+  diagnosis?: string;
+  notes?: string;
+  medications?: string[];
+  followUpDate?: string;
+  certificateEnabled?: boolean;
+  vitalSigns?: VitalSigns;
+  appointmentId?: string;
+  type?: string;
+  gender?: string;
+  vaccinations?: Vaccination[];
 }
 
 export const SAMPLE_USERS: User[] = [
