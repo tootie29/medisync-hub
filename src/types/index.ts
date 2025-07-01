@@ -1,3 +1,4 @@
+
 export type UserRole = 'admin' | 'doctor' | 'student' | 'staff' | 'head nurse';
 export type Gender = 'male' | 'female' | 'other';
 
@@ -66,6 +67,7 @@ export interface Medicine {
   expiryDate?: string;
   quantity?: number;
   unit?: string;
+  threshold?: number;
   createdAt: string;
   updatedAt: string;
 }

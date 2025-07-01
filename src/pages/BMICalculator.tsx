@@ -33,7 +33,7 @@ const BMICalculator: React.FC = () => {
   
   const [height, setHeight] = useState<number>(0);
   const [weight, setWeight] = useState<number>(0);
-  const [gender, setGender] = useState<Gender>('');
+  const [gender, setGender] = useState<Gender>('male'); // Set default to 'male' instead of empty string
   const [bmi, setBmi] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [lastRecord, setLastRecord] = useState<any>(null);

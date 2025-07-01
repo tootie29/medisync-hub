@@ -103,9 +103,11 @@ const Appointments = () => {
         patientId,
         doctorId: selectedDoctor,
         date: formattedDate,
+        time: startTime, // Add required time property
         startTime,
         endTime,
-        status: 'pending', // This remains a valid status
+        type: 'consultation', // Add required type property
+        status: 'pending',
         reason,
         notes: notes || undefined,
       })
