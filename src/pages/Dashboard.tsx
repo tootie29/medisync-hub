@@ -399,7 +399,7 @@ const Dashboard: React.FC = () => {
             </Card>
           )}
 
-          {/* Medical Records card - visible to patients (students and staff) and medical staff - UPDATED TO ORANGE */}
+          {/* Medical Records card - visible to patients (students and staff) and medical staff */}
           <Card className="stats-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -413,8 +413,8 @@ const Dashboard: React.FC = () => {
                     ? userMedicalRecords.length 
                     : medicalRecords.length}
                 </div>
-                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                  <Activity className="h-5 w-5 text-orange-600" />
+                <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Activity className="h-5 w-5 text-purple-600" />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
