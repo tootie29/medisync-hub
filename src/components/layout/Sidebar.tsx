@@ -56,7 +56,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
     },
     {
       path: "/medical-records",
-      name: "Orange Card",
+      name: "Medical Records",
       icon: ClipboardCheck,
     },
     {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -400,11 +399,11 @@ const Dashboard: React.FC = () => {
             </Card>
           )}
 
-          {/* Orange Card - visible to patients (students and staff) and medical staff */}
+          {/* Medical Records card - visible to patients (students and staff) and medical staff */}
           <Card className="stats-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {isPatient ? 'Your Orange Card' : 'Orange Card'}
+                {isPatient ? 'Your Medical Records' : 'Medical Records'}
               </CardTitle>
             </CardHeader>
             <CardContent>
