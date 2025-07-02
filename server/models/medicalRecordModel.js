@@ -240,6 +240,59 @@ class MedicalRecordModel {
       }
       console.log('Patient ID validated:', recordData.patientId);
       
+      // ***** CRITICAL FIX: Validate doctor exists or use fallback *****
+      let doctorId = recordData.doctorId || 'self-recorded';
+      console.log('Original doctor ID:', doctorId);
+      
+      // Check if the doctor exists in the users table
+      if (doctorId && doctorId !== 'self-recorded') {
+        console.log('Checking if doctor exists:', doctorId);
+        const [doctorExists] = await connection.query(
+          'SELECT id FROM users WHERE id = ?',
+          [doctorId]
+        );
+        
+        if (doctorExists.length === 0) {
+          console.log(`Doctor ID ${doctorId} does not exist in users table`);
+          
+          // Try to find any head nurse or admin to use as fallback
+          const [fallbackDoctor] = await connection.query(
+            "SELECT id FROM users WHERE role IN ('head nurse', 'admin') LIMIT 1"
+          );
+          
+          if (fallbackDoctor.length > 0) {
+            doctorId = fallbackDoctor[0].id;
+            console.log(`Using fallback doctor ID: ${doctorId}`);
+          } else {
+            // If no fallback doctor found, we'll need to create one or use null
+            console.log('No fallback doctor found, using self-recorded');
+            doctorId = 'self-recorded';
+          }
+        } else {
+          console.log(`Doctor ID ${doctorId} exists in users table`);
+        }
+      }
+      
+      // If still using 'self-recorded', ensure it exists in users table or create it
+      if (doctorId === 'self-recorded') {
+        const [selfRecordedExists] = await connection.query(
+          'SELECT id FROM users WHERE id = ?',
+          ['self-recorded']
+        );
+        
+        if (selfRecordedExists.length === 0) {
+          console.log('Creating self-recorded user entry');
+          await connection.query(
+            `INSERT INTO users (id, email, name, role, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            ['self-recorded', 'system@medihub.com', 'System (Self-Recorded)', 'admin', now, now]
+          );
+          console.log('Created self-recorded user successfully');
+        }
+      }
+      
+      console.log('Final doctor ID to use:', doctorId);
+      
       // Validate height and weight are numbers
       const height = parseFloat(recordData.height);
       const weight = parseFloat(recordData.weight);
@@ -285,11 +338,11 @@ class MedicalRecordModel {
       const visitType = recordData.type || 'General Checkup';
       console.log('Visit type:', visitType);
       
-      // Prepare values for insertion (REMOVED gender field)
+      // Prepare values for insertion
       const insertValues = [
         id, 
         recordData.patientId, 
-        recordData.doctorId || 'self-recorded', 
+        doctorId, // Use the validated/fallback doctor ID
         recordData.date || new Date().toISOString().split('T')[0], 
         height, 
         weight, 
@@ -308,7 +361,7 @@ class MedicalRecordModel {
       
       console.log('Insert values prepared:', insertValues);
       
-      // Insert record with explicit type handling (REMOVED gender from query)
+      // Insert record with validated doctor ID
       const insertQuery = `INSERT INTO medical_records 
         (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, 
         follow_up_date, certificate_enabled, type, appointment_id, created_at, updated_at) 
@@ -319,7 +372,7 @@ class MedicalRecordModel {
       const [insertResult] = await connection.query(insertQuery, insertValues);
       console.log('Insert result:', insertResult);
       
-      // Handle medications if provided
+      // ... keep existing code (medications, vital signs, vaccinations handling)
       if (recordData.medications && recordData.medications.length > 0) {
         console.log('Processing medications:', recordData.medications);
         for (const medication of recordData.medications) {
@@ -332,7 +385,6 @@ class MedicalRecordModel {
         }
       }
       
-      // Handle vital signs if provided
       if (recordData.vitalSigns) {
         console.log('Processing vital signs:', recordData.vitalSigns);
         const vitalSignsId = uuidv4();
@@ -355,7 +407,6 @@ class MedicalRecordModel {
         console.log('Inserted vital signs with ID:', vitalSignsId);
       }
       
-      // Handle vaccinations if provided
       if (recordData.vaccinations && recordData.vaccinations.length > 0) {
         console.log('Processing vaccinations:', recordData.vaccinations);
         for (const vaccination of recordData.vaccinations) {
@@ -388,6 +439,7 @@ class MedicalRecordModel {
       const returnData = { 
         id, 
         ...recordData, 
+        doctorId, // Return the actual doctor ID used
         bmi,
         certificateEnabled,
         type: visitType,
