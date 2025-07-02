@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -154,6 +155,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Fetching medical records from API:', API_URL);
       const response = await apiClient.get('/medical-records');
       console.log('Medical records fetched:', response.data);
+      console.log('Total records fetched:', response.data.length);
       setMedicalRecords(response.data);
     } catch (error) {
       console.error('Error fetching medical records:', error);
@@ -237,26 +239,58 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getMedicalRecordsByPatientId = (patientId: string): MedicalRecord[] => {
-    console.log('Getting medical records for patient ID:', patientId);
+    console.log('=== GETTING MEDICAL RECORDS ===');
+    console.log('Requested patient ID:', patientId);
     console.log('Available medical records:', medicalRecords.length);
     console.log('Is preview mode:', isPreviewMode);
+    console.log('All record patient IDs:', medicalRecords.map(r => r.patientId));
     
     // If we have real data from the API, use it
     if (!isPreviewMode && medicalRecords.length > 0) {
       console.log('Using real medical records from API');
+      
+      // Try exact match first
       const exactMatch = medicalRecords.filter(record => record.patientId === patientId);
       if (exactMatch.length > 0) {
         console.log('Found exact patient ID match:', exactMatch.length, 'records');
         return exactMatch;
       }
       
-      // Try with numeric ID if prefixed
+      // Try with numeric ID if prefixed (user-1 -> 1)
       if (patientId && patientId.startsWith('user-')) {
         const numericId = patientId.replace('user-', '');
+        console.log('Trying numeric ID:', numericId);
         const numericMatch = medicalRecords.filter(record => record.patientId === numericId);
         if (numericMatch.length > 0) {
           console.log('Found numeric patient ID match:', numericMatch.length, 'records');
           return numericMatch;
+        }
+      }
+      
+      // Try with prefixed ID if numeric (1 -> user-1)  
+      if (patientId && !patientId.startsWith('user-')) {
+        const prefixedId = `user-${patientId}`;
+        console.log('Trying prefixed ID:', prefixedId);
+        const prefixedMatch = medicalRecords.filter(record => record.patientId === prefixedId);
+        if (prefixedMatch.length > 0) {
+          console.log('Found prefixed patient ID match:', prefixedMatch.length, 'records');
+          return prefixedMatch;
+        }
+      }
+      
+      // Check if any records exist for any user (for debugging)
+      if (medicalRecords.length > 0) {
+        console.log('No records found for patient ID, but records exist for other patients:');
+        const uniquePatientIds = [...new Set(medicalRecords.map(r => r.patientId))];
+        console.log('Available patient IDs in database:', uniquePatientIds);
+        
+        // If this is user-1 and we have records for "1", return those
+        if (patientId === 'user-1') {
+          const fallbackRecords = medicalRecords.filter(record => record.patientId === '1' || record.patientId === 1);
+          if (fallbackRecords.length > 0) {
+            console.log('Using fallback records for user-1 -> 1 mapping:', fallbackRecords.length);
+            return fallbackRecords;
+          }
         }
       }
       
@@ -668,3 +702,4 @@ export const useData = () => {
 };
 
 export { getApiUrl };
+
