@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   createBrowserRouter,
@@ -22,6 +21,7 @@ import BMICalculator from '@/pages/BMICalculator';
 import HealthMonitoring from '@/pages/HealthMonitoring';
 import NotFound from '@/pages/NotFound';
 import Settings from '@/pages/Settings';
+import OrangeCard from '@/pages/OrangeCard';
 
 const router = createBrowserRouter([
   {
@@ -83,6 +83,10 @@ const router = createBrowserRouter([
   {
     path: "/health-monitoring",
     element: <HealthMonitoring />
+  },
+  {
+    path: "/orange-card",
+    element: <OrangeCard />
   },
   {
     path: "/settings",

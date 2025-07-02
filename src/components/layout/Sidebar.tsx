@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +15,7 @@ import {
   UserCircle,
   Activity,
   BadgeCheck,
+  CreditCard,
 } from "lucide-react";
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
@@ -64,6 +64,12 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       name: "Health Monitoring",
       icon: Activity,
     },
+    // Add Orange Card route for patients (students and staff)
+    ...(isPatient ? [{
+      path: "/orange-card",
+      name: "Orange Card",
+      icon: CreditCard,
+    }] : []),
     // Only show inventory to admin and staff roles
     ...(canAccessInventory ? [{
       path: "/inventory",
