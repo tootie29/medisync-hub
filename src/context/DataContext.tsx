@@ -134,19 +134,36 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshMedicalRecords = async () => {
     setIsLoadingRecords(true);
     try {
+      console.log('=== REFRESHING MEDICAL RECORDS ===');
       console.log('Attempting to fetch medical records from API:', API_URL);
       const response = await apiClient.get('/medical-records');
-      console.log('Medical records fetched successfully:', response.data);
-      console.log('Total records fetched:', response.data.length);
+      console.log('Medical records API response:', response.data);
+      console.log('Total records fetched from API:', response.data.length);
+      
+      // Log each record to see what data we're getting
+      response.data.forEach((record: any, index: number) => {
+        console.log(`Record ${index + 1}:`, {
+          id: record.id,
+          patientId: record.patientId,
+          bmi: record.bmi,
+          weight: record.weight,
+          height: record.height,
+          date: record.date
+        });
+      });
+      
       setMedicalRecords(response.data);
       setIsPreviewMode(false);
+      console.log('Medical records state updated successfully');
     } catch (error) {
-      console.error('Error fetching medical records:', error);
-      console.log('API unavailable, switching to preview mode');
+      console.error('=== API ERROR FETCHING MEDICAL RECORDS ===');
+      console.error('Error details:', error);
+      console.log('API completely unavailable, entering preview mode');
       setMedicalRecords([]);
       setIsPreviewMode(true);
     } finally {
       setIsLoadingRecords(false);
+      console.log('=== MEDICAL RECORDS REFRESH COMPLETE ===');
     }
   };
 
@@ -187,7 +204,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getUserById = (id: string): User | undefined => {
-    console.log('Looking up user by ID:', id);
+    console.log('=== GETTING USER BY ID ===');
+    console.log('Requested user ID:', id);
     
     if (!id) {
       console.log('No ID provided to getUserById');
@@ -197,7 +215,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // First try exact match
     const exactMatch = SAMPLE_USERS.find(user => user.id === id);
     if (exactMatch) {
-      console.log('Found exact user match with ID:', id);
+      console.log('Found exact user match:', exactMatch.name, 'with ID:', id);
       return exactMatch;
     }
     
@@ -209,7 +227,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Try to find by numeric part
       const numericMatch = SAMPLE_USERS.find(user => user.id === numericId);
       if (numericMatch) {
-        console.log('Found user with numeric ID part:', numericMatch.id);
+        console.log('Found user with numeric ID part:', numericMatch.name, 'ID:', numericMatch.id);
         return numericMatch;
       }
       
@@ -219,22 +237,40 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // For prefixed IDs that match pattern but not found, try to find any student/staff
         const fallbackUser = SAMPLE_USERS.find(u => u.role === 'student' || u.role === 'staff');
         if (fallbackUser) {
-          console.log('Using fallback user for preview mode:', fallbackUser.id);
+          console.log('Using fallback user for preview mode:', fallbackUser.name, 'ID:', fallbackUser.id);
           return fallbackUser;
         }
       }
     }
     
     console.log('No user found for ID:', id);
+    console.log('Available users:', SAMPLE_USERS.map(u => ({ id: u.id, name: u.name })));
     return undefined;
   };
 
   const getMedicalRecordsByPatientId = (patientId: string): MedicalRecord[] => {
-    console.log('=== GETTING MEDICAL RECORDS ===');
+    console.log('=== GETTING MEDICAL RECORDS FOR PATIENT ===');
     console.log('Requested patient ID:', patientId);
-    console.log('Available medical records:', medicalRecords.length);
+    console.log('Total medical records available:', medicalRecords.length);
     console.log('Is preview mode:', isPreviewMode);
-    console.log('All record patient IDs:', medicalRecords.map(r => r.patientId));
+    console.log('Is loading records:', isLoadingRecords);
+    
+    // Log all available records and their patient IDs
+    if (medicalRecords.length > 0) {
+      console.log('Available medical records:');
+      medicalRecords.forEach((record, index) => {
+        console.log(`  Record ${index + 1}:`, {
+          id: record.id,
+          patientId: record.patientId,
+          bmi: record.bmi,
+          weight: record.weight,
+          height: record.height,
+          date: record.date
+        });
+      });
+    } else {
+      console.log('No medical records available in state');
+    }
     
     // If we have real data from the API, use it
     if (!isPreviewMode && medicalRecords.length > 0) {
@@ -244,6 +280,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const exactMatch = medicalRecords.filter(record => record.patientId === patientId);
       if (exactMatch.length > 0) {
         console.log('Found exact patient ID match:', exactMatch.length, 'records');
+        console.log('Matched records:', exactMatch.map(r => ({ 
+          id: r.id, 
+          bmi: r.bmi, 
+          weight: r.weight, 
+          height: r.height 
+        })));
         return exactMatch;
       }
       
@@ -254,6 +296,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const numericMatch = medicalRecords.filter(record => record.patientId === numericId);
         if (numericMatch.length > 0) {
           console.log('Found numeric patient ID match:', numericMatch.length, 'records');
+          console.log('Matched records:', numericMatch.map(r => ({ 
+            id: r.id, 
+            bmi: r.bmi, 
+            weight: r.weight, 
+            height: r.height 
+          })));
           return numericMatch;
         }
       }
@@ -265,6 +313,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const prefixedMatch = medicalRecords.filter(record => record.patientId === prefixedId);
         if (prefixedMatch.length > 0) {
           console.log('Found prefixed patient ID match:', prefixedMatch.length, 'records');
+          console.log('Matched records:', prefixedMatch.map(r => ({ 
+            id: r.id, 
+            bmi: r.bmi, 
+            weight: r.weight, 
+            height: r.height 
+          })));
           return prefixedMatch;
         }
       }
@@ -274,15 +328,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('No records found for patient ID, but records exist for other patients:');
         const uniquePatientIds = [...new Set(medicalRecords.map(r => r.patientId))];
         console.log('Available patient IDs in database:', uniquePatientIds);
-        
-        // If this is user-1 and we have records for "1", return those
-        if (patientId === 'user-1') {
-          const fallbackRecords = medicalRecords.filter(record => record.patientId === '1');
-          if (fallbackRecords.length > 0) {
-            console.log('Using fallback records for user-1 -> 1 mapping:', fallbackRecords.length);
-            return fallbackRecords;
-          }
-        }
       }
       
       console.log('No records found for patient ID in real data');
@@ -290,8 +335,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     // If we're in preview mode or no data available, return empty array
-    // This prevents showing fake/test data
     console.log('No real medical records available - returning empty array');
+    console.log('=== END MEDICAL RECORDS LOOKUP ===');
     return [];
   };
 

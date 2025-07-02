@@ -1,4 +1,3 @@
-
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/context/AuthContext';
@@ -25,6 +24,11 @@ import { formatDate } from '@/utils/helpers';
 const OrangeCard: React.FC = () => {
   const { user } = useAuth();
   const { getMedicalRecordsByPatientId, getUserById, isLoadingRecords } = useData();
+
+  console.log('=== ORANGE CARD COMPONENT DEBUG ===');
+  console.log('Current user from auth:', user);
+  console.log('User ID:', user?.id);
+  console.log('Is loading records:', isLoadingRecords);
 
   // Helper function to safely format BMI
   const formatBMI = (bmi: any): string => {
@@ -54,13 +58,26 @@ const OrangeCard: React.FC = () => {
   const userDetails = getUserById(user.id) || user;
   const medicalRecords = getMedicalRecordsByPatientId(user.id);
   
-  console.log('Orange Card - User ID:', user.id);
-  console.log('Orange Card - Medical records found:', medicalRecords.length);
-  console.log('Orange Card - Is loading:', isLoadingRecords);
+  console.log('User details:', userDetails);
+  console.log('Medical records found:', medicalRecords.length);
+  console.log('Medical records data:', medicalRecords);
   
   // Get latest medical record for current health info
   const latestRecord = medicalRecords
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
+  console.log('Latest record:', latestRecord);
+  
+  if (latestRecord) {
+    console.log('Latest record details:', {
+      id: latestRecord.id,
+      patientId: latestRecord.patientId,
+      bmi: latestRecord.bmi,
+      weight: latestRecord.weight,
+      height: latestRecord.height,
+      date: latestRecord.date
+    });
+  }
 
   // Collect all vaccinations from all records
   const allVaccinations = medicalRecords
@@ -148,6 +165,7 @@ const OrangeCard: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500 mx-auto mb-4"></div>
                 <p className="text-gray-500">Loading health records...</p>
               </div>
             </CardContent>
