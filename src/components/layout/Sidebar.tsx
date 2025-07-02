@@ -34,8 +34,8 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   // Determine if user is patient
   const isPatient = user && (user.role === "student" || user.role === "staff");
 
-  // Only allow users with role "doctor" to access permission slip
-  const canAccessPermissionSlip = user && user.role === "doctor";
+  // Allow both doctors and head nurses to access permission slip
+  const canAccessPermissionSlip = user && (user.role === "doctor" || user.role === "head nurse");
 
   // Debug logging
   console.log('User data for sidebar:', {
@@ -89,7 +89,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       name: "Inventory",
       icon: Package,
     }] : []),
-    // Show permission slip only to users with role "doctor"
+    // Show permission slip to both doctors and head nurses
     ...(canAccessPermissionSlip ? [{
       path: "/permission-slip",
       name: "Permission Slip",
