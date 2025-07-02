@@ -223,28 +223,49 @@ class MedicalRecordModel {
   }
 
   async create(recordData) {
-    console.log('Creating medical record with data:', JSON.stringify(recordData));
+    console.log('=== MODEL CREATE DEBUG START ===');
+    console.log('Model received data:', JSON.stringify(recordData, null, 2));
+    
     const connection = await pool.getConnection();
     
     try {
       await connection.beginTransaction();
+      console.log('Transaction started successfully');
       
       const id = recordData.id || uuidv4();
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      console.log('Generated record ID:', id);
+      console.log('Timestamp:', now);
       
       // Validate essential fields
       if (!recordData.patientId) {
         throw new Error('Patient ID is required');
       }
+      console.log('Patient ID validated:', recordData.patientId);
+      
+      // Validate height and weight are numbers
+      const height = parseFloat(recordData.height);
+      const weight = parseFloat(recordData.weight);
+      
+      if (isNaN(height) || height <= 0) {
+        throw new Error(`Invalid height value: ${recordData.height}`);
+      }
+      
+      if (isNaN(weight) || weight <= 0) {
+        throw new Error(`Invalid weight value: ${recordData.weight}`);
+      }
+      
+      console.log('Height validated:', height);
+      console.log('Weight validated:', weight);
       
       // Calculate BMI if not provided or if height and weight are available
       let bmi = recordData.bmi;
-      if ((!bmi || bmi === 0 || isNaN(bmi)) && recordData.height && recordData.weight) {
+      if (!bmi || bmi === 0 || isNaN(bmi)) {
         try {
-          const heightInMeters = parseFloat(recordData.height) / 100;
-          bmi = parseFloat(recordData.weight) / (heightInMeters * heightInMeters);
+          const heightInMeters = height / 100;
+          bmi = weight / (heightInMeters * heightInMeters);
           bmi = parseFloat(bmi.toFixed(2));
-          console.log('Calculated BMI:', bmi, 'from height:', recordData.height, 'and weight:', recordData.weight);
+          console.log('Calculated BMI:', bmi, 'from height:', height, 'and weight:', weight);
         } catch (calcError) {
           console.error('BMI calculation error:', calcError);
           bmi = 0; // Default to 0 if calculation fails
@@ -256,62 +277,75 @@ class MedicalRecordModel {
         Boolean(recordData.certificateEnabled) : 
         (bmi >= 18.5 && bmi < 25);
       
-      console.log('Creating record with certificate status:', certificateEnabled);
+      console.log('Certificate enabled status:', certificateEnabled);
       console.log('Certificate status type:', typeof certificateEnabled);
-      console.log('Patient ID being used for record:', recordData.patientId);
       
       // Set the appointment ID if provided
       const appointmentId = recordData.appointmentId || null;
+      console.log('Appointment ID:', appointmentId);
       
       // Set the visit type or use default
       const visitType = recordData.type || 'General Checkup';
+      console.log('Visit type:', visitType);
+      
+      // Prepare values for insertion
+      const insertValues = [
+        id, 
+        recordData.patientId, 
+        recordData.doctorId || 'self-recorded', 
+        recordData.date || new Date().toISOString().split('T')[0], 
+        height, 
+        weight, 
+        bmi || 0, 
+        recordData.bloodPressure || null, 
+        recordData.temperature || null, 
+        recordData.diagnosis || null, 
+        recordData.notes || null, 
+        recordData.followUpDate || null,
+        certificateEnabled ? 1 : 0,
+        visitType,
+        appointmentId,
+        recordData.gender || null,
+        now,
+        now
+      ];
+      
+      console.log('Insert values prepared:', insertValues);
       
       // Insert record with explicit type handling
-      await connection.query(
-        `INSERT INTO medical_records 
+      const insertQuery = `INSERT INTO medical_records 
         (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, 
         follow_up_date, certificate_enabled, type, appointment_id, gender, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          id, 
-          recordData.patientId, 
-          recordData.doctorId || 'self-recorded', 
-          recordData.date || new Date().toISOString().split('T')[0], 
-          parseFloat(recordData.height) || 0, 
-          parseFloat(recordData.weight) || 0, 
-          bmi || 0, 
-          recordData.bloodPressure || null, 
-          recordData.temperature || null, 
-          recordData.diagnosis || null, 
-          recordData.notes || null, 
-          recordData.followUpDate || null,
-          certificateEnabled ? 1 : 0,
-          visitType,
-          appointmentId,
-          recordData.gender || null,
-          now,
-          now
-        ]
-      );
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      
+      console.log('Executing insert query:', insertQuery);
+      
+      const [insertResult] = await connection.query(insertQuery, insertValues);
+      console.log('Insert result:', insertResult);
       
       // Handle medications if provided
       if (recordData.medications && recordData.medications.length > 0) {
+        console.log('Processing medications:', recordData.medications);
         for (const medication of recordData.medications) {
+          const medicationId = uuidv4();
           await connection.query(
             'INSERT INTO medications (id, medical_record_id, medication_name) VALUES (?, ?, ?)',
-            [uuidv4(), id, medication]
+            [medicationId, id, medication]
           );
+          console.log('Inserted medication:', medication, 'with ID:', medicationId);
         }
       }
       
       // Handle vital signs if provided
       if (recordData.vitalSigns) {
+        console.log('Processing vital signs:', recordData.vitalSigns);
+        const vitalSignsId = uuidv4();
         await connection.query(
           `INSERT INTO vital_signs 
           (id, medical_record_id, heart_rate, blood_pressure, blood_glucose, respiratory_rate, oxygen_saturation, created_at, updated_at) 
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            uuidv4(),
+            vitalSignsId,
             id,
             recordData.vitalSigns.heartRate || null,
             recordData.vitalSigns.bloodPressure || recordData.bloodPressure || null,
@@ -322,17 +356,20 @@ class MedicalRecordModel {
             now
           ]
         );
+        console.log('Inserted vital signs with ID:', vitalSignsId);
       }
       
       // Handle vaccinations if provided
       if (recordData.vaccinations && recordData.vaccinations.length > 0) {
+        console.log('Processing vaccinations:', recordData.vaccinations);
         for (const vaccination of recordData.vaccinations) {
+          const vaccinationId = vaccination.id || uuidv4();
           await connection.query(
             `INSERT INTO vaccinations 
             (id, medical_record_id, name, date_administered, dose_number, manufacturer, lot_number, administered_by, notes, created_at, updated_at) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              vaccination.id || uuidv4(),
+              vaccinationId,
               id,
               vaccination.name,
               vaccination.dateAdministered,
@@ -345,12 +382,14 @@ class MedicalRecordModel {
               now
             ]
           );
+          console.log('Inserted vaccination:', vaccination.name, 'with ID:', vaccinationId);
         }
       }
       
       await connection.commit();
+      console.log('Transaction committed successfully');
       
-      return { 
+      const returnData = { 
         id, 
         ...recordData, 
         bmi,
@@ -360,12 +399,24 @@ class MedicalRecordModel {
         createdAt: now,
         updatedAt: now
       };
+      
+      console.log('=== MODEL CREATE DEBUG END ===');
+      console.log('Returning data:', JSON.stringify(returnData, null, 2));
+      
+      return returnData;
     } catch (error) {
       await connection.rollback();
-      console.error('Error creating medical record:', error);
+      console.error('=== MODEL CREATE ERROR ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('SQL State:', error.sqlState);
+      console.error('SQL Message:', error.sqlMessage);
+      console.error('==========================');
       throw error;
     } finally {
       connection.release();
+      console.log('Database connection released');
     }
   }
 
