@@ -46,11 +46,27 @@ exports.getMedicalRecordsByPatientId = async (req, res) => {
 exports.createMedicalRecord = async (req, res) => {
   try {
     const recordData = req.body;
-    console.log('Creating medical record with data:', JSON.stringify(recordData));
+    console.log('=== CREATE MEDICAL RECORD DEBUG ===');
+    console.log('Raw request body:', JSON.stringify(recordData, null, 2));
+    console.log('Request headers:', req.headers);
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('=====================================');
     
     // ***** CRITICAL FIX: Validate and sanitize input data *****
     if (!recordData.patientId) {
+      console.error('VALIDATION ERROR: Patient ID is missing');
       return res.status(400).json({ message: 'Patient ID is required' });
+    }
+    
+    // Validate required numeric fields early
+    if (!recordData.height || isNaN(parseFloat(recordData.height))) {
+      console.error('VALIDATION ERROR: Invalid height:', recordData.height);
+      return res.status(400).json({ message: 'Valid height is required' });
+    }
+    
+    if (!recordData.weight || isNaN(parseFloat(recordData.weight))) {
+      console.error('VALIDATION ERROR: Invalid weight:', recordData.weight);
+      return res.status(400).json({ message: 'Valid weight is required' });
     }
     
     // Handle certificateEnabled explicitly
@@ -72,22 +88,23 @@ exports.createMedicalRecord = async (req, res) => {
       console.log('Linking medical record to appointment:', recordData.appointmentId);
     }
     
-    // Check for required numeric fields
-    recordData.height = parseFloat(recordData.height) || 0;
-    recordData.weight = parseFloat(recordData.weight) || 0;
+    // Convert and validate numeric fields
+    recordData.height = parseFloat(recordData.height);
+    recordData.weight = parseFloat(recordData.weight);
     
-    if (!recordData.height || !recordData.weight) {
-      return res.status(400).json({ message: 'Valid height and weight are required' });
-    }
+    console.log('Processed height:', recordData.height);
+    console.log('Processed weight:', recordData.weight);
     
     // Ensure date is present
     if (!recordData.date) {
       recordData.date = new Date().toISOString().split('T')[0];
+      console.log('Set default date:', recordData.date);
     }
     
     // Ensure doctorId is present
     if (!recordData.doctorId) {
       recordData.doctorId = 'self-recorded';
+      console.log('Set default doctorId:', recordData.doctorId);
     }
     
     // Add visit type if provided
@@ -96,13 +113,20 @@ exports.createMedicalRecord = async (req, res) => {
     } else {
       // Default to general checkup if not specified
       recordData.type = 'General Checkup';
+      console.log('Set default visit type:', recordData.type);
     }
     
+    console.log('Final data being sent to model:', JSON.stringify(recordData, null, 2));
+    
     const newRecord = await medicalRecordModel.create(recordData);
-    console.log('Medical record created:', newRecord);
+    console.log('Medical record created successfully:', newRecord.id);
     res.status(201).json(newRecord);
   } catch (error) {
-    console.error('Error in createMedicalRecord controller:', error);
+    console.error('=== CREATE MEDICAL RECORD ERROR ===');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', error);
+    console.error('====================================');
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
