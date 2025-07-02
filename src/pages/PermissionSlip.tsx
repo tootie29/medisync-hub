@@ -107,7 +107,8 @@ const PermissionSlip: React.FC = () => {
     }, 250);
   };
 
-  if (!user || (user.role !== "admin" && !(user.role === "staff" && (user.position === "doctor" || user.position === "head_nurse")))) {
+  // Allow both "doctor" role and "head nurse" role to access
+  if (!user || (user.role !== "doctor" && user.role !== "head nurse")) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-64">
@@ -245,7 +246,7 @@ const PermissionSlip: React.FC = () => {
                       {user.name}
                     </div>
                     <div style={{ fontSize: '12px', marginTop: '5px' }}>
-                      {user.position === 'doctor' ? 'School Doctor' : 'Head Nurse'}<br/>
+                      {user.role === 'doctor' ? 'School Doctor' : 'Head Nurse'}<br/>
                       Health Services Department
                     </div>
                   </div>
