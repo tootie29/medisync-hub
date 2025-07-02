@@ -1,3 +1,4 @@
+
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/context/AuthContext';
@@ -143,23 +144,25 @@ const OrangeCard: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header with Share Button */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="text-center flex-1">
+      <div className="max-w-4xl mx-auto p-6 space-y-8">
+        {/* Header with Share Button - Fixed layout */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+          <div className="text-center sm:text-left flex-1">
             <h1 className="text-3xl font-bold text-orange-600 mb-2">Orange Card</h1>
             <p className="text-gray-600">Complete Health Summary</p>
           </div>
-          <PDFShareDialog 
-            onGeneratePDF={generatePDF}
-            patientName={userDetails?.name || 'Patient'}
-          />
+          <div className="flex-shrink-0">
+            <PDFShareDialog 
+              onGeneratePDF={generatePDF}
+              patientName={userDetails?.name || 'Patient'}
+            />
+          </div>
         </div>
 
         {/* PDF Content Wrapper */}
-        <div id="orange-card-content">
+        <div id="orange-card-content" className="space-y-6">
           {/* Personal Information Card */}
-          <Card className="border-orange-200">
+          <Card className="border-orange-200 shadow-sm">
             <CardHeader className="bg-orange-50">
               <CardTitle className="flex items-center gap-2 text-orange-700">
                 <User className="h-5 w-5" />
@@ -221,7 +224,7 @@ const OrangeCard: React.FC = () => {
 
           {/* Health Summary Card */}
           {isLoadingRecords ? (
-            <Card className="border-orange-200">
+            <Card className="border-orange-200 shadow-sm">
               <CardHeader className="bg-orange-50">
                 <CardTitle className="flex items-center gap-2 text-orange-700">
                   <Activity className="h-5 w-5" />
@@ -236,7 +239,7 @@ const OrangeCard: React.FC = () => {
               </CardContent>
             </Card>
           ) : latestRecord ? (
-            <Card className="border-orange-200">
+            <Card className="border-orange-200 shadow-sm">
               <CardHeader className="bg-orange-50">
                 <CardTitle className="flex items-center gap-2 text-orange-700">
                   <Activity className="h-5 w-5" />
@@ -296,7 +299,7 @@ const OrangeCard: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-orange-200">
+            <Card className="border-orange-200 shadow-sm">
               <CardHeader className="bg-orange-50">
                 <CardTitle className="flex items-center gap-2 text-orange-700">
                   <Activity className="h-5 w-5" />
@@ -316,7 +319,7 @@ const OrangeCard: React.FC = () => {
           )}
 
           {/* Allergies & Medical History */}
-          <Card className="border-orange-200">
+          <Card className="border-orange-200 shadow-sm">
             <CardHeader className="bg-orange-50">
               <CardTitle className="flex items-center gap-2 text-orange-700">
                 <AlertTriangle className="h-5 w-5" />
@@ -362,7 +365,7 @@ const OrangeCard: React.FC = () => {
 
           {/* Vaccination Records */}
           {allVaccinations.length > 0 && (
-            <Card className="border-orange-200">
+            <Card className="border-orange-200 shadow-sm">
               <CardHeader className="bg-orange-50">
                 <CardTitle className="flex items-center gap-2 text-orange-700">
                   <Syringe className="h-5 w-5" />
@@ -408,7 +411,7 @@ const OrangeCard: React.FC = () => {
           )}
 
           {/* Medical Records Summary */}
-          <Card className="border-orange-200">
+          <Card className="border-orange-200 shadow-sm">
             <CardHeader className="bg-orange-50">
               <CardTitle className="flex items-center gap-2 text-orange-700">
                 <FileText className="h-5 w-5" />
