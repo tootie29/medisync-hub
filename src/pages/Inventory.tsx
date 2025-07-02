@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Table, 
   TableBody, 
@@ -52,7 +54,8 @@ const Inventory = () => {
     category: "",
     quantity: 0,
     threshold: 10,
-    unit: "tablets"
+    unit: "tablets",
+    expiryDate: ""
   });
   const [updateQuantity, setUpdateQuantity] = useState<{ [key: string]: number }>({});
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -95,8 +98,8 @@ const Inventory = () => {
   };
 
   const handleAddMedicine = () => {
-    if (!newMedicine.name || !newMedicine.category) {
-      toast.error("Please fill in all required fields");
+    if (!newMedicine.name || !newMedicine.category || !newMedicine.expiryDate) {
+      toast.error("Please fill in all required fields including expiration date");
       return;
     }
 
@@ -105,7 +108,8 @@ const Inventory = () => {
       category: newMedicine.category,
       quantity: newMedicine.quantity,
       threshold: newMedicine.threshold,
-      unit: newMedicine.unit
+      unit: newMedicine.unit,
+      expiryDate: newMedicine.expiryDate
     });
 
     setNewMedicine({
@@ -113,7 +117,8 @@ const Inventory = () => {
       category: "",
       quantity: 0,
       threshold: 10,
-      unit: "tablets"
+      unit: "tablets",
+      expiryDate: ""
     });
     setOpenAddDialog(false);
   };
@@ -153,6 +158,16 @@ const Inventory = () => {
     }
   };
 
+  const formatExpiryDate = (expiryDate: string) => {
+    if (!expiryDate) return 'N/A';
+    return new Date(expiryDate).toLocaleDateString();
+  };
+
+  const isExpired = (expiryDate: string) => {
+    if (!expiryDate) return false;
+    return new Date(expiryDate) < new Date();
+  };
+
   const canManageInventory = user && (user.role === "staff" || user.role === "admin");
 
   return (
@@ -182,7 +197,7 @@ const Inventory = () => {
                 
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="name" className="text-right">Name</label>
+                    <Label htmlFor="name" className="text-right">Name *</Label>
                     <Input 
                       id="name" 
                       name="name"
@@ -193,7 +208,7 @@ const Inventory = () => {
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="category" className="text-right">Category</label>
+                    <Label htmlFor="category" className="text-right">Category *</Label>
                     <Input 
                       id="category" 
                       name="category"
@@ -204,7 +219,7 @@ const Inventory = () => {
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="quantity" className="text-right">Quantity</label>
+                    <Label htmlFor="quantity" className="text-right">Quantity</Label>
                     <Input 
                       id="quantity" 
                       name="quantity"
@@ -216,7 +231,7 @@ const Inventory = () => {
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="threshold" className="text-right">Alert Threshold</label>
+                    <Label htmlFor="threshold" className="text-right">Alert Threshold</Label>
                     <Input 
                       id="threshold" 
                       name="threshold"
@@ -228,7 +243,7 @@ const Inventory = () => {
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="unit" className="text-right">Unit</label>
+                    <Label htmlFor="unit" className="text-right">Unit</Label>
                     <Input 
                       id="unit" 
                       name="unit"
@@ -236,6 +251,17 @@ const Inventory = () => {
                       onChange={handleInputChange}
                       className="col-span-3" 
                       placeholder="e.g., tablets, bottles, vials"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="expiryDate" className="text-right">Expiry Date *</Label>
+                    <Input 
+                      id="expiryDate" 
+                      name="expiryDate"
+                      type="date"
+                      value={newMedicine.expiryDate}
+                      onChange={handleInputChange}
+                      className="col-span-3" 
                     />
                   </div>
                 </div>
@@ -274,6 +300,7 @@ const Inventory = () => {
                   <TableHead>Category</TableHead>
                   <TableHead>Quantity</TableHead>
                   <TableHead>Unit</TableHead>
+                  <TableHead>Expiry Date</TableHead>
                   <TableHead>Status</TableHead>
                   {canManageInventory && <TableHead>Actions</TableHead>}
                 </TableRow>
@@ -281,7 +308,7 @@ const Inventory = () => {
               <TableBody>
                 {medicines.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={canManageInventory ? 6 : 5} className="text-center py-8">
+                    <TableCell colSpan={canManageInventory ? 7 : 6} className="text-center py-8">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <Package className="h-12 w-12 mb-2" />
                         <p>No medicine items found</p>
@@ -306,12 +333,23 @@ const Inventory = () => {
                       <TableCell>{medicine.quantity} {medicine.unit}</TableCell>
                       <TableCell>{medicine.unit}</TableCell>
                       <TableCell>
+                        <span className={`${isExpired(medicine.expiryDate) ? 'text-red-600 font-medium' : ''}`}>
+                          {formatExpiryDate(medicine.expiryDate)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          medicine.quantity <= medicine.threshold 
-                            ? 'bg-red-100 text-red-800' 
-                            : 'bg-green-100 text-green-800'
+                          isExpired(medicine.expiryDate)
+                            ? 'bg-red-100 text-red-800'
+                            : medicine.quantity <= medicine.threshold 
+                              ? 'bg-yellow-100 text-yellow-800' 
+                              : 'bg-green-100 text-green-800'
                         }`}>
-                          {medicine.quantity <= medicine.threshold ? 'Low Stock' : 'In Stock'}
+                          {isExpired(medicine.expiryDate) 
+                            ? 'Expired' 
+                            : medicine.quantity <= medicine.threshold 
+                              ? 'Low Stock' 
+                              : 'In Stock'}
                         </span>
                       </TableCell>
                       {canManageInventory && (

@@ -79,6 +79,11 @@ class MedicineModel {
       const id = medicineData.id || uuidv4();
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       
+      // Validate required fields
+      if (!medicineData.expiryDate) {
+        throw new Error('Expiry date is required');
+      }
+      
       await pool.query(
         `INSERT INTO medicines (
           id, name, category, quantity, threshold, unit,
@@ -94,7 +99,7 @@ class MedicineModel {
           medicineData.unit,
           medicineData.description || null,
           medicineData.dosage || null,
-          medicineData.expiryDate || null,
+          medicineData.expiryDate,
           medicineData.supplier || null,
           now,
           now
