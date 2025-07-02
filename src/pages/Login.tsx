@@ -260,7 +260,7 @@ const Login: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => {
-                setEmail('admin@example.com');
+                setEmail('bob.williams@example.com');
                 setPassword('password');
               }}
               className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
@@ -271,7 +271,7 @@ const Login: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => {
-                setEmail('doctor@example.com');
+                setEmail('diana.miller@example.com');
                 setPassword('password');
               }}
               className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
@@ -282,7 +282,7 @@ const Login: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => {
-                setEmail('student@example.com');
+                setEmail('john.doe@example.com');
                 setPassword('password');
               }}
               className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
@@ -293,7 +293,7 @@ const Login: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => {
-                setEmail('staff@example.com');
+                setEmail('alice.johnson@example.com');
                 setPassword('password');
               }}
               className="text-xs border-medical-primary text-medical-primary hover:bg-medical-light"
