@@ -17,13 +17,14 @@ import {
   Shield,
   Activity,
   FileText,
-  Syringe
+  Syringe,
+  Info
 } from 'lucide-react';
 import { formatDate } from '@/utils/helpers';
 
 const OrangeCard: React.FC = () => {
   const { user } = useAuth();
-  const { getMedicalRecordsByPatientId, getUserById } = useData();
+  const { getMedicalRecordsByPatientId, getUserById, isLoadingRecords } = useData();
 
   // Helper function to safely format BMI
   const formatBMI = (bmi: any): string => {
@@ -52,6 +53,10 @@ const OrangeCard: React.FC = () => {
   // Get user details and medical records
   const userDetails = getUserById(user.id) || user;
   const medicalRecords = getMedicalRecordsByPatientId(user.id);
+  
+  console.log('Orange Card - User ID:', user.id);
+  console.log('Orange Card - Medical records found:', medicalRecords.length);
+  console.log('Orange Card - Is loading:', isLoadingRecords);
   
   // Get latest medical record for current health info
   const latestRecord = medicalRecords
@@ -133,7 +138,21 @@ const OrangeCard: React.FC = () => {
         </Card>
 
         {/* Health Summary Card */}
-        {latestRecord && (
+        {isLoadingRecords ? (
+          <Card className="border-orange-200">
+            <CardHeader className="bg-orange-50">
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <Activity className="h-5 w-5" />
+                Latest Health Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading health records...</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : latestRecord ? (
           <Card className="border-orange-200">
             <CardHeader className="bg-orange-50">
               <CardTitle className="flex items-center gap-2 text-orange-700">
@@ -190,6 +209,24 @@ const OrangeCard: React.FC = () => {
               
               <div className="mt-4 text-sm text-gray-600">
                 <strong>Last Check-up:</strong> {formatDate(latestRecord.date)}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-orange-200">
+            <CardHeader className="bg-orange-50">
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <Activity className="h-5 w-5" />
+                Latest Health Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 mb-2">No medical records found</p>
+                <p className="text-sm text-gray-400">
+                  Please visit the clinic to have your first health check-up recorded.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -317,9 +354,13 @@ const OrangeCard: React.FC = () => {
               </div>
             </div>
             
-            {medicalRecords.length === 0 && (
+            {medicalRecords.length === 0 && !isLoadingRecords && (
               <div className="text-center py-8">
-                <p className="text-gray-500">No medical records found.</p>
+                <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 mb-2">No medical records found</p>
+                <p className="text-sm text-gray-400">
+                  Your medical records will appear here after your first clinic visit.
+                </p>
               </div>
             )}
           </CardContent>

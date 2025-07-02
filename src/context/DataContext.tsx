@@ -12,26 +12,24 @@ import axios from 'axios';
 
 // Move this function inside the component or keep it as a standalone non-hook function
 const getApiUrl = () => {
-  // Check if we're in a production environment first
+  // Always try to connect to API first, even in Lovable preview
   const hostname = window.location.hostname;
-  if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
-    return 'https://api.climasys.entrsolutions.com/api';
-  }
   
-  // Check for environment variable
+  // Check for environment variable first
   const envApiUrl = import.meta.env.VITE_API_URL;
   if (envApiUrl) {
+    console.log('Using environment API URL:', envApiUrl);
     return envApiUrl;
   }
   
-  // Only fall back to preview mode if we're actually in Lovable preview
-  const isLovablePreview = window.location.hostname.includes('lovableproject.com');
-  if (isLovablePreview) {
-    console.log('Running in Lovable preview - using sample data instead of API');
-    return null;
+  // Check if we're in a production environment
+  if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
+    console.log('Using production API URL');
+    return 'https://api.climasys.entrsolutions.com/api';
   }
   
-  // Default to localhost for development
+  // Always try localhost first, even in Lovable preview
+  console.log('Using localhost API URL');
   return 'http://localhost:8080/api';
 };
 
@@ -79,8 +77,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   console.log('Using API URL in DataContext:', API_URL);
   
   const apiClient = axios.create({
-    baseURL: API_URL || 'http://localhost:8080/api',
-    timeout: 15000,
+    baseURL: API_URL,
+    timeout: 10000,
     headers: {
       'Content-Type': 'application/json',
     }
@@ -93,14 +91,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return Promise.reject(error);
       }
       
-      if (window.location.hostname.includes('lovableproject.com')) {
-        console.log('API error in preview mode, will fall back to sample data');
-        return Promise.reject(error);
-      }
-      
       const originalRequest = error.config;
       
-      if (originalRequest._retryCount >= 3) {
+      if (originalRequest._retryCount >= 2) {
         console.error('Request failed after multiple retries:', error.message);
         return Promise.reject(error);
       }
@@ -111,9 +104,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       originalRequest._retryCount++;
       
-      console.log(`Retrying request (${originalRequest._retryCount}/3)...`);
+      console.log(`Retrying request (${originalRequest._retryCount}/2)...`);
       
-      const delay = originalRequest._retryCount * 1000;
+      const delay = originalRequest._retryCount * 500;
       await new Promise(resolve => setTimeout(resolve, delay));
       
       return apiClient(originalRequest);
@@ -128,43 +121,40 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoadingAppointments, setIsLoadingAppointments] = useState<boolean>(true);
   const [isLoadingMedicines, setIsLoadingMedicines] = useState<boolean>(true);
   
-  // Only use preview mode if we're actually in Lovable preview
-  const isPreviewMode = !API_URL;
+  // Determine if we should use preview mode (only if API is completely unavailable)
+  const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isPreviewMode) {
-      console.log('Running in preview mode - using sample data');
-      setIsLoadingRecords(false);
-      setIsLoadingAppointments(false);
-      setIsLoadingMedicines(false);
-      return;
-    }
-
+    // Always try to fetch from API first
     refreshMedicalRecords();
     refreshAppointments();
     refreshMedicines();
   }, []);
 
   const refreshMedicalRecords = async () => {
-    if (isPreviewMode) return;
-    
     setIsLoadingRecords(true);
     try {
-      console.log('Fetching medical records from API:', API_URL);
+      console.log('Attempting to fetch medical records from API:', API_URL);
       const response = await apiClient.get('/medical-records');
-      console.log('Medical records fetched:', response.data);
+      console.log('Medical records fetched successfully:', response.data);
       console.log('Total records fetched:', response.data.length);
       setMedicalRecords(response.data);
+      setIsPreviewMode(false);
     } catch (error) {
       console.error('Error fetching medical records:', error);
+      console.log('API unavailable, switching to preview mode');
       setMedicalRecords([]);
+      setIsPreviewMode(true);
     } finally {
       setIsLoadingRecords(false);
     }
   };
 
   const refreshAppointments = async () => {
-    if (isPreviewMode) return;
+    if (isPreviewMode) {
+      setIsLoadingAppointments(false);
+      return;
+    }
     
     setIsLoadingAppointments(true);
     try {
@@ -179,7 +169,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshMedicines = async () => {
-    if (isPreviewMode) return;
+    if (isPreviewMode) {
+      setIsLoadingMedicines(false);
+      return;
+    }
     
     setIsLoadingMedicines(true);
     try {
@@ -296,28 +289,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return [];
     }
     
-    // Fallback to preview mode logic only if we're actually in preview
-    if (isPreviewMode && patientId && patientId.startsWith('user-')) {
-      const recordsWithPrefix = medicalRecords.filter(record => record.patientId === patientId);
-      
-      if (recordsWithPrefix.length > 0) {
-        console.log('Found records with prefixed patient ID');
-        return recordsWithPrefix;
-      }
-      
-      const numericId = patientId.replace('user-', '');
-      const recordsWithNumericId = medicalRecords.filter(record => record.patientId === numericId);
-      
-      if (recordsWithNumericId.length > 0) {
-        console.log('Found records with numeric patient ID');
-        return recordsWithNumericId;
-      }
-      
-      console.log('No records found for patient ID with any format');
-      return [];
-    }
-    
-    return medicalRecords.filter(record => record.patientId === patientId);
+    // If we're in preview mode or no data available, return empty array
+    // This prevents showing fake/test data
+    console.log('No real medical records available - returning empty array');
+    return [];
   };
 
   const getMedicalRecordById = (id: string): MedicalRecord | undefined => {
