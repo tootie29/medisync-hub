@@ -1,3 +1,4 @@
+
 const { pool } = require('../db/config');
 const { v4: uuidv4 } = require('uuid');
 
@@ -223,9 +224,48 @@ class MedicalRecordModel {
     console.log('=== MODEL CREATE DEBUG START ===');
     console.log('Model received data:', JSON.stringify(recordData, null, 2));
     
+    // ***** CRITICAL: Check if vaccinations table exists first *****
     const connection = await pool.getConnection();
     
     try {
+      // Verify vaccinations table exists before starting transaction
+      console.log('=== CHECKING VACCINATIONS TABLE ===');
+      const [tableCheck] = await connection.query("SHOW TABLES LIKE 'vaccinations'");
+      
+      if (tableCheck.length === 0) {
+        console.error('CRITICAL ERROR: vaccinations table does not exist!');
+        console.error('Creating vaccinations table from schema...');
+        
+        // Create the vaccinations table if it doesn't exist
+        await connection.query(`
+          CREATE TABLE IF NOT EXISTS vaccinations (
+            id VARCHAR(255) PRIMARY KEY,
+            medical_record_id VARCHAR(255) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            date_administered DATE NOT NULL,
+            dose_number INT DEFAULT 1,
+            manufacturer VARCHAR(255) DEFAULT NULL,
+            lot_number VARCHAR(255) DEFAULT NULL,
+            administered_by VARCHAR(255) DEFAULT NULL,
+            notes TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (medical_record_id) REFERENCES medical_records(id) ON DELETE CASCADE,
+            INDEX idx_medical_record_id (medical_record_id),
+            INDEX idx_vaccination_name (name),
+            INDEX idx_date_administered (date_administered)
+          )
+        `);
+        
+        console.log('Vaccinations table created successfully');
+      } else {
+        console.log('Vaccinations table exists');
+      }
+      
+      // Check table structure
+      const [tableStructure] = await connection.query("DESCRIBE vaccinations");
+      console.log('Vaccinations table structure:', tableStructure);
+      
       await connection.beginTransaction();
       console.log('Transaction started successfully');
       
@@ -408,37 +448,38 @@ class MedicalRecordModel {
         console.log('Inserted vital signs with ID:', vitalSignsId);
       }
       
-      // ***** ENHANCED VACCINATION HANDLING WITH DEBUGGING *****
-      if (recordData.vaccinations && recordData.vaccinations.length > 0) {
+      // ***** ENHANCED VACCINATION HANDLING WITH COMPREHENSIVE DEBUGGING *****
+      if (recordData.vaccinations && Array.isArray(recordData.vaccinations) && recordData.vaccinations.length > 0) {
         console.log('=== VACCINATION PROCESSING START ===');
         console.log('Processing', recordData.vaccinations.length, 'vaccinations');
-        console.log('Medical record ID:', id);
+        console.log('Medical record ID for vaccinations:', id);
         
-        // Verify vaccinations table exists
-        const [tableExists] = await connection.query(
-          "SHOW TABLES LIKE 'vaccinations'"
-        );
-        
-        if (tableExists.length === 0) {
-          console.error('CRITICAL ERROR: vaccinations table does not exist!');
-          throw new Error('Vaccinations table does not exist in database');
-        } else {
-          console.log('Vaccinations table exists, proceeding...');
-        }
+        // Verify we can access the vaccinations table
+        const [canAccessTable] = await connection.query("SELECT 1 FROM vaccinations LIMIT 1");
+        console.log('Can access vaccinations table:', canAccessTable !== undefined);
         
         for (let i = 0; i < recordData.vaccinations.length; i++) {
           const vaccination = recordData.vaccinations[i];
           const vaccinationId = vaccination.id || uuidv4();
           
-          console.log(`Processing vaccination ${i + 1}/${recordData.vaccinations.length}:`);
-          console.log('  ID:', vaccinationId);
-          console.log('  Name:', vaccination.name);
-          console.log('  Date:', vaccination.dateAdministered);
-          console.log('  Dose:', vaccination.doseNumber);
-          console.log('  Manufacturer:', vaccination.manufacturer);
-          console.log('  Lot Number:', vaccination.lotNumber);
-          console.log('  Administered By:', vaccination.administeredBy);
-          console.log('  Notes:', vaccination.notes);
+          console.log(`\n--- Processing vaccination ${i + 1}/${recordData.vaccinations.length} ---`);
+          console.log('Vaccination ID:', vaccinationId);
+          console.log('Medical Record ID:', id);
+          console.log('Vaccination Name:', vaccination.name);
+          console.log('Date Administered:', vaccination.dateAdministered);
+          console.log('Dose Number:', vaccination.doseNumber);
+          console.log('Manufacturer:', vaccination.manufacturer);
+          console.log('Lot Number:', vaccination.lotNumber);
+          console.log('Administered By:', vaccination.administeredBy);
+          console.log('Notes:', vaccination.notes);
+          
+          // Validate required fields
+          if (!vaccination.name || !vaccination.dateAdministered) {
+            console.error(`VALIDATION ERROR: Vaccination ${i + 1} missing required fields`);
+            console.error('Name:', vaccination.name);
+            console.error('Date:', vaccination.dateAdministered);
+            continue; // Skip this invalid vaccination
+          }
           
           const vaccinationInsertQuery = `INSERT INTO vaccinations 
             (id, medical_record_id, name, date_administered, dose_number, manufacturer, lot_number, administered_by, notes, created_at, updated_at) 
@@ -446,10 +487,10 @@ class MedicalRecordModel {
           
           const vaccinationValues = [
             vaccinationId,
-            id,
+            id, // This is the medical record ID
             vaccination.name,
             vaccination.dateAdministered,
-            vaccination.doseNumber || 1,
+            parseInt(vaccination.doseNumber) || 1,
             vaccination.manufacturer || null,
             vaccination.lotNumber || null,
             vaccination.administeredBy || null,
@@ -463,18 +504,22 @@ class MedicalRecordModel {
           
           try {
             const [vaccinationResult] = await connection.query(vaccinationInsertQuery, vaccinationValues);
-            console.log(`SUCCESS: Vaccination ${i + 1} inserted with result:`, vaccinationResult);
+            console.log(`SUCCESS: Vaccination ${i + 1} inserted:`, vaccinationResult);
+            console.log('Insert ID:', vaccinationResult.insertId);
+            console.log('Affected rows:', vaccinationResult.affectedRows);
             
-            // Verify the vaccination was inserted
-            const [verifyResult] = await connection.query(
+            // Immediate verification: Check if the vaccination was actually saved
+            const [immediateVerify] = await connection.query(
               'SELECT * FROM vaccinations WHERE id = ?',
               [vaccinationId]
             );
             
-            if (verifyResult.length > 0) {
-              console.log(`VERIFICATION SUCCESS: Vaccination ${i + 1} found in database:`, verifyResult[0]);
+            if (immediateVerify.length > 0) {
+              console.log(`IMMEDIATE VERIFICATION SUCCESS: Vaccination ${i + 1} found in database`);
+              console.log('Saved data:', immediateVerify[0]);
             } else {
-              console.error(`VERIFICATION FAILED: Vaccination ${i + 1} not found in database after insert`);
+              console.error(`IMMEDIATE VERIFICATION FAILED: Vaccination ${i + 1} not found after insert!`);
+              throw new Error(`Failed to save vaccination ${vaccination.name}`);
             }
             
           } catch (vaccinationError) {
@@ -485,20 +530,35 @@ class MedicalRecordModel {
               sqlState: vaccinationError.sqlState,
               sqlMessage: vaccinationError.sqlMessage
             });
-            throw vaccinationError;
+            
+            // This is critical - if we can't save vaccinations, we should fail
+            throw new Error(`Failed to save vaccination "${vaccination.name}": ${vaccinationError.message}`);
           }
         }
         
-        // Final verification: Check how many vaccinations were actually saved
+        // Final comprehensive verification
+        console.log('\n=== FINAL VACCINATION VERIFICATION ===');
         const [finalVerification] = await connection.query(
-          'SELECT COUNT(*) as count FROM vaccinations WHERE medical_record_id = ?',
+          'SELECT COUNT(*) as count, GROUP_CONCAT(name) as names FROM vaccinations WHERE medical_record_id = ?',
           [id]
         );
         
-        console.log(`FINAL VERIFICATION: ${finalVerification[0].count} vaccinations saved for medical record ${id}`);
+        console.log(`FINAL COUNT: ${finalVerification[0].count} vaccinations saved for medical record ${id}`);
+        console.log(`VACCINATION NAMES: ${finalVerification[0].names}`);
+        
+        if (finalVerification[0].count !== recordData.vaccinations.length) {
+          console.error('MISMATCH: Expected', recordData.vaccinations.length, 'but saved', finalVerification[0].count);
+          throw new Error(`Vaccination count mismatch: expected ${recordData.vaccinations.length}, saved ${finalVerification[0].count}`);
+        }
+        
         console.log('=== VACCINATION PROCESSING END ===');
       } else {
-        console.log('No vaccinations to process');
+        console.log('No vaccinations to process or invalid vaccination data');
+        if (recordData.vaccinations) {
+          console.log('Vaccination data type:', typeof recordData.vaccinations);
+          console.log('Is array:', Array.isArray(recordData.vaccinations));
+          console.log('Length:', recordData.vaccinations.length);
+        }
       }
       
       await connection.commit();

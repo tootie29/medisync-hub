@@ -46,15 +46,16 @@ exports.getMedicalRecordsByPatientId = async (req, res) => {
 exports.createMedicalRecord = async (req, res) => {
   try {
     const recordData = req.body;
-    console.log('=== CREATE MEDICAL RECORD DEBUG ===');
+    console.log('=== CREATE MEDICAL RECORD CONTROLLER DEBUG ===');
     console.log('Raw request body:', JSON.stringify(recordData, null, 2));
     console.log('Request headers:', req.headers);
     console.log('Content-Type:', req.headers['content-type']);
     
     // ***** VACCINATION DEBUG: Check vaccination data specifically *****
     if (recordData.vaccinations) {
-      console.log('=== VACCINATION DATA DEBUG ===');
+      console.log('=== VACCINATION DATA RECEIVED ===');
       console.log('Number of vaccinations:', recordData.vaccinations.length);
+      console.log('Is array:', Array.isArray(recordData.vaccinations));
       console.log('Vaccination data:', JSON.stringify(recordData.vaccinations, null, 2));
       
       recordData.vaccinations.forEach((vac, index) => {
@@ -68,13 +69,19 @@ exports.createMedicalRecord = async (req, res) => {
           administeredBy: vac.administeredBy,
           notes: vac.notes
         });
+        
+        // Validate each vaccination
+        if (!vac.name) {
+          console.error(`Vaccination ${index + 1} missing name!`);
+        }
+        if (!vac.dateAdministered) {
+          console.error(`Vaccination ${index + 1} missing date!`);
+        }
       });
-      console.log('===============================');
+      console.log('=====================================');
     } else {
       console.log('NO VACCINATION DATA FOUND in request');
     }
-    
-    console.log('=====================================');
     
     // ***** CRITICAL FIX: Validate and sanitize input data *****
     if (!recordData.patientId) {
@@ -140,32 +147,48 @@ exports.createMedicalRecord = async (req, res) => {
       console.log('Set default visit type:', recordData.type);
     }
     
-    // ***** VACCINATION VALIDATION: Validate vaccination data structure *****
-    if (recordData.vaccinations && recordData.vaccinations.length > 0) {
-      console.log('VALIDATING VACCINATION DATA...');
+    // ***** ENHANCED VACCINATION VALIDATION *****
+    if (recordData.vaccinations && Array.isArray(recordData.vaccinations) && recordData.vaccinations.length > 0) {
+      console.log('=== VALIDATING VACCINATION DATA ===');
       const validatedVaccinations = [];
       
       for (let i = 0; i < recordData.vaccinations.length; i++) {
         const vac = recordData.vaccinations[i];
         console.log(`Validating vaccination ${i + 1}:`, vac);
         
-        if (!vac.name || !vac.dateAdministered) {
-          console.error(`VALIDATION ERROR: Vaccination ${i + 1} missing required fields:`, {
-            name: vac.name,
-            dateAdministered: vac.dateAdministered
+        // Strict validation
+        if (!vac.name || typeof vac.name !== 'string' || vac.name.trim() === '') {
+          console.error(`VALIDATION ERROR: Vaccination ${i + 1} has invalid name:`, vac.name);
+          return res.status(400).json({ 
+            message: `Vaccination ${i + 1} must have a valid name` 
           });
-          continue; // Skip invalid vaccination
+        }
+        
+        if (!vac.dateAdministered || typeof vac.dateAdministered !== 'string') {
+          console.error(`VALIDATION ERROR: Vaccination ${i + 1} has invalid date:`, vac.dateAdministered);
+          return res.status(400).json({ 
+            message: `Vaccination ${i + 1} must have a valid date` 
+          });
+        }
+        
+        // Validate date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(vac.dateAdministered)) {
+          console.error(`VALIDATION ERROR: Vaccination ${i + 1} has invalid date format:`, vac.dateAdministered);
+          return res.status(400).json({ 
+            message: `Vaccination ${i + 1} date must be in YYYY-MM-DD format` 
+          });
         }
         
         const validatedVaccination = {
           id: vac.id || `vaccination-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          name: vac.name,
+          name: vac.name.trim(),
           dateAdministered: vac.dateAdministered,
           doseNumber: parseInt(vac.doseNumber) || 1,
-          manufacturer: vac.manufacturer || '',
-          lotNumber: vac.lotNumber || '',
-          administeredBy: vac.administeredBy || '',
-          notes: vac.notes || ''
+          manufacturer: (vac.manufacturer || '').trim(),
+          lotNumber: (vac.lotNumber || '').trim(),
+          administeredBy: (vac.administeredBy || '').trim(),
+          notes: (vac.notes || '').trim()
         };
         
         validatedVaccinations.push(validatedVaccination);
@@ -173,39 +196,50 @@ exports.createMedicalRecord = async (req, res) => {
       }
       
       recordData.vaccinations = validatedVaccinations;
-      console.log('Final validated vaccinations:', recordData.vaccinations.length, 'vaccines');
+      console.log('Final validated vaccinations count:', recordData.vaccinations.length);
+      console.log('=== VACCINATION VALIDATION COMPLETE ===');
+    } else if (recordData.vaccinations) {
+      console.log('Invalid vaccination data structure - clearing vaccinations');
+      recordData.vaccinations = [];
     }
     
     console.log('Final data being sent to model:', JSON.stringify(recordData, null, 2));
     
+    // Call the model to create the record
     const newRecord = await medicalRecordModel.create(recordData);
-    console.log('Medical record created successfully:', newRecord.id);
+    console.log('Medical record created successfully with ID:', newRecord.id);
     
-    // ***** VACCINATION VERIFICATION: Check if vaccinations were saved *****
+    // ***** POST-CREATION VERIFICATION *****
     if (recordData.vaccinations && recordData.vaccinations.length > 0) {
-      console.log('VERIFYING VACCINATION SAVE...');
-      const savedRecord = await medicalRecordModel.getById(newRecord.id);
-      if (savedRecord && savedRecord.vaccinations) {
-        console.log('VERIFICATION SUCCESS: Saved record has', savedRecord.vaccinations.length, 'vaccinations');
-        savedRecord.vaccinations.forEach((vac, index) => {
-          console.log(`Saved vaccination ${index + 1}:`, {
-            id: vac.id,
-            name: vac.name,
-            dateAdministered: vac.dateAdministered
+      console.log('=== POST-CREATION VERIFICATION ===');
+      try {
+        const savedRecord = await medicalRecordModel.getById(newRecord.id);
+        if (savedRecord && savedRecord.vaccinations && savedRecord.vaccinations.length > 0) {
+          console.log('VERIFICATION SUCCESS: Saved record has', savedRecord.vaccinations.length, 'vaccinations');
+          savedRecord.vaccinations.forEach((vac, index) => {
+            console.log(`Verified vaccination ${index + 1}:`, {
+              id: vac.id,
+              name: vac.name,
+              dateAdministered: vac.dateAdministered
+            });
           });
-        });
-      } else {
-        console.error('VERIFICATION FAILED: No vaccinations found in saved record');
+        } else {
+          console.error('VERIFICATION FAILED: No vaccinations found in saved record');
+          console.error('Saved record vaccinations:', savedRecord?.vaccinations);
+        }
+      } catch (verificationError) {
+        console.error('VERIFICATION ERROR:', verificationError);
       }
+      console.log('=== VERIFICATION COMPLETE ===');
     }
     
     res.status(201).json(newRecord);
   } catch (error) {
-    console.error('=== CREATE MEDICAL RECORD ERROR ===');
+    console.error('=== CREATE MEDICAL RECORD CONTROLLER ERROR ===');
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     console.error('Error details:', error);
-    console.error('====================================');
+    console.error('================================================');
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
