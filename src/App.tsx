@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   createBrowserRouter,
@@ -22,6 +23,7 @@ import HealthMonitoring from '@/pages/HealthMonitoring';
 import NotFound from '@/pages/NotFound';
 import Settings from '@/pages/Settings';
 import OrangeCard from '@/pages/OrangeCard';
+import PermissionSlip from '@/pages/PermissionSlip';
 
 const router = createBrowserRouter([
   {
@@ -87,6 +89,10 @@ const router = createBrowserRouter([
   {
     path: "/orange-card",
     element: <OrangeCard />
+  },
+  {
+    path: "/permission-slip",
+    element: <PermissionSlip />
   },
   {
     path: "/settings",

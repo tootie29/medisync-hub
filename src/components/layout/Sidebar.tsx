@@ -16,6 +16,7 @@ import {
   Activity,
   BadgeCheck,
   CreditCard,
+  FileText,
 } from "lucide-react";
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
@@ -30,6 +31,9 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
 
   // Determine if user is patient
   const isPatient = user && (user.role === "student" || user.role === "staff");
+
+  // Determine if user can access permission slip (doctor or head nurse only)
+  const canAccessPermissionSlip = user && (user.role === "admin" || (user.role === "staff" && (user.position === "doctor" || user.position === "head_nurse")));
 
   // Check if any certificate-enabled medical record exists for this patient
   let patientHasCertificate = false;
@@ -75,6 +79,12 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       path: "/inventory",
       name: "Inventory",
       icon: Package,
+    }] : []),
+    // Show permission slip only to doctors and head nurses
+    ...(canAccessPermissionSlip ? [{
+      path: "/permission-slip",
+      name: "Permission Slip",
+      icon: FileText,
     }] : []),
     // Show certificate menu only to patients who have enabled certificate medical records
     ...(isPatient && patientHasCertificate ? [{
