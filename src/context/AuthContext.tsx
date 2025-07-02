@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -61,13 +60,16 @@ interface RegisteredUser extends User {
   consentGiven?: boolean;
 }
 
-// Demo account credentials - separate from User type
-const DEMO_CREDENTIALS = [
-  { email: 'admin@example.com', password: 'password' },
-  { email: 'student@example.com', password: 'password' },
-  { email: 'staff@example.com', password: 'password' },
-  { email: 'doctor@example.com', password: 'password' },
-];
+// Demo account credentials - these need to match the emails in SAMPLE_USERS exactly
+const getDemoCredentials = () => {
+  console.log('Available sample users:', SAMPLE_USERS.map(u => ({ email: u.email, role: u.role })));
+  
+  // Create demo credentials that match the actual sample users
+  return SAMPLE_USERS.map(user => ({
+    email: user.email,
+    password: 'password'
+  }));
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -111,6 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (isPreviewMode) {
         console.log('Login in preview mode - checking sample users first');
+        
+        // Get dynamic demo credentials that match actual sample users
+        const DEMO_CREDENTIALS = getDemoCredentials();
+        console.log('Demo credentials:', DEMO_CREDENTIALS);
         
         // First check demo credentials
         const validDemo = DEMO_CREDENTIALS.find(demo => demo.email === email && demo.password === password);
@@ -194,6 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         // Fallback to demo credentials if API fails
+        const DEMO_CREDENTIALS = getDemoCredentials();
         const validDemo = DEMO_CREDENTIALS.find(demo => demo.email === email && demo.password === password);
         if (validDemo) {
           const foundUser = SAMPLE_USERS.find(u => u.email === email);
