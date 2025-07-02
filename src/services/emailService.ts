@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Use the correct API base URL for production
 const API_BASE_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:5000/api'
+  ? 'http://localhost:8080/api'  // Changed from 5000 to 8080 to match server config
   : 'https://api.climasys.entrsolutions.com/api';
 
 export interface SendPDFEmailRequest {
