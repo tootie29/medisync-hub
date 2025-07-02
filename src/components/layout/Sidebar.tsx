@@ -1,4 +1,5 @@
 
+
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -33,17 +34,8 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   // Determine if user is patient
   const isPatient = user && (user.role === "student" || user.role === "staff");
 
-  // Updated permission slip access check - more flexible
-  const canAccessPermissionSlip = user && (
-    user.role === "admin" || 
-    (user.role === "staff" && user.position && (
-      user.position === "doctor" || 
-      user.position === "head_nurse" ||
-      user.position === "head nurse" ||
-      user.position.toLowerCase().includes("doctor") ||
-      user.position.toLowerCase().includes("nurse")
-    ))
-  );
+  // Only allow users with role "doctor" to access permission slip
+  const canAccessPermissionSlip = user && user.role === "doctor";
 
   // Debug logging
   console.log('User data for sidebar:', {
@@ -97,7 +89,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       name: "Inventory",
       icon: Package,
     }] : []),
-    // Show permission slip only to doctors and head nurses
+    // Show permission slip only to users with role "doctor"
     ...(canAccessPermissionSlip ? [{
       path: "/permission-slip",
       name: "Permission Slip",
@@ -178,3 +170,4 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
     </div>
   );
 }
+
