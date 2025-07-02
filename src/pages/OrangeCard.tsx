@@ -25,6 +25,20 @@ const OrangeCard: React.FC = () => {
   const { user } = useAuth();
   const { getMedicalRecordsByPatientId, getUserById } = useData();
 
+  // Helper function to safely format BMI
+  const formatBMI = (bmi: any): string => {
+    if (typeof bmi === 'number' && !isNaN(bmi)) {
+      return bmi.toFixed(1);
+    }
+    if (typeof bmi === 'string') {
+      const parsed = parseFloat(bmi);
+      if (!isNaN(parsed)) {
+        return parsed.toFixed(1);
+      }
+    }
+    return 'N/A';
+  };
+
   if (!user) {
     return (
       <MainLayout>
@@ -131,7 +145,7 @@ const OrangeCard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
-                    {latestRecord.bmi?.toFixed(1) || 'N/A'}
+                    {formatBMI(latestRecord.bmi)}
                   </div>
                   <div className="text-sm text-gray-600">BMI</div>
                 </div>
