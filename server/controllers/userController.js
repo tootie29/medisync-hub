@@ -5,6 +5,14 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
+// Demo accounts that should bypass email verification
+const DEMO_ACCOUNTS = [
+  'bob.williams@example.com',
+  'diana.miller@example.com', 
+  'john.doe@example.com',
+  'alice.johnson@example.com'
+];
+
 // Create email transporter based on environment
 const getEmailTransporter = async () => {
   try {
@@ -22,7 +30,7 @@ const getEmailTransporter = async () => {
         pass: process.env.SMTP_PASS ? 'Provided' : 'Missing'
       });
       
-      const transporter = nodemailer.createTransport({
+      const transporter = nodemailer.createTransporter({
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT,
         secure: process.env.SMTP_SECURE === 'true',
@@ -51,7 +59,7 @@ const getEmailTransporter = async () => {
     return new Promise((resolve, reject) => {
       nodemailer.createTestAccount().then(testAccount => {
         console.log('Created Ethereal test account:', testAccount.user);
-        const transporter = nodemailer.createTransport({
+        const transporter = nodemailer.createTransporter({
           host: 'smtp.ethereal.email',
           port: 587,
           secure: false,
@@ -243,6 +251,8 @@ const sendPasswordResetEmail = async (recipientEmail, resetLink) => {
   }
 };
 
+// ... keep existing code (getAllUsers, getUserById, createUser, updateUser functions)
+
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await userModel.getAll();
@@ -416,12 +426,19 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
     
-    // Check if email is verified
-    if (!user.email_verified) {
+    // Check if email is verified - SKIP for demo accounts
+    const isDemoAccount = DEMO_ACCOUNTS.includes(email.toLowerCase());
+    
+    if (!isDemoAccount && !user.email_verified) {
       return res.status(403).json({ 
         message: 'Email not verified. Please check your email for the verification link.',
         requiresVerification: true
       });
+    }
+    
+    // For demo accounts, log that we're bypassing verification
+    if (isDemoAccount) {
+      console.log(`Demo account login - bypassing email verification for: ${email}`);
     }
     
     // Check if password matches
