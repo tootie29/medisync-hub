@@ -101,17 +101,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       if (isPreviewMode) {
-        console.log('Login in preview mode - checking registered users first');
+        console.log('Login in preview mode - checking sample users first');
+        
+        // First check sample users (demo accounts) - these should always work
+        const foundSampleUser = SAMPLE_USERS.find(u => u.email === email && u.password === password);
+        
+        if (foundSampleUser) {
+          const { password: _, ...userWithoutPassword } = foundSampleUser;
+          setUser(userWithoutPassword);
+          localStorage.setItem('medisyncUser', JSON.stringify(userWithoutPassword));
+          toast.success(`Welcome, ${userWithoutPassword.name}!`);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Then check registered users
         const registeredUsers = getRegisteredUsers();
         const foundRegisteredUser = registeredUsers.find(u => 
           u.email === email && u.password === password
         );
         
         if (foundRegisteredUser) {
-          // Skip email verification check for demo accounts
-          const isDemoAccount = SAMPLE_USERS.some(demo => demo.email === email);
-          
-          if (foundRegisteredUser.emailVerified === false && !isDemoAccount) {
+          if (foundRegisteredUser.emailVerified === false) {
             setVerificationEmail(email);
             setIsLoading(false);
             throw new Error('Email not verified. Please check your email for the verification link or request a new one.');
@@ -121,17 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(userWithoutPassword);
           localStorage.setItem('medisyncUser', JSON.stringify(userWithoutPassword));
           toast.success(`Welcome, ${userWithoutPassword.name}!`);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Demo accounts always bypass verification
-        const foundSampleUser = SAMPLE_USERS.find(u => u.email === email);
-        
-        if (foundSampleUser) {
-          setUser(foundSampleUser);
-          localStorage.setItem('medisyncUser', JSON.stringify(foundSampleUser));
-          toast.success(`Welcome, ${foundSampleUser.name}!`);
           setIsLoading(false);
           return;
         }
@@ -174,23 +174,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error: any) {
         console.error('Login API error:', error);
         
-        // Skip verification check for demo accounts
-        const isDemoAccount = SAMPLE_USERS.some(demo => demo.email === email);
-        
-        if (error.response?.status === 403 && error.response?.data?.requiresVerification && !isDemoAccount) {
+        if (error.response?.status === 403 && error.response?.data?.requiresVerification) {
           setVerificationEmail(email);
           throw new Error('Email not verified. Please check your email for the verification link or request a new one.');
         }
         
-        const foundUser = SAMPLE_USERS.find(u => u.email === email);
+        // Fallback to sample users if API fails
+        const foundUser = SAMPLE_USERS.find(u => u.email === email && u.password === password);
         
         if (!foundUser) {
           throw new Error('Invalid email or password');
         }
         
-        setUser(foundUser);
-        localStorage.setItem('medisyncUser', JSON.stringify(foundUser));
-        toast.success(`Welcome, ${foundUser.name}!`);
+        const { password: _, ...userWithoutPassword } = foundUser;
+        setUser(userWithoutPassword);
+        localStorage.setItem('medisyncUser', JSON.stringify(userWithoutPassword));
+        toast.success(`Welcome, ${userWithoutPassword.name}!`);
       }
       
     } catch (error) {
