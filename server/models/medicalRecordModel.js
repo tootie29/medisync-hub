@@ -40,7 +40,6 @@ class MedicalRecordModel {
         record.updatedAt = record.updated_at;
         record.appointmentId = record.appointment_id || null;
         record.type = record.type || 'General Checkup';
-        record.gender = record.gender || null;
         
         // Get vaccinations for this record
         const [vaccinations] = await pool.query(
@@ -115,7 +114,6 @@ class MedicalRecordModel {
       record.updatedAt = record.updated_at;
       record.appointmentId = record.appointment_id || null;
       record.type = record.type || 'General Checkup';
-      record.gender = record.gender || null;
       
       // Get vaccinations for this record
       const [vaccinations] = await pool.query(
@@ -187,7 +185,6 @@ class MedicalRecordModel {
         record.updatedAt = record.updated_at;
         record.appointmentId = record.appointment_id || null;
         record.type = record.type || 'General Checkup';
-        record.gender = record.gender || null;
         
         // Get vaccinations for this record
         const [vaccinations] = await pool.query(
@@ -288,7 +285,7 @@ class MedicalRecordModel {
       const visitType = recordData.type || 'General Checkup';
       console.log('Visit type:', visitType);
       
-      // Prepare values for insertion
+      // Prepare values for insertion (REMOVED gender field)
       const insertValues = [
         id, 
         recordData.patientId, 
@@ -305,18 +302,17 @@ class MedicalRecordModel {
         certificateEnabled ? 1 : 0,
         visitType,
         appointmentId,
-        recordData.gender || null,
         now,
         now
       ];
       
       console.log('Insert values prepared:', insertValues);
       
-      // Insert record with explicit type handling
+      // Insert record with explicit type handling (REMOVED gender from query)
       const insertQuery = `INSERT INTO medical_records 
         (id, patient_id, doctor_id, date, height, weight, bmi, blood_pressure, temperature, diagnosis, notes, 
-        follow_up_date, certificate_enabled, type, appointment_id, gender, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        follow_up_date, certificate_enabled, type, appointment_id, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       
       console.log('Executing insert query:', insertQuery);
       
@@ -472,6 +468,7 @@ class MedicalRecordModel {
       const setClause = [];
       const params = [];
       
+      // ... keep existing code (field setting logic) but REMOVED gender handling
       if (recordData.patientId) {
         setClause.push('patient_id = ?');
         params.push(recordData.patientId);
@@ -544,11 +541,6 @@ class MedicalRecordModel {
         params.push(recordData.appointmentId);
       }
       
-      if (recordData.gender) {
-        setClause.push('gender = ?');
-        params.push(recordData.gender);
-      }
-      
       setClause.push('updated_at = NOW()');
       
       if (setClause.length === 0) {
@@ -574,6 +566,7 @@ class MedicalRecordModel {
         }
       }
       
+      // ... keep existing code (medications, vital signs, vaccinations handling)
       if (recordData.medications) {
         await connection.query(
           'DELETE FROM medications WHERE medical_record_id = ?',
