@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -12,22 +13,26 @@ import axios from 'axios';
 
 // Move this function inside the component or keep it as a standalone non-hook function
 const getApiUrl = () => {
+  // Check if we're in a production environment first
+  const hostname = window.location.hostname;
+  if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
+    return 'https://api.climasys.entrsolutions.com/api';
+  }
+  
+  // Check for environment variable
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  if (envApiUrl) {
+    return envApiUrl;
+  }
+  
+  // Only fall back to preview mode if we're actually in Lovable preview
   const isLovablePreview = window.location.hostname.includes('lovableproject.com');
   if (isLovablePreview) {
     console.log('Running in Lovable preview - using sample data instead of API');
     return null;
   }
   
-  const hostname = window.location.hostname;
-  if (hostname === "climasys.entrsolutions.com" || hostname === "app.climasys.entrsolutions.com") {
-    return 'https://api.climasys.entrsolutions.com/api';
-  }
-  
-  const envApiUrl = import.meta.env.VITE_API_URL;
-  if (envApiUrl) {
-    return envApiUrl;
-  }
-  
+  // Default to localhost for development
   return 'http://localhost:8080/api';
 };
 
@@ -124,7 +129,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoadingAppointments, setIsLoadingAppointments] = useState<boolean>(true);
   const [isLoadingMedicines, setIsLoadingMedicines] = useState<boolean>(true);
   
-  const isPreviewMode = window.location.hostname.includes('lovableproject.com');
+  // Only use preview mode if we're actually in Lovable preview
+  const isPreviewMode = !API_URL;
 
   useEffect(() => {
     if (isPreviewMode) {
@@ -145,7 +151,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setIsLoadingRecords(true);
     try {
+      console.log('Fetching medical records from API:', API_URL);
       const response = await apiClient.get('/medical-records');
+      console.log('Medical records fetched:', response.data);
       setMedicalRecords(response.data);
     } catch (error) {
       console.error('Error fetching medical records:', error);
@@ -213,7 +221,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Special handling for demo purposes - if in preview mode, find any user with matching role
-      if (isPreviewMode || !API_URL) {
+      if (isPreviewMode) {
         console.log('In preview mode, trying to find any matching user by role');
         // For prefixed IDs that match pattern but not found, try to find any student/staff
         const fallbackUser = SAMPLE_USERS.find(u => u.role === 'student' || u.role === 'staff');
@@ -230,7 +238,33 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getMedicalRecordsByPatientId = (patientId: string): MedicalRecord[] => {
     console.log('Getting medical records for patient ID:', patientId);
+    console.log('Available medical records:', medicalRecords.length);
+    console.log('Is preview mode:', isPreviewMode);
     
+    // If we have real data from the API, use it
+    if (!isPreviewMode && medicalRecords.length > 0) {
+      console.log('Using real medical records from API');
+      const exactMatch = medicalRecords.filter(record => record.patientId === patientId);
+      if (exactMatch.length > 0) {
+        console.log('Found exact patient ID match:', exactMatch.length, 'records');
+        return exactMatch;
+      }
+      
+      // Try with numeric ID if prefixed
+      if (patientId && patientId.startsWith('user-')) {
+        const numericId = patientId.replace('user-', '');
+        const numericMatch = medicalRecords.filter(record => record.patientId === numericId);
+        if (numericMatch.length > 0) {
+          console.log('Found numeric patient ID match:', numericMatch.length, 'records');
+          return numericMatch;
+        }
+      }
+      
+      console.log('No records found for patient ID in real data');
+      return [];
+    }
+    
+    // Fallback to preview mode logic only if we're actually in preview
     if (isPreviewMode && patientId && patientId.startsWith('user-')) {
       const recordsWithPrefix = medicalRecords.filter(record => record.patientId === patientId);
       
