@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/context/AuthContext';
@@ -63,12 +64,59 @@ const OrangeCard: React.FC = () => {
   console.log('Medical records found:', medicalRecords.length);
   console.log('Medical records data:', medicalRecords);
   
-  // Get latest medical record for current health info
-  const latestRecord = medicalRecords && medicalRecords.length > 0
-    ? medicalRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-    : null;
+  // Get latest medical record - fix the sorting logic
+  let latestRecord = null;
+  if (medicalRecords && medicalRecords.length > 0) {
+    console.log('=== FINDING LATEST RECORD ===');
+    console.log('All records with dates:');
+    medicalRecords.forEach((record, index) => {
+      console.log(`Record ${index}:`, {
+        id: record.id,
+        date: record.date,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+        bmi: record.bmi,
+        weight: record.weight,
+        height: record.height
+      });
+    });
+    
+    // Sort by multiple date fields to find the most recent
+    const sortedRecords = [...medicalRecords].sort((a, b) => {
+      // Try to sort by date first, then createdAt, then updatedAt
+      const dateA = a.date || a.createdAt || a.updatedAt;
+      const dateB = b.date || b.createdAt || b.updatedAt;
+      
+      if (dateA && dateB) {
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      }
+      
+      // If no dates, just take the last one in the array (assuming it's most recent)
+      return 0;
+    });
+    
+    latestRecord = sortedRecords[0];
+    console.log('Selected latest record:', {
+      id: latestRecord.id,
+      bmi: latestRecord.bmi,
+      weight: latestRecord.weight,
+      height: latestRecord.height,
+      date: latestRecord.date || latestRecord.createdAt || latestRecord.updatedAt
+    });
+  }
 
-  console.log('Latest record:', latestRecord);
+  if (!latestRecord && medicalRecords && medicalRecords.length > 0) {
+    // If sorting failed, just take the last record in the array
+    latestRecord = medicalRecords[medicalRecords.length - 1];
+    console.log('Fallback: Using last record in array:', {
+      id: latestRecord.id,
+      bmi: latestRecord.bmi,
+      weight: latestRecord.weight,
+      height: latestRecord.height
+    });
+  }
+
+  console.log('Final latest record:', latestRecord);
   
   if (latestRecord) {
     console.log('Latest record details:', {
@@ -232,7 +280,7 @@ const OrangeCard: React.FC = () => {
               </div>
               
               <div className="mt-4 text-sm text-gray-600">
-                <strong>Last Check-up:</strong> {formatDate(latestRecord.date)}
+                <strong>Last Check-up:</strong> {formatDate(latestRecord.date || latestRecord.createdAt || latestRecord.updatedAt || new Date().toISOString())}
               </div>
             </CardContent>
           </Card>
@@ -395,3 +443,4 @@ const OrangeCard: React.FC = () => {
 };
 
 export default OrangeCard;
+
