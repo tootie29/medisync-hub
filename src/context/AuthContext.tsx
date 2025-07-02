@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -113,8 +114,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // First check demo credentials
         const validDemo = DEMO_CREDENTIALS.find(demo => demo.email === email && demo.password === password);
+        console.log('Valid demo found:', !!validDemo);
+        
         if (validDemo) {
           const foundSampleUser = SAMPLE_USERS.find(u => u.email === email);
+          console.log('Found sample user:', !!foundSampleUser);
+          
           if (foundSampleUser) {
             setUser(foundSampleUser);
             localStorage.setItem('medisyncUser', JSON.stringify(foundSampleUser));
