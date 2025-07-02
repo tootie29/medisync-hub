@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,8 +33,24 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   // Determine if user is patient
   const isPatient = user && (user.role === "student" || user.role === "staff");
 
-  // Determine if user can access permission slip (doctor or head nurse only)
-  const canAccessPermissionSlip = user && (user.role === "admin" || (user.role === "staff" && (user.position === "doctor" || user.position === "head_nurse")));
+  // Updated permission slip access check - more flexible
+  const canAccessPermissionSlip = user && (
+    user.role === "admin" || 
+    (user.role === "staff" && user.position && (
+      user.position === "doctor" || 
+      user.position === "head_nurse" ||
+      user.position === "head nurse" ||
+      user.position.toLowerCase().includes("doctor") ||
+      user.position.toLowerCase().includes("nurse")
+    ))
+  );
+
+  // Debug logging
+  console.log('User data for sidebar:', {
+    role: user?.role,
+    position: user?.position,
+    canAccessPermissionSlip
+  });
 
   // Check if any certificate-enabled medical record exists for this patient
   let patientHasCertificate = false;
