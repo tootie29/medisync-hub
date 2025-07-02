@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -60,6 +61,14 @@ interface RegisteredUser extends User {
   consentGiven?: boolean;
 }
 
+// Demo account credentials - separate from User type
+const DEMO_CREDENTIALS = [
+  { email: 'admin@example.com', password: 'password' },
+  { email: 'student@example.com', password: 'password' },
+  { email: 'staff@example.com', password: 'password' },
+  { email: 'doctor@example.com', password: 'password' },
+];
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,16 +112,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isPreviewMode) {
         console.log('Login in preview mode - checking sample users first');
         
-        // First check sample users (demo accounts) - these should always work
-        const foundSampleUser = SAMPLE_USERS.find(u => u.email === email && u.password === password);
-        
-        if (foundSampleUser) {
-          const { password: _, ...userWithoutPassword } = foundSampleUser;
-          setUser(userWithoutPassword);
-          localStorage.setItem('medisyncUser', JSON.stringify(userWithoutPassword));
-          toast.success(`Welcome, ${userWithoutPassword.name}!`);
-          setIsLoading(false);
-          return;
+        // First check demo credentials
+        const validDemo = DEMO_CREDENTIALS.find(demo => demo.email === email && demo.password === password);
+        if (validDemo) {
+          const foundSampleUser = SAMPLE_USERS.find(u => u.email === email);
+          if (foundSampleUser) {
+            setUser(foundSampleUser);
+            localStorage.setItem('medisyncUser', JSON.stringify(foundSampleUser));
+            toast.success(`Welcome, ${foundSampleUser.name}!`);
+            setIsLoading(false);
+            return;
+          }
         }
         
         // Then check registered users
@@ -179,17 +189,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error('Email not verified. Please check your email for the verification link or request a new one.');
         }
         
-        // Fallback to sample users if API fails
-        const foundUser = SAMPLE_USERS.find(u => u.email === email && u.password === password);
-        
-        if (!foundUser) {
+        // Fallback to demo credentials if API fails
+        const validDemo = DEMO_CREDENTIALS.find(demo => demo.email === email && demo.password === password);
+        if (validDemo) {
+          const foundUser = SAMPLE_USERS.find(u => u.email === email);
+          if (foundUser) {
+            setUser(foundUser);
+            localStorage.setItem('medisyncUser', JSON.stringify(foundUser));
+            toast.success(`Welcome, ${foundUser.name}!`);
+          } else {
+            throw new Error('Invalid email or password');
+          }
+        } else {
           throw new Error('Invalid email or password');
         }
-        
-        const { password: _, ...userWithoutPassword } = foundUser;
-        setUser(userWithoutPassword);
-        localStorage.setItem('medisyncUser', JSON.stringify(userWithoutPassword));
-        toast.success(`Welcome, ${userWithoutPassword.name}!`);
       }
       
     } catch (error) {
