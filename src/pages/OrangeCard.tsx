@@ -1,3 +1,4 @@
+
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/context/AuthContext';
@@ -63,8 +64,9 @@ const OrangeCard: React.FC = () => {
   console.log('Medical records data:', medicalRecords);
   
   // Get latest medical record for current health info
-  const latestRecord = medicalRecords
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+  const latestRecord = medicalRecords && medicalRecords.length > 0
+    ? medicalRecords.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+    : null;
 
   console.log('Latest record:', latestRecord);
   
@@ -77,12 +79,16 @@ const OrangeCard: React.FC = () => {
       height: latestRecord.height,
       date: latestRecord.date
     });
+  } else {
+    console.log('NO LATEST RECORD FOUND - latestRecord is null/undefined');
   }
 
   // Collect all vaccinations from all records
-  const allVaccinations = medicalRecords
-    .flatMap(record => record.vaccinations || [])
-    .sort((a, b) => new Date(b.dateAdministered).getTime() - new Date(a.dateAdministered).getTime());
+  const allVaccinations = medicalRecords && medicalRecords.length > 0
+    ? medicalRecords
+        .flatMap(record => record.vaccinations || [])
+        .sort((a, b) => new Date(b.dateAdministered).getTime() - new Date(a.dateAdministered).getTime())
+    : [];
 
   return (
     <MainLayout>
@@ -354,7 +360,7 @@ const OrangeCard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-6">
               <div>
                 <div className="text-2xl font-bold text-orange-600">
-                  {medicalRecords.length}
+                  {medicalRecords ? medicalRecords.length : 0}
                 </div>
                 <div className="text-sm text-gray-600">Total Records</div>
               </div>
@@ -372,7 +378,7 @@ const OrangeCard: React.FC = () => {
               </div>
             </div>
             
-            {medicalRecords.length === 0 && !isLoadingRecords && (
+            {(!medicalRecords || medicalRecords.length === 0) && !isLoadingRecords && (
               <div className="text-center py-8">
                 <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 mb-2">No medical records found</p>
