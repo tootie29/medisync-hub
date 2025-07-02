@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, SAMPLE_USERS, UserRole } from '@/types';
 import { toast } from "sonner";
@@ -197,12 +196,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(foundUser);
             localStorage.setItem('medisyncUser', JSON.stringify(foundUser));
             toast.success(`Welcome, ${foundUser.name}!`);
-          } else {
-            throw new Error('Invalid email or password');
+            setIsLoading(false);
+            return;
           }
-        } else {
-          throw new Error('Invalid email or password');
         }
+        
+        throw new Error('Invalid email or password');
       }
       
     } catch (error) {
