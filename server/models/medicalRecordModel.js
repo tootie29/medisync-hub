@@ -41,7 +41,7 @@ class MedicalRecordModel {
         record.appointmentId = record.appointment_id || null;
         record.type = record.type || 'General Checkup';
         
-        // Get vaccinations for this record
+        // Get vaccinations for this record - FIXED field mapping
         const [vaccinations] = await pool.query(
           'SELECT * FROM vaccinations WHERE medical_record_id = ?',
           [record.id]
@@ -51,10 +51,10 @@ class MedicalRecordModel {
           name: vac.name,
           dateAdministered: vac.date_administered,
           doseNumber: vac.dose_number,
-          manufacturer: vac.manufacturer,
-          lotNumber: vac.lot_number,
-          administeredBy: vac.administered_by,
-          notes: vac.notes
+          manufacturer: vac.manufacturer || '',
+          lotNumber: vac.lot_number || '',
+          administeredBy: vac.administered_by || '',
+          notes: vac.notes || ''
         }));
         
         delete record.patient_id;
@@ -115,7 +115,7 @@ class MedicalRecordModel {
       record.appointmentId = record.appointment_id || null;
       record.type = record.type || 'General Checkup';
       
-      // Get vaccinations for this record
+      // Get vaccinations for this record - FIXED field mapping
       const [vaccinations] = await pool.query(
         'SELECT * FROM vaccinations WHERE medical_record_id = ?',
         [id]
@@ -125,10 +125,10 @@ class MedicalRecordModel {
         name: vac.name,
         dateAdministered: vac.date_administered,
         doseNumber: vac.dose_number,
-        manufacturer: vac.manufacturer,
-        lotNumber: vac.lot_number,
-        administeredBy: vac.administered_by,
-        notes: vac.notes
+        manufacturer: vac.manufacturer || '',
+        lotNumber: vac.lot_number || '',
+        administeredBy: vac.administered_by || '',
+        notes: vac.notes || ''
       }));
       
       delete record.patient_id;
@@ -186,7 +186,7 @@ class MedicalRecordModel {
         record.appointmentId = record.appointment_id || null;
         record.type = record.type || 'General Checkup';
         
-        // Get vaccinations for this record
+        // Get vaccinations for this record - FIXED field mapping
         const [vaccinations] = await pool.query(
           'SELECT * FROM vaccinations WHERE medical_record_id = ?',
           [record.id]
@@ -196,10 +196,10 @@ class MedicalRecordModel {
           name: vac.name,
           dateAdministered: vac.date_administered,
           doseNumber: vac.dose_number,
-          manufacturer: vac.manufacturer,
-          lotNumber: vac.lot_number,
-          administeredBy: vac.administered_by,
-          notes: vac.notes
+          manufacturer: vac.manufacturer || '',
+          lotNumber: vac.lot_number || '',
+          administeredBy: vac.administered_by || '',
+          notes: vac.notes || ''
         }));
         
         delete record.patient_id;
@@ -372,7 +372,7 @@ class MedicalRecordModel {
       const [insertResult] = await connection.query(insertQuery, insertValues);
       console.log('Insert result:', insertResult);
       
-      // ... keep existing code (medications, vital signs, vaccinations handling)
+      // Handle medications
       if (recordData.medications && recordData.medications.length > 0) {
         console.log('Processing medications:', recordData.medications);
         for (const medication of recordData.medications) {
@@ -385,6 +385,7 @@ class MedicalRecordModel {
         }
       }
       
+      // Handle vital signs
       if (recordData.vitalSigns) {
         console.log('Processing vital signs:', recordData.vitalSigns);
         const vitalSignsId = uuidv4();
@@ -407,10 +408,22 @@ class MedicalRecordModel {
         console.log('Inserted vital signs with ID:', vitalSignsId);
       }
       
+      // Handle vaccinations - FIXED with proper logging
       if (recordData.vaccinations && recordData.vaccinations.length > 0) {
-        console.log('Processing vaccinations:', recordData.vaccinations);
+        console.log('Processing vaccinations:', recordData.vaccinations.length, 'vaccines');
         for (const vaccination of recordData.vaccinations) {
           const vaccinationId = vaccination.id || uuidv4();
+          console.log('Inserting vaccination:', {
+            id: vaccinationId,
+            name: vaccination.name,
+            dateAdministered: vaccination.dateAdministered,
+            doseNumber: vaccination.doseNumber,
+            manufacturer: vaccination.manufacturer,
+            lotNumber: vaccination.lotNumber,
+            administeredBy: vaccination.administeredBy,
+            notes: vaccination.notes
+          });
+          
           await connection.query(
             `INSERT INTO vaccinations 
             (id, medical_record_id, name, date_administered, dose_number, manufacturer, lot_number, administered_by, notes, created_at, updated_at) 
@@ -429,7 +442,7 @@ class MedicalRecordModel {
               now
             ]
           );
-          console.log('Inserted vaccination:', vaccination.name, 'with ID:', vaccinationId);
+          console.log('Successfully inserted vaccination:', vaccination.name, 'with ID:', vaccinationId);
         }
       }
       
@@ -520,7 +533,6 @@ class MedicalRecordModel {
       const setClause = [];
       const params = [];
       
-      // ... keep existing code (field setting logic) but REMOVED gender handling
       if (recordData.patientId) {
         setClause.push('patient_id = ?');
         params.push(recordData.patientId);
@@ -618,7 +630,7 @@ class MedicalRecordModel {
         }
       }
       
-      // ... keep existing code (medications, vital signs, vaccinations handling)
+      // Handle medications
       if (recordData.medications) {
         await connection.query(
           'DELETE FROM medications WHERE medical_record_id = ?',
@@ -633,6 +645,7 @@ class MedicalRecordModel {
         }
       }
       
+      // Handle vital signs
       if (recordData.vitalSigns) {
         const [existingVitalSigns] = await connection.query(
           'SELECT id FROM vital_signs WHERE medical_record_id = ?',
@@ -698,7 +711,11 @@ class MedicalRecordModel {
         }
       }
       
+      // Handle vaccinations - FIXED with proper logging
       if (recordData.vaccinations) {
+        console.log('Updating vaccinations for record:', id);
+        console.log('New vaccination data:', recordData.vaccinations);
+        
         // Delete existing vaccinations
         await connection.query(
           'DELETE FROM vaccinations WHERE medical_record_id = ?',
@@ -707,12 +724,19 @@ class MedicalRecordModel {
         
         // Insert new vaccinations
         for (const vaccination of recordData.vaccinations) {
+          const vaccinationId = vaccination.id || uuidv4();
+          console.log('Inserting updated vaccination:', {
+            id: vaccinationId,
+            name: vaccination.name,
+            dateAdministered: vaccination.dateAdministered
+          });
+          
           await connection.query(
             `INSERT INTO vaccinations 
             (id, medical_record_id, name, date_administered, dose_number, manufacturer, lot_number, administered_by, notes, created_at, updated_at) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
-              vaccination.id || uuidv4(),
+              vaccinationId,
               id,
               vaccination.name,
               vaccination.dateAdministered,
@@ -723,6 +747,7 @@ class MedicalRecordModel {
               vaccination.notes || null
             ]
           );
+          console.log('Successfully updated vaccination:', vaccination.name);
         }
       }
       
