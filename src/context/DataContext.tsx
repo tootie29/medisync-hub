@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   MedicalRecord, 
@@ -286,7 +284,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // If this is user-1 and we have records for "1", return those
         if (patientId === 'user-1') {
-          const fallbackRecords = medicalRecords.filter(record => record.patientId === '1' || record.patientId === 1);
+          const fallbackRecords = medicalRecords.filter(record => record.patientId === '1');
           if (fallbackRecords.length > 0) {
             console.log('Using fallback records for user-1 -> 1 mapping:', fallbackRecords.length);
             return fallbackRecords;
@@ -702,4 +700,3 @@ export const useData = () => {
 };
 
 export { getApiUrl };
-
