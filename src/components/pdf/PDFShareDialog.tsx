@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Share, Mail, MessageSquare, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { sendPDFEmail } from '@/services/emailService';
 
 interface PDFShareDialogProps {
   onGeneratePDF: () => Promise<Blob>;
@@ -76,22 +77,39 @@ const PDFShareDialog: React.FC<PDFShareDialogProps> = ({ onGeneratePDF, patientN
       setIsLoading(true);
       const pdfBlob = await onGeneratePDF();
       
-      // Convert blob to base64 for email
+      // Convert blob to base64
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64data = reader.result as string;
-        
-        // Create mailto link with attachment info
-        const subject = encodeURIComponent(`Orange Card - ${patientName}`);
-        const body = encodeURIComponent(`${message}\n\nNote: PDF attachment may not be supported by all email clients. Please download the PDF separately if needed.`);
-        const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
-        
-        window.open(mailtoLink, '_blank');
-        
-        toast({
-          title: "Email Client Opened",
-          description: "Your email client has been opened. Please attach the downloaded PDF manually if needed.",
-        });
+      reader.onloadend = async () => {
+        try {
+          const base64data = reader.result as string;
+          
+          // Send email using the API
+          const response = await sendPDFEmail({
+            email: email,
+            subject: `Orange Card - ${patientName}`,
+            message: message,
+            pdfData: base64data,
+            fileName: `orange-card-${patientName.replace(/\s+/g, '-').toLowerCase()}.pdf`
+          });
+
+          if (response.success) {
+            toast({
+              title: "Email Sent!",
+              description: `Orange Card PDF has been sent to ${email}`,
+            });
+            setEmail('');
+            setIsOpen(false);
+          } else {
+            throw new Error(response.message || 'Failed to send email');
+          }
+        } catch (error) {
+          console.error('Error sending email:', error);
+          toast({
+            title: "Error",
+            description: "Failed to send email. Please try again.",
+            variant: "destructive",
+          });
+        }
       };
       reader.readAsDataURL(pdfBlob);
     } catch (error) {
@@ -217,7 +235,7 @@ const PDFShareDialog: React.FC<PDFShareDialogProps> = ({ onGeneratePDF, patientN
                 disabled={isLoading || !email}
                 className="w-full"
               >
-                {isLoading ? 'Preparing...' : 'Open Email Client'}
+                {isLoading ? 'Sending Email...' : 'Send Email'}
               </Button>
             </TabsContent>
 
