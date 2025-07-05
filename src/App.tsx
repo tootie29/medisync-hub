@@ -24,6 +24,7 @@ import NotFound from '@/pages/NotFound';
 import Settings from '@/pages/Settings';
 import OrangeCard from '@/pages/OrangeCard';
 import PermissionSlip from '@/pages/PermissionSlip';
+import MedicalCertificate from '@/pages/MedicalCertificate';
 
 const router = createBrowserRouter([
   {
@@ -93,6 +94,10 @@ const router = createBrowserRouter([
   {
     path: "/permission-slip",
     element: <PermissionSlip />
+  },
+  {
+    path: "/medical-certificate",
+    element: <MedicalCertificate />
   },
   {
     path: "/settings",

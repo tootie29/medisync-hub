@@ -1,5 +1,3 @@
-
-
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,6 +17,7 @@ import {
   BadgeCheck,
   CreditCard,
   FileText,
+  Award,
 } from "lucide-react";
 
 export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
@@ -34,14 +33,16 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
   // Determine if user is patient
   const isPatient = user && (user.role === "student" || user.role === "staff");
 
-  // Allow both doctors and head nurses to access permission slip
+  // Allow both doctors and head nurses to access permission slip and medical certificate
   const canAccessPermissionSlip = user && (user.role === "doctor" || user.role === "head nurse");
+  const canAccessMedicalCertificate = user && (user.role === "doctor" || user.role === "head nurse");
 
   // Debug logging
   console.log('User data for sidebar:', {
     role: user?.role,
     position: user?.position,
-    canAccessPermissionSlip
+    canAccessPermissionSlip,
+    canAccessMedicalCertificate
   });
 
   // Check if any certificate-enabled medical record exists for this patient
@@ -94,6 +95,12 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
       path: "/permission-slip",
       name: "Permission Slip",
       icon: FileText,
+    }] : []),
+    // Show medical certificate to both doctors and head nurses
+    ...(canAccessMedicalCertificate ? [{
+      path: "/medical-certificate",
+      name: "Medical Certificate",
+      icon: Award,
     }] : []),
     // Show certificate menu only to patients who have enabled certificate medical records
     ...(isPatient && patientHasCertificate ? [{
@@ -170,4 +177,3 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
     </div>
   );
 }
-
