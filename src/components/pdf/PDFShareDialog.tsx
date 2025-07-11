@@ -1,23 +1,15 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Share, Mail, MessageSquare, Download } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { sendPDFEmail } from '@/services/emailService';
+import { Download } from 'lucide-react';
 
 interface PDFShareDialogProps {
   onGeneratePDF: () => Promise<Blob>;
@@ -27,9 +19,6 @@ interface PDFShareDialogProps {
 const PDFShareDialog: React.FC<PDFShareDialogProps> = ({ onGeneratePDF, patientName }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [message, setMessage] = useState(`Please find attached the Orange Card for ${patientName}.`);
   const { toast } = useToast();
 
   const handleDownload = async () => {
@@ -51,6 +40,7 @@ const PDFShareDialog: React.FC<PDFShareDialogProps> = ({ onGeneratePDF, patientN
         title: "Success",
         description: "PDF downloaded successfully!",
       });
+      setIsOpen(false);
     } catch (error) {
       console.error('Error downloading PDF:', error);
       toast({
@@ -63,215 +53,33 @@ const PDFShareDialog: React.FC<PDFShareDialogProps> = ({ onGeneratePDF, patientN
     }
   };
 
-  const handleSendEmail = async () => {
-    if (!email) {
-      toast({
-        title: "Error",
-        description: "Please enter an email address.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const pdfBlob = await onGeneratePDF();
-      
-      // Convert blob to base64
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const base64data = reader.result as string;
-          
-          // Send email using the API
-          const response = await sendPDFEmail({
-            email: email,
-            subject: `Orange Card - ${patientName}`,
-            message: message,
-            pdfData: base64data,
-            fileName: `orange-card-${patientName.replace(/\s+/g, '-').toLowerCase()}.pdf`
-          });
-
-          if (response.success) {
-            toast({
-              title: "Email Sent!",
-              description: `Orange Card PDF has been sent to ${email}`,
-            });
-            setEmail('');
-            setIsOpen(false);
-          } else {
-            throw new Error(response.message || 'Failed to send email');
-          }
-        } catch (error) {
-          console.error('Error sending email:', error);
-          toast({
-            title: "Error",
-            description: "Failed to send email. Please try again.",
-            variant: "destructive",
-          });
-        }
-      };
-      reader.readAsDataURL(pdfBlob);
-    } catch (error) {
-      console.error('Error preparing email:', error);
-      toast({
-        title: "Error",
-        description: "Failed to prepare email. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSendSMS = async () => {
-    if (!mobile) {
-      toast({
-        title: "Error",
-        description: "Please enter a mobile number.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      
-      // Create SMS link (PDF cannot be attached via SMS, so we'll send a message)
-      const smsMessage = encodeURIComponent(`${message}\n\nNote: Orange Card PDF will be sent separately via email or download link.`);
-      const smsLink = `sms:${mobile}?body=${smsMessage}`;
-      
-      window.open(smsLink, '_blank');
-      
-      toast({
-        title: "SMS Client Opened",
-        description: "Your SMS client has been opened. Note: PDF cannot be sent via SMS directly.",
-      });
-    } catch (error) {
-      console.error('Error preparing SMS:', error);
-      toast({
-        title: "Error",
-        description: "Failed to prepare SMS. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2">
-          <Share className="h-4 w-4" />
-          Share Orange Card
+          <Download className="h-4 w-4" />
+          Download Orange Card
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Share className="h-5 w-5" />
-            Share Orange Card
+            <Download className="h-5 w-5" />
+            Download Orange Card
           </DialogTitle>
           <DialogDescription>
-            Generate and share the Orange Card PDF for {patientName}
+            Generate and download the Orange Card PDF for {patientName}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                Download PDF
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={handleDownload} 
-                disabled={isLoading}
-                className="w-full"
-              >
-                {isLoading ? 'Generating...' : 'Download PDF'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Tabs defaultValue="email" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Email
-              </TabsTrigger>
-              <TabsTrigger value="sms" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                SMS
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="email" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email-message">Message</Label>
-                <Textarea
-                  id="email-message"
-                  placeholder="Enter your message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <Button 
-                onClick={handleSendEmail} 
-                disabled={isLoading || !email}
-                className="w-full"
-              >
-                {isLoading ? 'Sending Email...' : 'Send Email'}
-              </Button>
-            </TabsContent>
-
-            <TabsContent value="sms" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="mobile">Mobile Number</Label>
-                <Input
-                  id="mobile"
-                  type="tel"
-                  placeholder="Enter mobile number"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sms-message">Message</Label>
-                <Textarea
-                  id="sms-message"
-                  placeholder="Enter your message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-md">
-                <strong>Note:</strong> PDF files cannot be sent via SMS. The SMS will contain your message, and you'll need to send the PDF separately.
-              </div>
-              <Button 
-                onClick={handleSendSMS} 
-                disabled={isLoading || !mobile}
-                className="w-full"
-              >
-                {isLoading ? 'Preparing...' : 'Open SMS Client'}
-              </Button>
-            </TabsContent>
-          </Tabs>
+          <Button 
+            onClick={handleDownload} 
+            disabled={isLoading}
+            className="w-full"
+          >
+            {isLoading ? 'Generating...' : 'Download PDF'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
