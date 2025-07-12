@@ -372,93 +372,144 @@ const OrangeCard: React.FC = () => {
           </Card>
 
           {/* Vaccination Records */}
-          {allVaccinations.length > 0 && (
-            <Card className="border-orange-200 shadow-sm">
-              <CardHeader className="bg-orange-50">
-                <CardTitle className="flex items-center gap-2 text-orange-700">
-                  <Syringe className="h-5 w-5" />
-                  Vaccination Records
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {allVaccinations.map((vaccination, index) => (
-                    <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-green-700">{vaccination.name}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          {formatDate(vaccination.dateAdministered)}
-                        </Badge>
-                      </div>
+          <Card className="border-orange-200 shadow-sm">
+            <CardHeader className="bg-orange-50">
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <Syringe className="h-5 w-5" />
+                VACCINATION RECORD
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-orange-300">
+                  <thead>
+                    <tr className="bg-orange-100">
+                      <th className="border border-orange-300 p-2 text-left font-semibold text-sm">VACCINE</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">DOSE</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">1</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">2</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">3</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">4</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">5</th>
+                      <th className="border border-orange-300 p-2 text-left font-semibold text-sm">REMARKS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {['ANTI RABIES', 'FLU VACCINE', 'HEPATITIS A6', 'HEPATITIS B', 'PNEUMOVAC', 'TETANUS TOXOID'].map((vaccineName) => {
+                      const vaccineRecords = allVaccinations.filter(v => 
+                        v.name.toUpperCase().includes(vaccineName.replace('A6', 'A'))
+                      );
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                        {vaccination.doseNumber && (
-                          <p><strong>Dose:</strong> {vaccination.doseNumber}</p>
-                        )}
-                        {vaccination.manufacturer && (
-                          <p><strong>Manufacturer:</strong> {vaccination.manufacturer}</p>
-                        )}
-                        {vaccination.lotNumber && (
-                          <p><strong>Lot Number:</strong> {vaccination.lotNumber}</p>
-                        )}
-                        {vaccination.administeredBy && (
-                          <p><strong>Administered by:</strong> {vaccination.administeredBy}</p>
-                        )}
-                      </div>
-                      
-                      {vaccination.notes && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          <strong>Notes:</strong> {vaccination.notes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                      return (
+                        <React.Fragment key={vaccineName}>
+                          <tr>
+                            <td className="border border-orange-300 p-2 font-medium text-sm bg-orange-50" rowSpan={3}>
+                              {vaccineName}
+                            </td>
+                            <td className="border border-orange-300 p-2 text-xs text-center">DATE GIVEN</td>
+                            {[1, 2, 3, 4, 5].map(doseNum => {
+                              const doseRecord = vaccineRecords.find(v => v.doseNumber === doseNum);
+                              return (
+                                <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
+                                  {doseRecord ? formatDate(doseRecord.dateAdministered).split(' ')[0] : ''}
+                                </td>
+                              );
+                            })}
+                            <td className="border border-orange-300 p-2 text-xs" rowSpan={3}>
+                              {vaccineRecords.map(v => v.notes).filter(Boolean).join('; ') || ''}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="border border-orange-300 p-2 text-xs text-center">SIG.</td>
+                            {[1, 2, 3, 4, 5].map(doseNum => (
+                              <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
+                                {vaccineRecords.find(v => v.doseNumber === doseNum) ? '✓' : ''}
+                              </td>
+                            ))}
+                          </tr>
+                          <tr>
+                            <td className="border border-orange-300 p-2 text-xs text-center">LOT</td>
+                            {[1, 2, 3, 4, 5].map(doseNum => {
+                              const doseRecord = vaccineRecords.find(v => v.doseNumber === doseNum);
+                              return (
+                                <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
+                                  {doseRecord?.lotNumber || ''}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Laboratory Tests */}
           <Card className="border-orange-200 shadow-sm">
             <CardHeader className="bg-orange-50">
               <CardTitle className="flex items-center gap-2 text-orange-700">
                 <TestTube className="h-5 w-5" />
-                Laboratory Test Results
+                MEDICAL LABORATORY RESULTS RECORD
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-              {allLaboratoryTests.length > 0 ? (
-                <div className="space-y-4">
-                  {allLaboratoryTests.map((test, index) => (
-                    <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-blue-700">{test.testName}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          {formatDate(test.testDate)}
-                        </Badge>
-                      </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-orange-300">
+                  <thead>
+                    <tr className="bg-orange-100">
+                      <th className="border border-orange-300 p-2 text-left font-semibold text-sm">TESTS</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">DATE<br/>RESULT</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">DATE<br/>RESULT</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">DATE<br/>RESULT</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">DATE<br/>RESULT</th>
+                      <th className="border border-orange-300 p-2 text-center font-semibold text-sm">DATE<br/>RESULT</th>
+                      <th className="border border-orange-300 p-2 text-left font-semibold text-sm">REMARKS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {['Chest X-ray', 'Complete Blood Count', 'Urinalysis', 'Fecalysis', 'Hepatitis B Screening'].map((testName) => {
+                      const testRecords = allLaboratoryTests.filter(test => 
+                        test.testName.toLowerCase().includes(testName.toLowerCase()) ||
+                        testName.toLowerCase().includes(test.testName.toLowerCase())
+                      ).slice(0, 5); // Limit to 5 most recent results
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                        <p><strong>Result:</strong> {test.result}</p>
-                        {test.normalRange && (
-                          <p><strong>Normal Range:</strong> {test.normalRange}</p>
-                        )}
-                      </div>
-                      
-                      {test.remarks && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          <strong>Remarks:</strong> {test.remarks}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
+                      return (
+                        <tr key={testName}>
+                          <td className="border border-orange-300 p-2 font-medium text-sm bg-orange-50">
+                            {testName}
+                          </td>
+                          {[0, 1, 2, 3, 4].map(index => {
+                            const testRecord = testRecords[index];
+                            return (
+                              <td key={index} className="border border-orange-300 p-1 text-xs text-center">
+                                {testRecord ? (
+                                  <div>
+                                    <div className="font-medium">{formatDate(testRecord.testDate).split(' ')[0]}</div>
+                                    <div className="text-green-600">{testRecord.result}</div>
+                                  </div>
+                                ) : ''}
+                              </td>
+                            );
+                          })}
+                          <td className="border border-orange-300 p-2 text-xs">
+                            {testRecords.map(test => test.remarks).filter(Boolean).join('; ') || ''}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              
+              {allLaboratoryTests.length === 0 && (
                 <div className="text-center py-8">
                   <TestTube className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500 mb-2">No laboratory tests recorded</p>
                   <p className="text-sm text-gray-400">
-                    Laboratory test results will appear here once tests are performed and recorded.
+                    Laboratory test results will appear here once tests are completed.
                   </p>
                 </div>
               )}
