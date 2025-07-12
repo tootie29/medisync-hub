@@ -18,7 +18,38 @@ const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
   getBMICategory, 
   getBMICategoryColor 
 }) => {
-  if (!latestMedicalRecord) return null;
+  if (!latestMedicalRecord) {
+    return (
+      <Card className="shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Health Status</CardTitle>
+          <CardDescription>
+            No health records available
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="text-center text-gray-500 py-8">
+              <div className="text-sm">No medical records found</div>
+              <div className="text-xs mt-2">Visit the clinic to create your first health record</div>
+            </div>
+            
+            <div className="pt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full flex items-center justify-center text-medical-primary"
+                onClick={() => window.location.href = '/medical-records'}
+              >
+                View Medical Records
+                <ArrowUpRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const safeToFixed = (value: any, digits: number = 1): string => {
     if (typeof value === 'number' && !isNaN(value)) {
@@ -220,7 +251,7 @@ const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
               variant="outline" 
               size="sm" 
               className="w-full flex items-center justify-center text-medical-primary"
-              onClick={() => window.location.href = '/records'}
+              onClick={() => window.location.href = '/medical-records'}
             >
               View Medical Records
               <ArrowUpRight className="ml-1 h-4 w-4" />
