@@ -387,6 +387,32 @@ const MedicalRecords: React.FC = () => {
           vaccinations: formData.vaccinations || []
         });
         
+        console.log('=== SENDING MEDICAL RECORD TO API ===');
+        console.log('API URL:', getApiUrl());
+        console.log('Final data to send:', {
+          patientId,
+          doctorId: user?.id as string,
+          date: new Date().toISOString().split('T')[0],
+          height: height,
+          weight: weight,
+          bloodPressure: formData.bloodPressure,
+          temperature: formData.temperature,
+          diagnosis: formData.diagnosis,
+          notes: formData.notes,
+          medications: formData.medications,
+          followUpDate: formData.followUpDate,
+          certificateEnabled: formData.certificateEnabled !== undefined ? 
+            Boolean(formData.certificateEnabled) : isHealthyBmi,
+          vaccinations: formData.vaccinations || [],
+          laboratoryTests: formData.laboratoryTests || [],
+          vitalSigns: {
+            heartRate: formData.vitalSigns?.heartRate || 0,
+            bloodGlucose: formData.vitalSigns?.bloodGlucose || 0,
+            respiratoryRate: formData.vitalSigns?.respiratoryRate || 0,
+            oxygenSaturation: formData.vitalSigns?.oxygenSaturation || 0
+          }
+        });
+
         await addMedicalRecord({
           patientId,
           doctorId: user?.id as string,
