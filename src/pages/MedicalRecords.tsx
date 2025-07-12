@@ -199,29 +199,21 @@ const MedicalRecords: React.FC = () => {
     }
   }, [actionFromUrl]);
   
-  // React to URL changes - reset states when moving between different URLs
+  // React to URL changes - redirect medical staff to dashboard if no patient selected
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const currentPatientId = queryParams.get('patient');
-    const currentAction = queryParams.get('action');
     
-    // If patient ID changes or is removed, update the state accordingly
-    if (currentPatientId !== patientIdFromUrl) {
-      if (currentPatientId) {
-        setSelectedPatientId(currentPatientId);
-        fetchPatientData(currentPatientId);
-      } else if (isMedicalStaff) {
-        // If no patient ID and user is medical staff, redirect to dashboard
-        navigate('/dashboard');
-        return;
-      }
+    // If medical staff accesses medical records without a patient, redirect to dashboard
+    if (isMedicalStaff && !currentPatientId) {
+      navigate('/dashboard');
+      return;
     }
     
-    // Reset form states when navigating without query parameters
-    if (!currentPatientId && !currentAction) {
-      setIsAddingRecord(false);
-      setEditingRecordId(null);
-      resetForm();
+    // If patient ID changes, update the state accordingly
+    if (currentPatientId && currentPatientId !== patientIdFromUrl) {
+      setSelectedPatientId(currentPatientId);
+      fetchPatientData(currentPatientId);
     }
   }, [location.search, isMedicalStaff, navigate]);
   
