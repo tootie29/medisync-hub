@@ -18,11 +18,19 @@ const Profile: React.FC = () => {
   
   const userMedicalRecords = user ? getMedicalRecordsByPatientId(user.id) : [];
   
+  console.log('=== PROFILE PAGE DEBUG ===');
+  console.log('User ID:', user?.id);
+  console.log('User medical records count:', userMedicalRecords.length);
+  console.log('User medical records:', userMedicalRecords);
+  
   const latestMedicalRecord = userMedicalRecords.length > 0
     ? userMedicalRecords.sort((a, b) => 
         new Date(b.date).getTime() - new Date(a.date).getTime()
       )[0]
     : null;
+    
+  console.log('Latest medical record:', latestMedicalRecord);
+  console.log('=== END PROFILE PAGE DEBUG ===');
 
   const upcomingAppointments = userAppointments
     .filter(app => 
