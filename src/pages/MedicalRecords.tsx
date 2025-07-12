@@ -313,13 +313,25 @@ const MedicalRecords: React.FC = () => {
     e.preventDefault();
     e.stopPropagation(); // Prevent event bubbling
     
+    // Validate height and weight properly
+    const height = typeof formData.height === 'string' ? parseFloat(formData.height) : formData.height;
+    const weight = typeof formData.weight === 'string' ? parseFloat(formData.weight) : formData.weight;
+    
+    console.log('=== FORM SUBMISSION DEBUG ===');
+    console.log('Raw form data:', formData);
+    console.log('Parsed height:', height);
+    console.log('Parsed weight:', weight);
+    console.log('Height type:', typeof height);
+    console.log('Weight type:', typeof weight);
+    
     // Prevent double submission
-    if (editingRecordId === null && !formData.height && !formData.weight) {
+    if (editingRecordId === null && (!height || height <= 0) && (!weight || weight <= 0)) {
+      console.log('Preventing submission due to invalid height/weight');
       return;
     }
     
-    if (!formData.height || !formData.weight) {
-      toast.error('Height and weight are required');
+    if (!height || height <= 0 || !weight || weight <= 0) {
+      toast.error('Height and weight must be positive numbers');
       return;
     }
     
@@ -328,9 +340,14 @@ const MedicalRecords: React.FC = () => {
       return;
     }
     
-    const heightInMeters = formData.height as number / 100;
-    const calculatedBmi = (formData.weight as number) / (heightInMeters * heightInMeters);
+    const heightInMeters = height / 100;
+    const calculatedBmi = weight / (heightInMeters * heightInMeters);
     const isHealthyBmi = calculatedBmi >= 18.5 && calculatedBmi < 25;
+    
+    console.log('=== CALCULATED VALUES ===');
+    console.log('Height in meters:', heightInMeters);
+    console.log('Calculated BMI:', calculatedBmi);
+    console.log('Is healthy BMI:', isHealthyBmi);
     
     try {
       console.log('Submitting form with certificateEnabled:', formData.certificateEnabled);
@@ -374,8 +391,8 @@ const MedicalRecords: React.FC = () => {
           patientId,
           doctorId: user?.id as string,
           date: new Date().toISOString().split('T')[0],
-          height: formData.height as number,
-          weight: formData.weight as number,
+          height: height,
+          weight: weight,
           bloodPressure: formData.bloodPressure,
           temperature: formData.temperature,
           diagnosis: formData.diagnosis,
@@ -853,14 +870,14 @@ const MedicalRecords: React.FC = () => {
                           <CollapsibleContent>
                             <CardContent className="pt-6">
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4">
-                                <div>
-                                  <p className="text-sm text-gray-500">Height</p>
-                                  <p className="font-medium">{record.height} cm</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-gray-500">Weight</p>
-                                  <p className="font-medium">{record.weight} kg</p>
-                                </div>
+                                 <div>
+                                   <p className="text-sm text-gray-500">Height</p>
+                                   <p className="font-medium">{record.height && record.height > 0 ? record.height.toFixed(1) : '0.0'} cm</p>
+                                 </div>
+                                 <div>
+                                   <p className="text-sm text-gray-500">Weight</p>
+                                   <p className="font-medium">{record.weight && record.weight > 0 ? record.weight.toFixed(1) : '0.0'} kg</p>
+                                 </div>
                                 <div>
                                   <p className="text-sm text-gray-500">BMI</p>
                                   <p className="font-medium">{displayBmi}</p>
