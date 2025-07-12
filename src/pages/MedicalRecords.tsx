@@ -564,35 +564,6 @@ const MedicalRecords: React.FC = () => {
                       />
                     </div>
                     
-                    <div className="md:col-span-2 mt-2 pb-2 border-b">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="certificateEnabled" className="font-medium">Health Certificate</Label>
-                          <p className="text-sm text-gray-500">
-                            Enable health certificate for this patient
-                            {formData.height && formData.weight ? (
-                              <span className="ml-1">
-                                (BMI: {calculateBmi(formData.height as number, formData.weight as number).toFixed(1)})
-                              </span>
-                            ) : null}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="certificateEnabled"
-                            checked={formData.certificateEnabled}
-                            onCheckedChange={(checked) => {
-                              setFormData(prev => ({
-                                ...prev,
-                                certificateEnabled: checked
-                              }));
-                            }}
-                          />
-                          <Award className={`h-5 w-5 ${formData.certificateEnabled ? 'text-green-500' : 'text-gray-300'}`} />
-                        </div>
-                      </div>
-                    </div>
-                    
                     <div>
                       <Label htmlFor="bloodPressure">Blood Pressure</Label>
                       <Input
