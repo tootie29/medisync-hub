@@ -43,6 +43,7 @@ interface DataContextType {
   isLoadingMedicines: boolean;
   
   getUserById: (id: string) => User | undefined;
+  getUsersByRole: (role: string) => Promise<User[]>;
   
   getMedicalRecordsByPatientId: (patientId: string) => MedicalRecord[];
   getMedicalRecordById: (id: string) => MedicalRecord | undefined;
@@ -246,6 +247,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('No user found for ID:', id);
     console.log('Available users:', SAMPLE_USERS.map(u => ({ id: u.id, name: u.name })));
     return undefined;
+  };
+
+  const getUsersByRole = async (role: string): Promise<User[]> => {
+    try {
+      if (isPreviewMode) {
+        // Return users from SAMPLE_USERS if in preview mode
+        return SAMPLE_USERS.filter(user => user.role === role);
+      }
+      
+      const response = await apiClient.get(`/users/role/${role}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching users by role:', error);
+      // Fallback to SAMPLE_USERS if API fails
+      return SAMPLE_USERS.filter(user => user.role === role);
+    }
   };
 
   const getMedicalRecordsByPatientId = (patientId: string): MedicalRecord[] => {
@@ -683,6 +700,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoadingMedicines,
       
       getUserById,
+      getUsersByRole,
       
       getMedicalRecordsByPatientId,
       getMedicalRecordById,

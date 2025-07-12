@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Vaccination, VaccinationType, COMMON_VACCINATIONS } from '@/types/vaccination';
-import { SAMPLE_USERS } from '@/types';
+import { User } from '@/types';
+import { useData } from '@/context/DataContext';
 import { Trash2, Plus, Syringe } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,10 +22,23 @@ const VaccinationForm: React.FC<VaccinationFormProps> = ({
   onVaccinationsChange,
   disabled = false
 }) => {
-  // Get doctors and head nurses for the administered by dropdown
-  const healthcareProviders = SAMPLE_USERS.filter(user => 
-    user.role === 'doctor' || user.role === 'head nurse'
-  );
+  const { getUsersByRole } = useData();
+  const [healthcareProviders, setHealthcareProviders] = useState<User[]>([]);
+  
+  // Fetch doctors and head nurses from the database
+  useEffect(() => {
+    const fetchHealthcareProviders = async () => {
+      try {
+        const doctors = await getUsersByRole('doctor');
+        const headNurses = await getUsersByRole('head nurse');
+        setHealthcareProviders([...doctors, ...headNurses]);
+      } catch (error) {
+        console.error('Error fetching healthcare providers:', error);
+      }
+    };
+    
+    fetchHealthcareProviders();
+  }, [getUsersByRole]);
   const [newVaccination, setNewVaccination] = useState<Partial<Vaccination>>({
     name: '',
     dateAdministered: '',
