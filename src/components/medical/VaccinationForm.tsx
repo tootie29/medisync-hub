@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Vaccination, VaccinationType, COMMON_VACCINATIONS } from '@/types/vaccination';
+import { SAMPLE_USERS } from '@/types';
 import { Trash2, Plus, Syringe } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -20,6 +21,10 @@ const VaccinationForm: React.FC<VaccinationFormProps> = ({
   onVaccinationsChange,
   disabled = false
 }) => {
+  // Get doctors and head nurses for the administered by dropdown
+  const healthcareProviders = SAMPLE_USERS.filter(user => 
+    user.role === 'doctor' || user.role === 'head nurse'
+  );
   const [newVaccination, setNewVaccination] = useState<Partial<Vaccination>>({
     name: '',
     dateAdministered: '',
@@ -215,12 +220,21 @@ const VaccinationForm: React.FC<VaccinationFormProps> = ({
 
               <div>
                 <Label htmlFor="administered-by">Administered By</Label>
-                <Input
-                  id="administered-by"
-                  placeholder="Healthcare provider name"
+                <Select
                   value={newVaccination.administeredBy}
-                  onChange={(e) => setNewVaccination(prev => ({ ...prev, administeredBy: e.target.value }))}
-                />
+                  onValueChange={(value) => setNewVaccination(prev => ({ ...prev, administeredBy: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select healthcare provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {healthcareProviders.map((provider) => (
+                      <SelectItem key={provider.id} value={provider.name}>
+                        {provider.name} ({provider.role})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
