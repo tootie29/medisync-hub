@@ -58,6 +58,20 @@ class MedicalRecordModel {
           notes: vac.notes || ''
         }));
         
+        // Get laboratory tests for this record
+        const [laboratoryTests] = await pool.query(
+          'SELECT * FROM laboratory_tests WHERE medical_record_id = ?',
+          [record.id]
+        );
+        record.laboratoryTests = laboratoryTests.map(test => ({
+          id: test.id,
+          testName: test.test_name,
+          testDate: test.test_date,
+          result: test.result,
+          normalRange: test.normal_range || '',
+          remarks: test.remarks || ''
+        }));
+        
         delete record.patient_id;
         delete record.doctor_id;
         delete record.blood_pressure;
@@ -132,6 +146,20 @@ class MedicalRecordModel {
         notes: vac.notes || ''
       }));
       
+      // Get laboratory tests for this record
+      const [laboratoryTests] = await pool.query(
+        'SELECT * FROM laboratory_tests WHERE medical_record_id = ?',
+        [id]
+      );
+      record.laboratoryTests = laboratoryTests.map(test => ({
+        id: test.id,
+        testName: test.test_name,
+        testDate: test.test_date,
+        result: test.result,
+        normalRange: test.normal_range || '',
+        remarks: test.remarks || ''
+      }));
+      
       delete record.patient_id;
       delete record.doctor_id;
       delete record.blood_pressure;
@@ -199,9 +227,23 @@ class MedicalRecordModel {
           doseNumber: vac.dose_number,
           manufacturer: vac.manufacturer || '',
           lotNumber: vac.lot_number || '',
-          administeredBy: vac.administered_by || '',
-          notes: vac.notes || ''
-        }));
+        administeredBy: vac.administered_by || '',
+        notes: vac.notes || ''
+      }));
+      
+      // Get laboratory tests for this record
+      const [laboratoryTests] = await pool.query(
+        'SELECT * FROM laboratory_tests WHERE medical_record_id = ?',
+        [record.id]
+      );
+      record.laboratoryTests = laboratoryTests.map(test => ({
+        id: test.id,
+        testName: test.test_name,
+        testDate: test.test_date,
+        result: test.result,
+        normalRange: test.normal_range || '',
+        remarks: test.remarks || ''
+      }));
         
         delete record.patient_id;
         delete record.doctor_id;
@@ -561,6 +603,82 @@ class MedicalRecordModel {
         }
       }
       
+      // ***** LABORATORY TESTS HANDLING *****
+      if (recordData.laboratoryTests && Array.isArray(recordData.laboratoryTests) && recordData.laboratoryTests.length > 0) {
+        console.log('=== LABORATORY TESTS PROCESSING START ===');
+        console.log('Processing', recordData.laboratoryTests.length, 'laboratory tests');
+        console.log('Medical record ID for lab tests:', id);
+        
+        // Check if laboratory_tests table exists, create if not
+        const [labTableCheck] = await connection.query("SHOW TABLES LIKE 'laboratory_tests'");
+        if (labTableCheck.length === 0) {
+          console.log('Creating laboratory_tests table...');
+          await connection.query(`
+            CREATE TABLE IF NOT EXISTS laboratory_tests (
+              id VARCHAR(36) PRIMARY KEY,
+              medical_record_id VARCHAR(36) NOT NULL,
+              test_name VARCHAR(255) NOT NULL,
+              test_date DATE NOT NULL,
+              result TEXT NOT NULL,
+              normal_range VARCHAR(255),
+              remarks TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              FOREIGN KEY (medical_record_id) REFERENCES medical_records(id) ON DELETE CASCADE ON UPDATE CASCADE,
+              INDEX idx_laboratory_tests_medical_record (medical_record_id),
+              INDEX idx_laboratory_tests_test_name (test_name),
+              INDEX idx_laboratory_tests_test_date (test_date)
+            )
+          `);
+          console.log('Laboratory tests table created successfully');
+        }
+        
+        for (let i = 0; i < recordData.laboratoryTests.length; i++) {
+          const test = recordData.laboratoryTests[i];
+          const testId = test.id || uuidv4();
+          
+          console.log(`\n--- Processing lab test ${i + 1}/${recordData.laboratoryTests.length} ---`);
+          console.log('Test ID:', testId);
+          console.log('Test Name:', test.testName);
+          console.log('Test Date:', test.testDate);
+          console.log('Result:', test.result);
+          
+          // Validate required fields
+          if (!test.testName || !test.testDate || !test.result) {
+            console.error(`VALIDATION ERROR: Lab test ${i + 1} missing required fields`);
+            continue;
+          }
+          
+          const testInsertQuery = `INSERT INTO laboratory_tests 
+            (id, medical_record_id, test_name, test_date, result, normal_range, remarks, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+          
+          const testValues = [
+            testId,
+            id,
+            test.testName,
+            test.testDate,
+            test.result,
+            test.normalRange || null,
+            test.remarks || null,
+            now,
+            now
+          ];
+          
+          try {
+            const [testResult] = await connection.query(testInsertQuery, testValues);
+            console.log(`SUCCESS: Lab test ${i + 1} inserted:`, testResult);
+          } catch (testError) {
+            console.error(`ERROR inserting lab test ${i + 1}:`, testError);
+            throw new Error(`Failed to save lab test "${test.testName}": ${testError.message}`);
+          }
+        }
+        
+        console.log('=== LABORATORY TESTS PROCESSING END ===');
+      } else {
+        console.log('No laboratory tests to process');
+      }
+      
       await connection.commit();
       console.log('Transaction committed successfully');
       
@@ -866,6 +984,44 @@ class MedicalRecordModel {
         }
       }
       
+      // Handle laboratory tests
+      if (recordData.laboratoryTests) {
+        console.log('Updating laboratory tests for record:', id);
+        console.log('New lab test data:', recordData.laboratoryTests);
+        
+        // Delete existing laboratory tests
+        await connection.query(
+          'DELETE FROM laboratory_tests WHERE medical_record_id = ?',
+          [id]
+        );
+        
+        // Insert new laboratory tests
+        for (const test of recordData.laboratoryTests) {
+          const testId = test.id || uuidv4();
+          console.log('Inserting updated lab test:', {
+            id: testId,
+            testName: test.testName,
+            testDate: test.testDate
+          });
+          
+          await connection.query(
+            `INSERT INTO laboratory_tests 
+            (id, medical_record_id, test_name, test_date, result, normal_range, remarks, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            [
+              testId,
+              id,
+              test.testName,
+              test.testDate,
+              test.result,
+              test.normalRange || null,
+              test.remarks || null
+            ]
+          );
+          console.log('Successfully updated lab test:', test.testName);
+        }
+      }
+      
       await connection.commit();
       console.log('Transaction committed successfully');
       
@@ -889,11 +1045,13 @@ class MedicalRecordModel {
     try {
       await connection.beginTransaction();
       
+      // Delete medications
       await connection.query(
         'DELETE FROM medications WHERE medical_record_id = ?',
         [id]
       );
       
+      // Delete vital signs
       await connection.query(
         'DELETE FROM vital_signs WHERE medical_record_id = ?',
         [id]
@@ -905,6 +1063,13 @@ class MedicalRecordModel {
         [id]
       );
       
+      // Delete laboratory tests
+      await connection.query(
+        'DELETE FROM laboratory_tests WHERE medical_record_id = ?',
+        [id]
+      );
+      
+      // Delete medical record
       const [result] = await connection.query(
         'DELETE FROM medical_records WHERE id = ?',
         [id]
