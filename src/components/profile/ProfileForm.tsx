@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/context/AuthContext';
 import ProfileHeader from './ProfileHeader';
+import { differenceInYears } from 'date-fns';
 
 const ProfileForm: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -27,7 +28,16 @@ const ProfileForm: React.FC = () => {
     gender: user?.gender || undefined,
     address: user?.address || '',
     emergencyContact: user?.emergencyContact || '',
+    studentId: user?.studentId || '',
+    faculty: user?.faculty || '',
+    course: user?.course || '',
   });
+
+  // Calculate age from date of birth
+  const calculateAge = (dateOfBirth: string): number => {
+    if (!dateOfBirth) return 0;
+    return differenceInYears(new Date(), new Date(dateOfBirth));
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
@@ -168,6 +178,17 @@ const ProfileForm: React.FC = () => {
           </div>
 
           <div className="form-group">
+            <Label htmlFor="age">Age</Label>
+            <Input
+              id="age"
+              name="age"
+              value={calculateAge(formData.dateOfBirth || '')}
+              disabled={true}
+              className="bg-gray-50"
+            />
+          </div>
+
+          <div className="form-group">
             <Label htmlFor="gender">Gender</Label>
             <Select
               value={formData.gender}
@@ -184,6 +205,43 @@ const ProfileForm: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {user?.role === 'student' && (
+            <>
+              <div className="form-group">
+                <Label htmlFor="studentId">Student ID</Label>
+                <Input
+                  id="studentId"
+                  name="studentId"
+                  value={formData.studentId}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div className="form-group">
+                <Label htmlFor="faculty">Faculty/College/Department</Label>
+                <Input
+                  id="faculty"
+                  name="faculty"
+                  value={formData.faculty}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div className="form-group">
+                <Label htmlFor="course">Course</Label>
+                <Input
+                  id="course"
+                  name="course"
+                  value={formData.course}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                />
+              </div>
+            </>
+          )}
 
           <div className="form-group md:col-span-2">
             <Label htmlFor="address">Address</Label>
@@ -227,6 +285,9 @@ const ProfileForm: React.FC = () => {
                     gender: user?.gender || undefined,
                     address: user?.address || '',
                     emergencyContact: user?.emergencyContact || '',
+                    studentId: user?.studentId || '',
+                    faculty: user?.faculty || '',
+                    course: user?.course || '',
                   });
                   setNameError(null);
                   setPhoneError(null);

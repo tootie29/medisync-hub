@@ -56,6 +56,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
     emergencyContact: '',
     studentId: '',
     department: '',
+    course: '',
     staffId: '',
     position: '',
     faculty: '',
@@ -217,6 +218,11 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
       toast.error('Please enter your Student ID');
       isValid = false;
     }
+
+    if (role === 'student' && !formData.course) {
+      toast.error('Please enter your Course');
+      isValid = false;
+    }
     
     if (role === 'staff' && !formData.staffId) {
       toast.error('Please enter your Staff ID');
@@ -264,7 +270,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
           consentGiven: formData.consentGiven,
           ...(role === 'student' && {
             studentId: formData.studentId,
-            department: formData.department,
+            course: formData.course,
           }),
           ...(role === 'staff' && {
             staffId: formData.staffId,
@@ -509,13 +515,14 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ role, onSuccess }) 
             </div>
 
             <div>
-              <Label htmlFor="department">Department</Label>
+              <Label htmlFor="course">Course *</Label>
               <Input
-                id="department"
-                name="department"
+                id="course"
+                name="course"
                 type="text"
-                value={formData.department}
+                value={formData.course}
                 onChange={handleChange}
+                required
                 className="auth-input mt-1"
               />
             </div>

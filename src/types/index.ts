@@ -20,6 +20,7 @@ export interface User {
   emergencyContact?: string;
   studentId?: string;
   department?: string;
+  course?: string;
   staffId?: string;
   position?: string;
   faculty?: string;
