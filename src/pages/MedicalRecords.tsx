@@ -309,8 +309,14 @@ const MedicalRecords: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event bubbling
+    
+    // Prevent double submission
+    if (editingRecordId === null && !formData.height && !formData.weight) {
+      return;
+    }
     
     if (!formData.height || !formData.weight) {
       toast.error('Height and weight are required');
@@ -364,7 +370,7 @@ const MedicalRecords: React.FC = () => {
           vaccinations: formData.vaccinations || []
         });
         
-        addMedicalRecord({
+        await addMedicalRecord({
           patientId,
           doctorId: user?.id as string,
           date: new Date().toISOString().split('T')[0],
@@ -389,8 +395,10 @@ const MedicalRecords: React.FC = () => {
         });
       }
       
+      // Reset form and state
       setIsAddingRecord(false);
       resetForm();
+      toast.success(editingRecordId ? 'Medical record updated successfully' : 'Medical record added successfully');
     } catch (error) {
       console.error('Error saving medical record:', error);
       toast.error('An error occurred while saving the medical record');
