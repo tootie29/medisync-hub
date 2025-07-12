@@ -91,6 +91,7 @@ export interface CreateMedicalRecordInput {
   type?: string;
   gender?: string;
   vaccinations?: Vaccination[];
+  laboratoryTests?: LaboratoryTest[];
 }
 
 export const SAMPLE_USERS: User[] = [
@@ -271,6 +272,15 @@ export interface Vaccination {
   notes?: string;
 }
 
+export interface LaboratoryTest {
+  id: string;
+  testName: string;
+  testDate: string;
+  result: string;
+  remarks?: string;
+  normalRange?: string;
+}
+
 export interface MedicalRecord {
   id: string;
   patientId: string;
@@ -293,4 +303,5 @@ export interface MedicalRecord {
   type?: string;
   gender?: string;
   vaccinations?: Vaccination[];
+  laboratoryTests?: LaboratoryTest[];
 }

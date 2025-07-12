@@ -19,6 +19,7 @@ import {
   Activity,
   FileText,
   Syringe,
+  TestTube,
   Info
 } from 'lucide-react';
 import { formatDate } from '@/utils/helpers';
@@ -140,6 +141,13 @@ const OrangeCard: React.FC = () => {
     ? medicalRecords
         .flatMap(record => record.vaccinations || [])
         .sort((a, b) => new Date(b.dateAdministered).getTime() - new Date(a.dateAdministered).getTime())
+    : [];
+
+  // Collect all laboratory tests from all records
+  const allLaboratoryTests = medicalRecords && medicalRecords.length > 0
+    ? medicalRecords
+        .flatMap(record => record.laboratoryTests || [])
+        .sort((a, b) => new Date(b.testDate).getTime() - new Date(a.testDate).getTime())
     : [];
 
   return (
@@ -410,6 +418,45 @@ const OrangeCard: React.FC = () => {
             </Card>
           )}
 
+          {/* Laboratory Tests */}
+          {allLaboratoryTests.length > 0 && (
+            <Card className="border-orange-200 shadow-sm">
+              <CardHeader className="bg-orange-50">
+                <CardTitle className="flex items-center gap-2 text-orange-700">
+                  <TestTube className="h-5 w-5" />
+                  Laboratory Test Results
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  {allLaboratoryTests.map((test, index) => (
+                    <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold text-blue-700">{test.testName}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {formatDate(test.testDate)}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <p><strong>Result:</strong> {test.result}</p>
+                        {test.normalRange && (
+                          <p><strong>Normal Range:</strong> {test.normalRange}</p>
+                        )}
+                      </div>
+                      
+                      {test.remarks && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          <strong>Remarks:</strong> {test.remarks}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Medical Records Summary */}
           <Card className="border-orange-200 shadow-sm">
             <CardHeader className="bg-orange-50">
@@ -419,7 +466,7 @@ const OrangeCard: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center mb-6">
                 <div>
                   <div className="text-2xl font-bold text-orange-600">
                     {medicalRecords ? medicalRecords.length : 0}
@@ -431,6 +478,12 @@ const OrangeCard: React.FC = () => {
                     {allVaccinations.length}
                   </div>
                   <div className="text-sm text-gray-600">Vaccinations</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {allLaboratoryTests.length}
+                  </div>
+                  <div className="text-sm text-gray-600">Lab Tests</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-orange-600">

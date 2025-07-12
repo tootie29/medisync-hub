@@ -8,15 +8,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
-import { MedicalRecord, SAMPLE_USERS, VitalSigns, Vaccination } from '@/types';
+import { MedicalRecord, SAMPLE_USERS, VitalSigns, Vaccination, LaboratoryTest } from '@/types';
 import { format } from 'date-fns';
-import { Activity, Calendar, FileText, Filter, Award, User, Plus, ChevronDown, ChevronUp, Syringe } from 'lucide-react';
+import { Activity, Calendar, FileText, Filter, Award, User, Plus, ChevronDown, ChevronUp, Syringe, TestTube } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import VaccinationForm from '@/components/medical/VaccinationForm';
+import LaboratoryTestForm from '@/components/medical/LaboratoryTestForm';
 
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
@@ -61,6 +62,7 @@ const MedicalRecords: React.FC = () => {
     followUpDate: '',
     certificateEnabled: false,
     vaccinations: [],
+    laboratoryTests: [],
     vitalSigns: {
       heartRate: 0,
       bloodGlucose: 0,
@@ -274,6 +276,7 @@ const MedicalRecords: React.FC = () => {
         followUpDate: record.followUpDate || '',
         certificateEnabled: record.certificateEnabled !== undefined ? record.certificateEnabled : false,
         vaccinations: record.vaccinations || [],
+        laboratoryTests: record.laboratoryTests || [],
         vitalSigns: {
           heartRate: record.vitalSigns?.heartRate || 0,
           bloodGlucose: record.vitalSigns?.bloodGlucose || 0,
@@ -294,6 +297,7 @@ const MedicalRecords: React.FC = () => {
         followUpDate: '',
         certificateEnabled: false,
         vaccinations: [],
+        laboratoryTests: [],
         vitalSigns: {
           heartRate: 0,
           bloodGlucose: 0,
@@ -342,7 +346,8 @@ const MedicalRecords: React.FC = () => {
           patientId: selectedPatientId,
           bmi: calculatedBmi,
           certificateEnabled: Boolean(formData.certificateEnabled),
-          vaccinations: formData.vaccinations || []
+          vaccinations: formData.vaccinations || [],
+          laboratoryTests: formData.laboratoryTests || []
         });
         setEditingRecordId(null);
       } else {
@@ -374,6 +379,7 @@ const MedicalRecords: React.FC = () => {
           certificateEnabled: formData.certificateEnabled !== undefined ? 
             Boolean(formData.certificateEnabled) : isHealthyBmi,
           vaccinations: formData.vaccinations || [],
+          laboratoryTests: formData.laboratoryTests || [],
           vitalSigns: {
             heartRate: formData.vitalSigns?.heartRate || 0,
             bloodGlucose: formData.vitalSigns?.bloodGlucose || 0,
@@ -719,6 +725,17 @@ const MedicalRecords: React.FC = () => {
                     />
                   </div>
 
+                  {/* Add Laboratory Test Form */}
+                  <div className="mt-6 border-t pt-6">
+                    <LaboratoryTestForm
+                      laboratoryTests={formData.laboratoryTests || []}
+                      onLaboratoryTestsChange={(laboratoryTests) => 
+                        setFormData(prev => ({ ...prev, laboratoryTests }))
+                      }
+                      disabled={false}
+                    />
+                  </div>
+
                   <div className="flex justify-end gap-2 mt-6">
                     <Button
                       type="button"
@@ -921,7 +938,7 @@ const MedicalRecords: React.FC = () => {
                                   </div>
                                 )}
                                 
-                                {/* Display vaccinations if they exist */}
+                                 {/* Display vaccinations if they exist */}
                                 {record.vaccinations && record.vaccinations.length > 0 && (
                                   <div className="md:col-span-2 mt-4 border-t pt-4">
                                     <div className="flex items-center gap-2 mb-3">
@@ -943,6 +960,36 @@ const MedicalRecords: React.FC = () => {
                                               )}
                                               {vaccination.administeredBy && (
                                                 <p className="text-sm text-green-600">Administered by: {vaccination.administeredBy}</p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Display laboratory tests if they exist */}
+                                {record.laboratoryTests && record.laboratoryTests.length > 0 && (
+                                  <div className="md:col-span-2 mt-4 border-t pt-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <TestTube className="h-4 w-4 text-blue-500" />
+                                      <p className="text-sm text-gray-500 font-medium">Laboratory Tests</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {record.laboratoryTests.map((test, index) => (
+                                        <div key={test.id || index} className="bg-blue-50 p-3 rounded-md border-l-4 border-l-blue-500">
+                                          <div className="flex justify-between items-start">
+                                            <div>
+                                              <p className="font-medium text-blue-800">{test.testName}</p>
+                                              <p className="text-sm text-blue-600">
+                                                Date: {format(new Date(test.testDate), 'PPP')} • Result: {test.result}
+                                              </p>
+                                              {test.normalRange && (
+                                                <p className="text-sm text-blue-600">Normal Range: {test.normalRange}</p>
+                                              )}
+                                              {test.remarks && (
+                                                <p className="text-sm text-blue-600">Remarks: {test.remarks}</p>
                                               )}
                                             </div>
                                           </div>
