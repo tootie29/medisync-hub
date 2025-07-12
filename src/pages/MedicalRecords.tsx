@@ -872,11 +872,23 @@ const MedicalRecords: React.FC = () => {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4">
                                  <div>
                                    <p className="text-sm text-gray-500">Height</p>
-                                   <p className="font-medium">{record.height && record.height > 0 ? record.height.toFixed(1) : '0.0'} cm</p>
+                                   <p className="font-medium">{
+                                     typeof record.height === 'number' && record.height > 0 
+                                       ? record.height.toFixed(1) 
+                                       : typeof record.height === 'string' && !isNaN(parseFloat(record.height)) && parseFloat(record.height) > 0
+                                         ? parseFloat(record.height).toFixed(1)
+                                         : '0.0'
+                                   } cm</p>
                                  </div>
                                  <div>
                                    <p className="text-sm text-gray-500">Weight</p>
-                                   <p className="font-medium">{record.weight && record.weight > 0 ? record.weight.toFixed(1) : '0.0'} kg</p>
+                                   <p className="font-medium">{
+                                     typeof record.weight === 'number' && record.weight > 0 
+                                       ? record.weight.toFixed(1) 
+                                       : typeof record.weight === 'string' && !isNaN(parseFloat(record.weight)) && parseFloat(record.weight) > 0
+                                         ? parseFloat(record.weight).toFixed(1)
+                                         : '0.0'
+                                   } kg</p>
                                  </div>
                                 <div>
                                   <p className="text-sm text-gray-500">BMI</p>
