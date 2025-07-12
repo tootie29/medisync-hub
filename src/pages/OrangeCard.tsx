@@ -419,15 +419,15 @@ const OrangeCard: React.FC = () => {
           )}
 
           {/* Laboratory Tests */}
-          {allLaboratoryTests.length > 0 && (
-            <Card className="border-orange-200 shadow-sm">
-              <CardHeader className="bg-orange-50">
-                <CardTitle className="flex items-center gap-2 text-orange-700">
-                  <TestTube className="h-5 w-5" />
-                  Laboratory Test Results
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
+          <Card className="border-orange-200 shadow-sm">
+            <CardHeader className="bg-orange-50">
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <TestTube className="h-5 w-5" />
+                Laboratory Test Results
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {allLaboratoryTests.length > 0 ? (
                 <div className="space-y-4">
                   {allLaboratoryTests.map((test, index) => (
                     <div key={index} className="border rounded-lg p-4 bg-gray-50">
@@ -453,9 +453,17 @@ const OrangeCard: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <div className="text-center py-8">
+                  <TestTube className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-2">No laboratory tests recorded</p>
+                  <p className="text-sm text-gray-400">
+                    Laboratory test results will appear here once tests are performed and recorded.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Medical Records Summary */}
           <Card className="border-orange-200 shadow-sm">
