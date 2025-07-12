@@ -186,14 +186,44 @@ const MedicalRecords: React.FC = () => {
     }
   };
   
-  // Handle 'add' action from URL
+  // Handle 'add' action from URL and react to URL parameter changes
   useEffect(() => {
     if (actionFromUrl === 'add') {
       console.log("Setting isAddingRecord to true based on URL action param");
       setIsAddingRecord(true);
       resetForm();
+    } else {
+      // If no action parameter, we should show the list view
+      setIsAddingRecord(false);
+      setEditingRecordId(null);
     }
   }, [actionFromUrl]);
+  
+  // React to URL changes - reset states when moving between different URLs
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const currentPatientId = queryParams.get('patient');
+    const currentAction = queryParams.get('action');
+    
+    // If patient ID changes or is removed, update the state accordingly
+    if (currentPatientId !== patientIdFromUrl) {
+      if (currentPatientId) {
+        setSelectedPatientId(currentPatientId);
+        fetchPatientData(currentPatientId);
+      } else if (isMedicalStaff) {
+        // If no patient ID and user is medical staff, redirect to dashboard
+        navigate('/dashboard');
+        return;
+      }
+    }
+    
+    // Reset form states when navigating without query parameters
+    if (!currentPatientId && !currentAction) {
+      setIsAddingRecord(false);
+      setEditingRecordId(null);
+      resetForm();
+    }
+  }, [location.search, isMedicalStaff, navigate]);
   
   // Look up the selected patient - this handles the case with prefixed IDs
   const selectedPatient = selectedPatientId ? getUserById(selectedPatientId) : null;
