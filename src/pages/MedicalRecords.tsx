@@ -998,6 +998,7 @@ const MedicalRecords: React.FC = () => {
                         <TableHead>BMI</TableHead>
                         <TableHead>Certificate</TableHead>
                         <TableHead>Diagnosis</TableHead>
+                        <TableHead>Vaccinations</TableHead>
                         <TableHead>Follow-up</TableHead>
                         {isDoctor && <TableHead className="text-right">Actions</TableHead>}
                       </TableRow>
@@ -1033,6 +1034,12 @@ const MedicalRecords: React.FC = () => {
                               }
                             </TableCell>
                             <TableCell>{record.diagnosis || 'N/A'}</TableCell>
+                            <TableCell>
+                              {record.vaccinations && record.vaccinations.length > 0 
+                                ? `${record.vaccinations.length} vaccination${record.vaccinations.length > 1 ? 's' : ''}`
+                                : 'None'
+                              }
+                            </TableCell>
                             <TableCell>
                               {record.followUpDate 
                                 ? format(new Date(record.followUpDate), 'PPP')

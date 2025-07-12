@@ -389,10 +389,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           bmi,
-          certificateEnabled
+          certificateEnabled,
+          vaccinations: record.vaccinations || []
         };
         
         console.log('Created mock record with certificate status:', mockRecord.certificateEnabled);
+        console.log('Mock record vaccinations:', mockRecord.vaccinations);
         setMedicalRecords(prev => [...prev, mockRecord]);
         toast.success('Medical record added successfully (preview mode)');
         
