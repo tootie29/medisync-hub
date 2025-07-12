@@ -335,7 +335,7 @@ const MedicalHistoryCard: React.FC<MedicalHistoryCardProps> = ({
               <Button 
                 variant="link" 
                 className="text-medical-primary"
-                onClick={() => window.location.href = '/records'}
+                onClick={() => window.location.href = '/medical-records'}
               >
                 View all medical records
               </Button>
