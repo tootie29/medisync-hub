@@ -152,6 +152,15 @@ const OrangeCard: React.FC = () => {
         .sort((a, b) => new Date(b.dateAdministered).getTime() - new Date(a.dateAdministered).getTime())
     : [];
 
+  console.log('=== VACCINATION DEBUG ===');
+  console.log('Total vaccination records:', allVaccinations.length);
+  console.log('All vaccinations:', allVaccinations.map(v => ({
+    name: v.name,
+    dateAdministered: v.dateAdministered,
+    doseNumber: v.doseNumber,
+    lotNumber: v.lotNumber
+  })));
+
   // Collect all laboratory tests from all records
   const allLaboratoryTests = medicalRecords && medicalRecords.length > 0
     ? medicalRecords
@@ -420,12 +429,17 @@ const OrangeCard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {['ANTI RABIES', 'FLU VACCINE', 'HEPATITIS A6', 'HEPATITIS B', 'PNEUMOVAC', 'TETANUS TOXOID'].map((vaccineName) => {
-                      const vaccineRecords = allVaccinations.filter(v => 
-                        v.name.toUpperCase().includes(vaccineName.replace('A6', 'A'))
-                      );
-                      
-                      return (
+                     {['ANTI RABIES', 'FLU VACCINE', 'HEPATITIS A6', 'HEPATITIS B', 'PNEUMOVAC', 'TETANUS TOXOID'].map((vaccineName) => {
+                       const vaccineRecords = allVaccinations.filter(v => 
+                         v.name.toUpperCase().includes(vaccineName.replace('A6', 'A'))
+                       );
+                       
+                       console.log(`=== VACCINE FILTER DEBUG for ${vaccineName} ===`);
+                       console.log('Search term:', vaccineName.replace('A6', 'A'));
+                       console.log('Matching records:', vaccineRecords.length);
+                       console.log('Available vaccination names:', allVaccinations.map(v => v.name));
+                       
+                       return (
                         <React.Fragment key={vaccineName}>
                           <tr>
                             <td className="border border-orange-300 p-2 font-medium text-sm bg-orange-50" rowSpan={3}>
