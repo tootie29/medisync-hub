@@ -200,19 +200,23 @@ const OrangeCard: React.FC = () => {
                     <Badge variant="outline" className="mb-2 capitalize">
                       {userDetails.role}
                     </Badge>
-                    {userDetails.role === 'student' && (
-                      <div className="text-sm text-gray-600 space-y-1 mb-2">
-                        {userDetails.course && (
-                          <p><strong>Course:</strong> {userDetails.course}</p>
-                        )}
-                        {userDetails.department && (
-                          <p><strong>Department:</strong> {userDetails.department}</p>
-                        )}
-                        {userDetails.faculty && (
-                          <p><strong>Faculty:</strong> {userDetails.faculty}</p>
-                        )}
-                      </div>
-                    )}
+                    
+                    {/* Show course/department for all users to debug */}
+                    <div className="text-sm text-gray-600 space-y-1 mb-2">
+                      {userDetails.course && (
+                        <p><strong>Course:</strong> {userDetails.course}</p>
+                      )}
+                      {userDetails.department && (
+                        <p><strong>Department:</strong> {userDetails.department}</p>
+                      )}
+                      {userDetails.faculty && (
+                        <p><strong>Faculty:</strong> {userDetails.faculty}</p>
+                      )}
+                      {/* Debug info */}
+                      <p className="text-xs text-red-500">
+                        DEBUG: Role={userDetails.role}, Course={userDetails.course || 'null'}, Dept={userDetails.department || 'null'}
+                      </p>
+                    </div>
                     
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
