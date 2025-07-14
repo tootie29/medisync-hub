@@ -543,11 +543,14 @@ const OrangeCard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {['Chest X-ray', 'Complete Blood Count', 'Urinalysis', 'Fecalysis', 'Hepatitis B Screening'].map((testName) => {
-                      const testRecords = allLaboratoryTests.filter(test => 
-                        test.testName.toLowerCase().includes(testName.toLowerCase()) ||
-                        testName.toLowerCase().includes(test.testName.toLowerCase())
-                      ).slice(0, 5); // Limit to 5 most recent results
+                     {['Chest X-ray', 'Complete Blood Count', 'Urinalysis', 'Fecalysis', 'Hepatitis B Screening'].map((testName) => {
+                       const testRecords = allLaboratoryTests
+                         .filter(test => 
+                           test.testName.toLowerCase().includes(testName.toLowerCase()) ||
+                           testName.toLowerCase().includes(test.testName.toLowerCase())
+                         )
+                         .sort((a, b) => new Date(a.testDate).getTime() - new Date(b.testDate).getTime()) // Sort by date (oldest first)
+                         .slice(0, 5); // Show up to 5 records for each test type
                       
                       return (
                         <tr key={testName}>
