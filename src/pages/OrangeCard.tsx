@@ -189,6 +189,16 @@ const OrangeCard: React.FC = () => {
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h3 className="font-semibold text-lg">{userDetails.name}</h3>
+                    {userDetails.role === 'student' && (userDetails.course || userDetails.department) && (
+                      <p className="text-sm text-gray-600 mb-1">
+                        {[userDetails.course, userDetails.department].filter(Boolean).join(' - ')}
+                      </p>
+                    )}
+                    {userDetails.studentId && (
+                      <p className="text-sm text-gray-600 mb-2">
+                        <strong>Student ID:</strong> {userDetails.studentId}
+                      </p>
+                    )}
                     <Badge variant="outline" className="mb-2 capitalize">
                       {userDetails.role}
                     </Badge>
@@ -215,10 +225,7 @@ const OrangeCard: React.FC = () => {
                       <span>{userDetails.address || 'Address not provided'}</span>
                     </div>
                     
-                    {userDetails.studentId && (
-                      <p><strong>Student ID:</strong> {userDetails.studentId}</p>
-                    )}
-                    {userDetails.department && (
+                    {userDetails.department && userDetails.role !== 'student' && (
                       <p><strong>Department:</strong> {userDetails.department}</p>
                     )}
                     {userDetails.staffId && (
