@@ -429,21 +429,44 @@ const OrangeCard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                     {['ANTI RABIES', 'FLU VACCINE', 'HEPATITIS A6', 'HEPATITIS B', 'PNEUMOVAC', 'TETANUS TOXOID'].map((vaccineName) => {
+                     {[
+                       'COVID-19',
+                       'HEPATITIS B', 
+                       'INFLUENZA (FLU)',
+                       'TETANUS',
+                       'MMR (MEASLES, MUMPS, RUBELLA)',
+                       'HPV (HUMAN PAPILLOMAVIRUS)',
+                       'VARICELLA (CHICKENPOX)',
+                       'PNEUMOCOCCAL',
+                       'MENINGOCOCCAL',
+                       'TUBERCULOSIS (BCG)'
+                     ].map((vaccineName) => {
                        // Find records that match this vaccine type with flexible matching
                        const vaccineRecords = allVaccinations.filter(v => {
                          const vName = v.name.toUpperCase().trim();
-                         const searchName = vaccineName.replace('A6', 'A').toUpperCase().trim();
+                         const searchName = vaccineName.toUpperCase().trim();
                          
                          // Flexible matching for different naming conventions
                          return vName.includes(searchName) || 
                                 searchName.includes(vName) ||
                                 vName.includes(searchName.split(' ')[0]) ||
+                                (searchName.includes('COVID') && vName.includes('COVID')) ||
                                 (searchName.includes('HEPATITIS') && vName.includes('HEPATITIS')) ||
-                                (searchName.includes('RABIES') && vName.includes('RABIES')) ||
+                                (searchName.includes('INFLUENZA') && (vName.includes('FLU') || vName.includes('INFLUENZA'))) ||
                                 (searchName.includes('FLU') && (vName.includes('FLU') || vName.includes('INFLUENZA'))) ||
-                                (searchName.includes('PNEUMO') && vName.includes('PNEUMO')) ||
-                                (searchName.includes('TETANUS') && vName.includes('TETANUS'));
+                                (searchName.includes('TETANUS') && vName.includes('TETANUS')) ||
+                                (searchName.includes('MMR') && vName.includes('MMR')) ||
+                                (searchName.includes('MEASLES') && vName.includes('MEASLES')) ||
+                                (searchName.includes('MUMPS') && vName.includes('MUMPS')) ||
+                                (searchName.includes('RUBELLA') && vName.includes('RUBELLA')) ||
+                                (searchName.includes('HPV') && vName.includes('HPV')) ||
+                                (searchName.includes('PAPILLOMAVIRUS') && vName.includes('PAPILLOMAVIRUS')) ||
+                                (searchName.includes('VARICELLA') && (vName.includes('VARICELLA') || vName.includes('CHICKENPOX'))) ||
+                                (searchName.includes('CHICKENPOX') && (vName.includes('VARICELLA') || vName.includes('CHICKENPOX'))) ||
+                                (searchName.includes('PNEUMOCOCCAL') && (vName.includes('PNEUMOCOCCAL') || vName.includes('PNEUMO'))) ||
+                                (searchName.includes('MENINGOCOCCAL') && (vName.includes('MENINGOCOCCAL') || vName.includes('MENINGO'))) ||
+                                (searchName.includes('TUBERCULOSIS') && (vName.includes('TUBERCULOSIS') || vName.includes('BCG'))) ||
+                                (searchName.includes('BCG') && (vName.includes('TUBERCULOSIS') || vName.includes('BCG')));
                        });
                        
                        return (
