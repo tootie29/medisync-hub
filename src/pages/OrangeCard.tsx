@@ -433,16 +433,13 @@ const OrangeCard: React.FC = () => {
                        // Get all unique vaccine names from the patient's vaccination records
                        const uniqueVaccineNames = [...new Set(allVaccinations.map(v => v.name))];
                        
-                       // If no vaccinations, show the standard vaccine types
-                       const vaccinesToShow = uniqueVaccineNames.length > 0 
-                         ? uniqueVaccineNames 
-                         : ['ANTI RABIES', 'FLU VACCINE', 'HEPATITIS A6', 'HEPATITIS B', 'PNEUMOVAC', 'TETANUS TOXOID'];
-                       
                        console.log('=== DYNAMIC VACCINATION TABLE ===');
+                       console.log('Total vaccinations:', allVaccinations.length);
+                       console.log('All vaccination records:', allVaccinations);
                        console.log('Unique vaccine names:', uniqueVaccineNames);
-                       console.log('Vaccines to show:', vaccinesToShow);
                        
-                       return vaccinesToShow.map((vaccineName) => {
+                       // Always show the vaccines the patient actually has, or empty table if none
+                       return uniqueVaccineNames.map((vaccineName) => {
                          // Find all records for this specific vaccine name
                          const vaccineRecords = allVaccinations.filter(v => 
                            v.name.toUpperCase().trim() === vaccineName.toUpperCase().trim()
