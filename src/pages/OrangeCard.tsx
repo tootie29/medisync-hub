@@ -477,7 +477,8 @@ const OrangeCard: React.FC = () => {
                              </td>
                              <td className="border border-orange-300 p-2 text-xs text-center">DATE GIVEN</td>
                              {[1, 2, 3, 4, 5].map(doseNum => {
-                               const doseRecord = vaccineRecords.find(v => v.doseNumber === doseNum);
+                               // Get the record for this dose position (not necessarily by doseNumber)
+                               const doseRecord = vaccineRecords[doseNum - 1]; // Use array index for dose position
                                return (
                                  <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
                                    {doseRecord ? formatDate(doseRecord.dateAdministered).split(' ')[0] : ''}
@@ -489,23 +490,26 @@ const OrangeCard: React.FC = () => {
                              </td>
                            </tr>
                            <tr>
-                             <td className="border border-orange-300 p-2 text-xs text-center">SIG.</td>
-                             {[1, 2, 3, 4, 5].map(doseNum => (
-                               <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
-                                 {vaccineRecords.find(v => v.doseNumber === doseNum) ? '✓' : ''}
-                               </td>
-                             ))}
-                           </tr>
-                           <tr>
-                             <td className="border border-orange-300 p-2 text-xs text-center">LOT</td>
-                             {[1, 2, 3, 4, 5].map(doseNum => {
-                               const doseRecord = vaccineRecords.find(v => v.doseNumber === doseNum);
-                               return (
-                                 <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
-                                   {doseRecord?.lotNumber || ''}
-                                 </td>
-                               );
-                             })}
+                              <td className="border border-orange-300 p-2 text-xs text-center">SIG.</td>
+                              {[1, 2, 3, 4, 5].map(doseNum => {
+                                const doseRecord = vaccineRecords[doseNum - 1]; // Use array index for position
+                                return (
+                                  <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
+                                    {doseRecord ? '✓' : ''}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                            <tr>
+                              <td className="border border-orange-300 p-2 text-xs text-center">LOT</td>
+                              {[1, 2, 3, 4, 5].map(doseNum => {
+                                const doseRecord = vaccineRecords[doseNum - 1]; // Use array index for position
+                                return (
+                                  <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
+                                    {doseRecord?.lotNumber || ''}
+                                  </td>
+                                );
+                              })}
                            </tr>
                          </React.Fragment>
                        );
