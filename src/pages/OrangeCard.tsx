@@ -429,74 +429,74 @@ const OrangeCard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                     {['ANTI RABIES', 'FLU VACCINE', 'HEPATITIS A6', 'HEPATITIS B', 'PNEUMOVAC', 'TETANUS TOXOID'].map((vaccineName) => {
-                       // More flexible matching logic
-                       const vaccineRecords = allVaccinations.filter(v => {
-                         const vName = v.name.toUpperCase().trim();
-                         const searchName = vaccineName.replace('A6', 'A').toUpperCase().trim();
+                     {(() => {
+                       // Get all unique vaccine names from the patient's vaccination records
+                       const uniqueVaccineNames = [...new Set(allVaccinations.map(v => v.name))];
+                       
+                       // If no vaccinations, show the standard vaccine types
+                       const vaccinesToShow = uniqueVaccineNames.length > 0 
+                         ? uniqueVaccineNames 
+                         : ['ANTI RABIES', 'FLU VACCINE', 'HEPATITIS A6', 'HEPATITIS B', 'PNEUMOVAC', 'TETANUS TOXOID'];
+                       
+                       console.log('=== DYNAMIC VACCINATION TABLE ===');
+                       console.log('Unique vaccine names:', uniqueVaccineNames);
+                       console.log('Vaccines to show:', vaccinesToShow);
+                       
+                       return vaccinesToShow.map((vaccineName) => {
+                         // Find all records for this specific vaccine name
+                         const vaccineRecords = allVaccinations.filter(v => 
+                           v.name.toUpperCase().trim() === vaccineName.toUpperCase().trim()
+                         );
                          
-                         // Try multiple matching strategies
-                         return vName.includes(searchName) || 
-                                searchName.includes(vName) ||
-                                vName.includes(searchName.split(' ')[0]) || // Match first word
-                                (searchName.includes('HEPATITIS') && vName.includes('HEPATITIS')) ||
-                                (searchName.includes('RABIES') && vName.includes('RABIES')) ||
-                                (searchName.includes('FLU') && vName.includes('FLU')) ||
-                                (searchName.includes('PNEUMO') && vName.includes('PNEUMO')) ||
-                                (searchName.includes('TETANUS') && vName.includes('TETANUS'));
+                         console.log(`Records for ${vaccineName}:`, vaccineRecords.length);
+                         
+                         return (
+                           <React.Fragment key={vaccineName}>
+                             <tr>
+                               <td className="border border-orange-300 p-2 font-medium text-sm bg-orange-50" rowSpan={3}>
+                                 {vaccineName}
+                               </td>
+                               <td className="border border-orange-300 p-2 text-xs text-center">DATE GIVEN</td>
+                               {[1, 2, 3, 4, 5].map(doseNum => {
+                                 const doseRecord = vaccineRecords.find(v => v.doseNumber === doseNum);
+                                 return (
+                                   <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
+                                     {doseRecord ? formatDate(doseRecord.dateAdministered).split(' ')[0] : ''}
+                                   </td>
+                                 );
+                               })}
+                               <td className="border border-orange-300 p-2 text-xs" rowSpan={3}>
+                                 {vaccineRecords.map(v => v.notes).filter(Boolean).join('; ') || ''}
+                               </td>
+                             </tr>
+                             <tr>
+                               <td className="border border-orange-300 p-2 text-xs text-center">SIG.</td>
+                               {[1, 2, 3, 4, 5].map(doseNum => (
+                                 <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
+                                   {vaccineRecords.find(v => v.doseNumber === doseNum) ? '✓' : ''}
+                                 </td>
+                               ))}
+                             </tr>
+                             <tr>
+                               <td className="border border-orange-300 p-2 text-xs text-center">LOT</td>
+                               {[1, 2, 3, 4, 5].map(doseNum => {
+                                 const doseRecord = vaccineRecords.find(v => v.doseNumber === doseNum);
+                                 return (
+                                   <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
+                                     {doseRecord?.lotNumber || ''}
+                                   </td>
+                                 );
+                               })}
+                             </tr>
+                           </React.Fragment>
+                         );
                        });
-                       
-                       console.log(`=== VACCINE FILTER DEBUG for ${vaccineName} ===`);
-                       console.log('Search term:', vaccineName.replace('A6', 'A'));
-                       console.log('Matching records:', vaccineRecords.length);
-                       console.log('Available vaccination names:', allVaccinations.map(v => v.name));
-                       
-                       return (
-                        <React.Fragment key={vaccineName}>
-                          <tr>
-                            <td className="border border-orange-300 p-2 font-medium text-sm bg-orange-50" rowSpan={3}>
-                              {vaccineName}
-                            </td>
-                            <td className="border border-orange-300 p-2 text-xs text-center">DATE GIVEN</td>
-                            {[1, 2, 3, 4, 5].map(doseNum => {
-                              const doseRecord = vaccineRecords.find(v => v.doseNumber === doseNum);
-                              return (
-                                <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
-                                  {doseRecord ? formatDate(doseRecord.dateAdministered).split(' ')[0] : ''}
-                                </td>
-                              );
-                            })}
-                            <td className="border border-orange-300 p-2 text-xs" rowSpan={3}>
-                              {vaccineRecords.map(v => v.notes).filter(Boolean).join('; ') || ''}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td className="border border-orange-300 p-2 text-xs text-center">SIG.</td>
-                            {[1, 2, 3, 4, 5].map(doseNum => (
-                              <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
-                                {vaccineRecords.find(v => v.doseNumber === doseNum) ? '✓' : ''}
-                              </td>
-                            ))}
-                          </tr>
-                          <tr>
-                            <td className="border border-orange-300 p-2 text-xs text-center">LOT</td>
-                            {[1, 2, 3, 4, 5].map(doseNum => {
-                              const doseRecord = vaccineRecords.find(v => v.doseNumber === doseNum);
-                              return (
-                                <td key={doseNum} className="border border-orange-300 p-1 text-xs text-center">
-                                  {doseRecord?.lotNumber || ''}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                       })()}
+                   </tbody>
+                 </table>
+               </div>
+             </CardContent>
+           </Card>
 
           {/* Laboratory Tests */}
           <Card className="border-orange-200 shadow-sm">
