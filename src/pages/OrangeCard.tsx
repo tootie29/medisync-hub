@@ -93,17 +93,22 @@ const OrangeCard: React.FC = () => {
   console.log('Medical records found:', medicalRecords.length);
   console.log('Medical records data:', medicalRecords);
   
-  // Get latest medical record - use the LAST record in the array (most recently inserted)
+  // Get latest medical record - find the most recent by date
   let latestRecord = null;
   if (medicalRecords && medicalRecords.length > 0) {
     console.log('=== GETTING LATEST RECORD ===');
     console.log('Total records:', medicalRecords.length);
     
-    // Use the LAST record in the array (most recently inserted)
-    latestRecord = medicalRecords[medicalRecords.length - 1];
+    // Sort records by date to find the most recent one
+    const sortedRecords = [...medicalRecords].sort((a, b) => {
+      const dateA = new Date(a.date || a.createdAt || a.updatedAt || 0);
+      const dateB = new Date(b.date || b.createdAt || b.updatedAt || 0);
+      return dateB.getTime() - dateA.getTime(); // Most recent first
+    });
     
-    console.log('Selected LATEST record (last in array):', {
-      index: medicalRecords.length - 1,
+    latestRecord = sortedRecords[0]; // First item is the most recent
+    
+    console.log('Selected LATEST record (most recent by date):', {
       id: latestRecord.id,
       bmi: latestRecord.bmi,
       weight: latestRecord.weight,
@@ -112,14 +117,15 @@ const OrangeCard: React.FC = () => {
     });
     
     // Log all records for debugging
-    console.log('All records in order:');
-    medicalRecords.forEach((record, index) => {
+    console.log('All records sorted by date (newest first):');
+    sortedRecords.forEach((record, index) => {
       console.log(`Record ${index}:`, {
         id: record.id,
+        date: record.date || record.createdAt || record.updatedAt,
         bmi: record.bmi,
         weight: record.weight,
         height: record.height,
-        isSelected: index === medicalRecords.length - 1
+        isSelected: index === 0
       });
     });
   }
