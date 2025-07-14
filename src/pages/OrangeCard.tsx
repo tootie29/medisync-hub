@@ -201,22 +201,19 @@ const OrangeCard: React.FC = () => {
                       {userDetails.role}
                     </Badge>
                     
-                    {/* Show course/department for all users to debug */}
-                    <div className="text-sm text-gray-600 space-y-1 mb-2">
-                      {userDetails.course && (
-                        <p><strong>Course:</strong> {userDetails.course}</p>
-                      )}
-                      {userDetails.department && (
-                        <p><strong>Department:</strong> {userDetails.department}</p>
-                      )}
-                      {userDetails.faculty && (
-                        <p><strong>Faculty:</strong> {userDetails.faculty}</p>
-                      )}
-                      {/* Debug info */}
-                      <p className="text-xs text-red-500">
-                        DEBUG: Role={userDetails.role}, Course={userDetails.course || 'null'}, Dept={userDetails.department || 'null'}
-                      </p>
-                    </div>
+                    {userDetails.role === 'student' && (
+                      <div className="text-sm text-gray-600 space-y-1 mb-2">
+                        {userDetails.course && (
+                          <p><strong>Course:</strong> {userDetails.course}</p>
+                        )}
+                        {userDetails.department && (
+                          <p><strong>Department:</strong> {userDetails.department}</p>
+                        )}
+                        {userDetails.faculty && (
+                          <p><strong>Faculty:</strong> {userDetails.faculty}</p>
+                        )}
+                      </div>
+                    )}
                     
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">

@@ -110,6 +110,10 @@ export const SAMPLE_USERS: User[] = [
     allergies: ['None'],
     insuranceProvider: 'None',
     insurancePolicyNumber: 'None',
+    studentId: '2022-0001',
+    course: 'Computer Science',
+    department: 'College of Computer Studies',
+    faculty: 'Engineering and Technology',
   },
   {
     id: 'user-2',
@@ -170,6 +174,10 @@ export const SAMPLE_USERS: User[] = [
     allergies: ['Peanuts'],
     insuranceProvider: 'CarePlus',
     insurancePolicyNumber: 'CP23456',
+    studentId: '2021-0005',
+    course: 'Nursing',
+    department: 'College of Nursing',
+    faculty: 'Health Sciences',
   },
   {
     id: 'user-6',
@@ -215,6 +223,10 @@ export const SAMPLE_USERS: User[] = [
     allergies: ['Latex'],
     insuranceProvider: 'FamilyCare',
     insurancePolicyNumber: 'FC45678',
+    studentId: '2023-0008',
+    course: 'Business Administration',
+    department: 'College of Business',
+    faculty: 'Business and Management',
   },
   {
     id: 'user-9',

@@ -179,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...(response.data.role === 'student' && {
             studentId: response.data.student_id || '',
             department: response.data.department || '',
+            course: response.data.course || '',
           }),
           ...(response.data.role === 'staff' && {
             staffId: response.data.staff_id || '',
