@@ -214,8 +214,15 @@ const OrangeCard: React.FC = () => {
                         )}
                       </div>
                     )}
+                  </div>
+                  
+                  <div className="text-sm">
+                    <div className="flex items-start gap-2 mb-4">
+                      <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
+                      <span>{userDetails.address || 'Address not provided'}</span>
+                    </div>
                     
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-gray-500" />
                         <span>{userDetails.email}</span>
@@ -229,16 +236,9 @@ const OrangeCard: React.FC = () => {
                         <span>Born: {userDetails.birthDate || userDetails.dateOfBirth || 'Not provided'}</span>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="text-sm">
-                    <div className="flex items-start gap-2 mb-2">
-                      <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
-                      <span>{userDetails.address || 'Address not provided'}</span>
-                    </div>
                     
                     {userDetails.department && userDetails.role !== 'student' && (
-                      <p><strong>Department:</strong> {userDetails.department}</p>
+                      <p className="mt-2"><strong>Department:</strong> {userDetails.department}</p>
                     )}
                     {userDetails.staffId && (
                       <p><strong>Staff ID:</strong> {userDetails.staffId}</p>
