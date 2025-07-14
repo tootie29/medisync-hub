@@ -430,9 +430,21 @@ const OrangeCard: React.FC = () => {
                   </thead>
                   <tbody>
                      {['ANTI RABIES', 'FLU VACCINE', 'HEPATITIS A6', 'HEPATITIS B', 'PNEUMOVAC', 'TETANUS TOXOID'].map((vaccineName) => {
-                       const vaccineRecords = allVaccinations.filter(v => 
-                         v.name.toUpperCase().includes(vaccineName.replace('A6', 'A'))
-                       );
+                       // More flexible matching logic
+                       const vaccineRecords = allVaccinations.filter(v => {
+                         const vName = v.name.toUpperCase().trim();
+                         const searchName = vaccineName.replace('A6', 'A').toUpperCase().trim();
+                         
+                         // Try multiple matching strategies
+                         return vName.includes(searchName) || 
+                                searchName.includes(vName) ||
+                                vName.includes(searchName.split(' ')[0]) || // Match first word
+                                (searchName.includes('HEPATITIS') && vName.includes('HEPATITIS')) ||
+                                (searchName.includes('RABIES') && vName.includes('RABIES')) ||
+                                (searchName.includes('FLU') && vName.includes('FLU')) ||
+                                (searchName.includes('PNEUMO') && vName.includes('PNEUMO')) ||
+                                (searchName.includes('TETANUS') && vName.includes('TETANUS'));
+                       });
                        
                        console.log(`=== VACCINE FILTER DEBUG for ${vaccineName} ===`);
                        console.log('Search term:', vaccineName.replace('A6', 'A'));
