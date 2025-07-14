@@ -87,6 +87,9 @@ const OrangeCard: React.FC = () => {
   const medicalRecords = getMedicalRecordsByPatientId(user.id);
   
   console.log('User details:', userDetails);
+  console.log('User details course:', userDetails?.course);
+  console.log('User details department:', userDetails?.department);
+  console.log('User details studentId:', userDetails?.studentId);
   console.log('Medical records found:', medicalRecords.length);
   console.log('Medical records data:', medicalRecords);
   
@@ -189,19 +192,27 @@ const OrangeCard: React.FC = () => {
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h3 className="font-semibold text-lg">{userDetails.name}</h3>
-                    {userDetails.role === 'student' && (userDetails.course || userDetails.department) && (
-                      <p className="text-sm text-gray-600 mb-1">
-                        {[userDetails.course, userDetails.department].filter(Boolean).join(' - ')}
-                      </p>
-                    )}
                     {userDetails.studentId && (
-                      <p className="text-sm text-gray-600 mb-2">
+                      <p className="text-sm font-medium text-gray-700 mb-1">
                         <strong>Student ID:</strong> {userDetails.studentId}
                       </p>
                     )}
                     <Badge variant="outline" className="mb-2 capitalize">
                       {userDetails.role}
                     </Badge>
+                    {userDetails.role === 'student' && (
+                      <div className="text-sm text-gray-600 space-y-1 mb-2">
+                        {userDetails.course && (
+                          <p><strong>Course:</strong> {userDetails.course}</p>
+                        )}
+                        {userDetails.department && (
+                          <p><strong>Department:</strong> {userDetails.department}</p>
+                        )}
+                        {userDetails.faculty && (
+                          <p><strong>Faculty:</strong> {userDetails.faculty}</p>
+                        )}
+                      </div>
+                    )}
                     
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
